@@ -1,0 +1,1682 @@
+/* ==========================================================================
+   VU Connect - Victoria University (VU) Frosted Glass Design System
+   Brand Identity: Authentic Victoria University Theme
+   Colors: VU Crimson Red (#D8232A / #E02B2D) & University Cobalt Blue (#3A86C8 / #2563EB)
+   Aesthetic: Ultra-refined Frosted Liquid Glass, Translucent Fluid Diffusions,
+              Soft Specular Highlights, Slate Accents & Silver Laurel Borders.
+   ========================================================================== */
+
+:root {
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  /* Primary Victoria University Red */
+  --vu-red: #D8232A;
+  --vu-red-hover: #BC171E;
+  --vu-red-dark: #991B1B;
+  --vu-red-light: #FEE2E2;
+  --vu-red-subtle: #FEF2F2;
+  --vu-red-glow: rgba(216, 35, 42, 0.28);
+  --vu-red-shadow: 0 10px 25px -5px rgba(216, 35, 42, 0.35);
+
+  /* Primary Victoria University Blue */
+  --vu-blue: #3A86C8;
+  --vu-blue-hover: #2B70B9;
+  --vu-blue-dark: #1E558E;
+  --vu-blue-light: #DBEAFE;
+  --vu-blue-subtle: #EFF6FF;
+  --vu-blue-glow: rgba(58, 134, 200, 0.28);
+  --vu-blue-shadow: 0 10px 25px -5px rgba(58, 134, 200, 0.35);
+
+  /* Brand Primary & Accents */
+  --primary: #D8232A;
+  --primary-hover: #BC171E;
+  --primary-dark: #991B1B;
+  --primary-light: #FEE2E2;
+  --primary-subtle: #FEF2F2;
+  --primary-glow: rgba(216, 35, 42, 0.28);
+  --primary-shadow: 0 10px 25px -5px rgba(216, 35, 42, 0.35);
+
+  --secondary: #3A86C8;
+  --secondary-hover: #2B70B9;
+  --secondary-light: #DBEAFE;
+  --secondary-glow: rgba(58, 134, 200, 0.28);
+
+  /* Deep Navy & Slate Accents */
+  --vu-navy: #0F294A;
+  --vu-silver: #94A3B8;
+  --vu-silver-light: #E2E8F0;
+  
+  --emerald: #10b981;
+  --emerald-light: #d1fae5;
+  --emerald-glow: rgba(16, 185, 129, 0.5);
+  --amber: #f59e0b;
+  --amber-light: #fef3c7;
+  
+  /* Frosted Glass Surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-hover: rgba(255, 255, 255, 0.75);
+  --glass-bg-active: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-border-subtle: rgba(255, 255, 255, 0.45);
+  --glass-border-blue: rgba(58, 134, 200, 0.25);
+  --glass-border-red: rgba(216, 35, 42, 0.25);
+  --glass-inset: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 2px 0 rgba(58, 134, 200, 0.04);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 41, 74, 0.06);
+  --glass-shadow-lg: 0 16px 40px 0 rgba(15, 41, 74, 0.09), 0 8px 24px -6px rgba(216, 35, 42, 0.08);
+  --glass-blur: blur(25px);
+  
+  /* Frosted Card Gradient */
+  --card-glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 100%);
+  --card-glass-border: rgba(255, 255, 255, 0.85);
+  
+  /* Typography Colors */
+  --text-main: #1E293B;
+  --text-muted: #475569;
+  --text-light: #64748B;
+  --text-on-accent: #ffffff;
+  
+  /* Canvas Background */
+  --canvas-bg: #F8FAFC;
+  
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-2xl: 40px;
+  --radius-full: 9999px;
+  
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--canvas-bg);
+  color: var(--text-main);
+  line-height: 1.55;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   Liquid Ambient Fluid Mesh Background & Frosted Blobs (VU Red & Blue)
+   ========================================================================== */
+.liquid-canvas-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.liquid-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  -webkit-filter: blur(85px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Blob 1: Victoria University Blue Orb */
+.blob-1, .liquid-orb-1 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(58, 134, 200, 0.22) 0%, rgba(219, 234, 254, 0.4) 60%, rgba(255, 255, 255, 0) 100%);
+  top: -100px;
+  right: -100px;
+  animation: liquidFloat1 24s infinite alternate ease-in-out;
+}
+
+/* Blob 2: Victoria University Crimson Red Orb */
+.blob-2, .liquid-orb-2 {
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(circle, rgba(216, 35, 42, 0.18) 0%, rgba(254, 226, 226, 0.4) 60%, rgba(255, 255, 255, 0) 100%);
+  bottom: -60px;
+  left: -60px;
+  animation: liquidFloat2 28s infinite alternate ease-in-out;
+}
+
+/* Orb 3: Translucent Blend */
+.liquid-orb-3 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(58, 134, 200, 0.14) 0%, rgba(216, 35, 42, 0.1) 50%, rgba(255, 255, 255, 0) 100%);
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: liquidFloat3 20s infinite alternate ease-in-out;
+}
+
+@keyframes liquidFloat1 {
+  0% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(-40px, 50px) scale(1.06); }
+  100% { transform: translate(30px, -20px) scale(0.96); }
+}
+
+@keyframes liquidFloat2 {
+  0% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(50px, -30px) scale(1.08); }
+  100% { transform: translate(-30px, 40px) scale(0.94); }
+}
+
+@keyframes liquidFloat3 {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-40%, -40%) scale(1.12); }
+  100% { transform: translate(-60%, -60%) scale(0.92); }
+}
+
+/* ==========================================================================
+   Frosted Glass Components & Utilities
+   ========================================================================== */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), background-color var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.liquid-glass-card {
+  background: var(--card-glass-bg);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--card-glass-border);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--glass-shadow);
+}
+
+.liquid-glass-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.45) 0%, transparent 70%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.glass-panel-elevated {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
+  backdrop-filter: blur(35px);
+  -webkit-backdrop-filter: blur(35px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: var(--glass-shadow-lg);
+  border-radius: var(--radius-xl);
+}
+
+.glass-card-interactive {
+  cursor: pointer;
+}
+.glass-card-interactive:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-3px);
+  box-shadow: var(--glass-shadow-lg);
+  border-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Active Ring Utility - Victoria University Dual Pulse */
+.active-ring {
+  position: relative;
+}
+.active-ring::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid var(--vu-red);
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: activePulse 2s infinite;
+}
+
+@keyframes activePulse {
+  0% { transform: scale(1); opacity: 0.4; border-color: var(--vu-red); }
+  50% { transform: scale(1.1); opacity: 0.2; border-color: var(--vu-blue); }
+  100% { transform: scale(1); opacity: 0.4; border-color: var(--vu-red); }
+}
+
+/* ==========================================================================
+   Header & Brand Area (Top Bar)
+   ========================================================================== */
+.glass-header {
+  position: sticky;
+  top: 12px;
+  z-index: 1000;
+  max-width: 1240px;
+  margin: 0 auto 16px auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 32px 0 rgba(15, 41, 74, 0.08);
+  transition: background var(--transition-smooth, 0.3s ease), box-shadow var(--transition-smooth, 0.3s ease), border-color var(--transition-smooth, 0.3s ease);
+}
+
+/* Intensifies once the page has scrolled, so the pill reads as a solid
+   "surface" sitting above the blurred content sliding beneath it. */
+.glass-header.is-scrolled {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 36px 0 rgba(15, 41, 74, 0.14);
+  border-color: rgba(255, 255, 255, 1);
+}
+
+/* Fixed veil sitting directly behind the header. Anything (hero text,
+   cards, images) that scrolls up past the header passes underneath this
+   veil first and is progressively blurred out instead of staying crisp
+   right up to the header's edge. */
+.header-blur-veil {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 92px;
+  z-index: 999;
+  pointer-events: none;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: backdrop-filter 0.25s ease, -webkit-backdrop-filter 0.25s ease;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%);
+}
+.header-blur-veil.is-active {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+/* Victoria University Crest / Shield Emblem */
+.vu-crest-symbol {
+  width: 38px;
+  height: 44px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 3px 6px rgba(15, 41, 74, 0.15));
+  transition: transform var(--transition-smooth);
+}
+.brand-logo:hover .vu-crest-symbol {
+  transform: scale(1.05);
+}
+
+.brand-logo-text {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.brand-vu-highlight {
+  background: linear-gradient(135deg, #D8232A 0%, #3A86C8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.nav-links-wrapper {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.nav-links-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-item-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #475569;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.nav-item-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.nav-item-btn.active {
+  background: linear-gradient(135deg, var(--vu-red) 0%, #B91C1C 100%);
+  color: white;
+  box-shadow: var(--vu-red-shadow);
+  font-weight: 700;
+}
+
+.nav-item-btn .nav-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.nav-badge {
+  background: rgba(255, 255, 255, 0.35);
+  color: white;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+.nav-item-btn:not(.active) .nav-badge {
+  background: #D8232A;
+  color: white;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Quick Features Navigation Bar (Top Tab Switcher)
+   ========================================================================== */
+.quick-tabs-container {
+  max-width: 1240px;
+  margin: 0 auto 20px auto;
+  padding: 0 12px;
+}
+
+.quick-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 20px rgba(15, 41, 74, 0.05);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.quick-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-tab-btn {
+  flex: 1;
+  min-width: 130px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #475569;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.quick-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: #1E293B;
+}
+
+.quick-tab-btn.active {
+  background: white;
+  color: #D8232A;
+  border-color: rgba(216, 35, 42, 0.2);
+  box-shadow: 0 4px 14px rgba(216, 35, 42, 0.12);
+}
+
+.quick-tab-btn .tab-icon {
+  font-size: 1.05rem;
+}
+
+/* Action Buttons */
+.btn-liquid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--vu-red) 0%, #BC171E 100%);
+  color: white;
+  box-shadow: var(--vu-red-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #E02B2D 0%, #991B1B 100%);
+  box-shadow: 0 12px 30px -5px rgba(216, 35, 42, 0.45);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary, .btn-blue {
+  background: linear-gradient(135deg, var(--vu-blue) 0%, #2563EB 100%);
+  color: white;
+  box-shadow: var(--vu-blue-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.btn-secondary:hover, .btn-blue:hover {
+  background: linear-gradient(135deg, #4A8CD6 0%, #1D4ED8 100%);
+  box-shadow: 0 12px 30px -5px rgba(58, 134, 200, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #334155;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px 0 rgba(15, 41, 74, 0.04);
+}
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--vu-red);
+  border-color: #FCA5A5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(216, 35, 42, 0.12);
+}
+
+.btn-glass-blue {
+  background: rgba(239, 246, 255, 0.7);
+  border: 1px solid #BFDBFE;
+  color: var(--vu-blue-dark);
+}
+.btn-glass-blue:hover {
+  background: white;
+  border-color: var(--vu-blue);
+  color: var(--vu-blue);
+  box-shadow: 0 6px 20px 0 rgba(58, 134, 200, 0.15);
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.84rem;
+}
+
+.btn-lg {
+  padding: 14px 30px;
+  font-size: 1.05rem;
+}
+
+/* User Pill & Avatar */
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 16px 5px 6px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.user-profile-pill:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px rgba(15, 41, 74, 0.06);
+}
+
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Main Content Container */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 80px 20px;
+  position: relative;
+  z-index: 10;
+}
+
+/* View Sections */
+.view-section {
+  display: none;
+  animation: fadeInView 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.view-section.active {
+  display: block;
+}
+
+@keyframes fadeInView {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   View 1: Landing Page Hero & Features
+   ========================================================================== */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 36px;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.hero-content {
+  padding-right: 12px;
+}
+
+.hero-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, rgba(254, 226, 226, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%);
+  border: 1px solid rgba(216, 35, 42, 0.25);
+  color: #991B1B;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+  margin-bottom: 22px;
+}
+
+.hero-title {
+  font-size: 3.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--text-main);
+  margin-bottom: 22px;
+}
+
+.hero-title span.highlight-red {
+  color: var(--vu-red);
+  font-style: italic;
+  position: relative;
+  display: inline-block;
+}
+
+.hero-title span.highlight-blue {
+  color: var(--vu-blue);
+  position: relative;
+  display: inline-block;
+}
+
+.hero-description {
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  max-width: 520px;
+}
+
+.hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.hero-proof-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(15, 41, 74, 0.08);
+}
+
+.avatar-stack {
+  display: flex;
+  margin-left: 6px;
+}
+
+.avatar-stack img,
+.avatar-stack .avatar-more {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid white;
+  margin-left: -10px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(15, 41, 74, 0.08);
+}
+
+.avatar-more {
+  background: var(--vu-red-light);
+  color: var(--vu-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.hero-visual-card {
+  position: relative;
+  padding: 12px;
+}
+
+.hero-main-photo {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  display: block;
+}
+
+.floating-glass-badge {
+  position: absolute;
+  bottom: -16px;
+  left: -16px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 36px rgba(15, 41, 74, 0.12);
+}
+
+.floating-badge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--vu-red-light) 0%, var(--vu-blue-light) 100%);
+  color: var(--vu-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+/* Feature 3-Pillar Cards */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 50px;
+}
+
+.feature-glass-box {
+  padding: 28px;
+  border-radius: var(--radius-xl);
+}
+
+.feature-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--vu-red-light);
+  color: var(--vu-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px var(--vu-red-glow);
+}
+
+.feature-icon-wrapper-blue {
+  background: var(--vu-blue-light);
+  color: var(--vu-blue);
+  box-shadow: 0 4px 14px var(--vu-blue-glow);
+}
+
+.feature-glass-box h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-main);
+}
+
+.feature-glass-box p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   View 2: Campus Dashboard
+   ========================================================================== */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 2.1fr 1fr;
+  gap: 28px;
+}
+
+.feed-header-banner {
+  padding: 28px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(219, 234, 254, 0.4) 50%, rgba(254, 226, 226, 0.4) 100%);
+  border-radius: var(--radius-xl);
+}
+
+.feed-announcement {
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(254, 242, 242, 0.9);
+  border: 1px solid #FECACA;
+  border-left: 4px solid var(--vu-red);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(15px);
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vu-red);
+  box-shadow: 0 0 0 4px rgba(216, 35, 42, 0.2);
+  animation: pulseAnim 2s infinite;
+}
+
+@keyframes pulseAnim {
+  0% { box-shadow: 0 0 0 0 rgba(216, 35, 42, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(216, 35, 42, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(216, 35, 42, 0); }
+}
+
+.dashboard-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   View 3: Smart Matchmaking Engine (Frosted Swiper)
+   ========================================================================== */
+.match-stage {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.match-card-main {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  border-radius: var(--radius-2xl);
+}
+
+.match-photo-holder {
+  position: relative;
+  height: 380px;
+  width: 100%;
+}
+
+.match-photo-holder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.match-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 41, 74, 0.92) 0%, rgba(15, 41, 74, 0.3) 50%, transparent 100%);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  color: white;
+}
+
+.match-compat-chip {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--vu-red);
+  font-weight: 800;
+  font-size: 0.88rem;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 16px rgba(15, 41, 74, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(216, 35, 42, 0.2);
+}
+
+.match-body-content {
+  padding: 26px;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.tag-pill {
+  padding: 5px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(15, 41, 74, 0.08);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.tag-pill-highlight {
+  background: var(--vu-red-light);
+  color: var(--vu-red-dark);
+  border-color: #FECACA;
+  font-weight: 700;
+}
+
+.tag-pill-blue {
+  background: var(--vu-blue-light);
+  color: var(--vu-blue-dark);
+  border-color: #BFDBFE;
+  font-weight: 700;
+}
+
+.match-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 16px 26px 26px 26px;
+}
+
+.btn-round-action {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all var(--transition-spring);
+  border: none;
+}
+
+.btn-pass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(15px);
+  color: #64748B;
+  border: 1px solid rgba(15, 41, 74, 0.08);
+  box-shadow: 0 4px 14px rgba(15, 41, 74, 0.06);
+}
+.btn-pass:hover {
+  background: white;
+  color: var(--text-main);
+  transform: scale(1.08);
+}
+
+.btn-like {
+  background: linear-gradient(135deg, var(--vu-red) 0%, #BC171E 100%);
+  color: white;
+  box-shadow: var(--vu-red-shadow);
+}
+.btn-like:hover {
+  transform: scale(1.12);
+  background: linear-gradient(135deg, #E02B2D 0%, #991B1B 100%);
+  box-shadow: 0 10px 28px rgba(216, 35, 42, 0.45);
+}
+
+.btn-super {
+  background: linear-gradient(135deg, var(--vu-blue-light) 0%, #BFDBFE 100%);
+  color: var(--vu-blue-dark);
+  border: 1px solid #93C5FD;
+}
+.btn-super:hover {
+  transform: scale(1.08);
+  background: #93C5FD;
+  color: var(--vu-navy);
+}
+
+/* ==========================================================================
+   View 4: CatchUp Meetups
+   ========================================================================== */
+.catchup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.catchup-card {
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.catchup-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.catchup-attendees {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  border-top: 1px solid rgba(15, 41, 74, 0.06);
+}
+
+/* ==========================================================================
+   View 5: Campus Hubs & Discussion Threads
+   ========================================================================== */
+.hubs-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 26px;
+}
+
+.hub-channel-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hub-channel-btn {
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all var(--transition-fast);
+}
+
+.hub-channel-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-main);
+}
+
+.hub-channel-btn.active {
+  background: linear-gradient(135deg, rgba(219, 234, 254, 0.8) 0%, rgba(254, 226, 226, 0.6) 100%);
+  color: var(--vu-red);
+  font-weight: 700;
+  border-left: 3px solid var(--vu-red);
+  box-shadow: 0 4px 14px rgba(15, 41, 74, 0.05);
+}
+
+.thread-post-card {
+  padding: 22px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-lg);
+}
+
+/* ==========================================================================
+   View 6: Real-Time Chats & DMs
+   ========================================================================== */
+.chat-workspace {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 22px;
+  height: 640px;
+}
+
+.chat-sidebar {
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: var(--radius-xl);
+}
+
+.chat-thread-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: 6px;
+}
+
+.chat-thread-item:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.chat-thread-item.active {
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(254, 242, 242, 0.7) 100%);
+  box-shadow: 0 4px 14px rgba(15, 41, 74, 0.05);
+  border-left: 3px solid var(--vu-blue);
+}
+
+.chat-main-window {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+
+.chat-messages-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 12px 18px;
+  border-radius: 20px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  position: relative;
+}
+
+.msg-incoming {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  color: var(--text-main);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(15, 41, 74, 0.04);
+}
+
+.msg-outgoing {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--vu-blue) 0%, #2563EB 100%);
+  color: white;
+  border-bottom-right-radius: 4px;
+  box-shadow: var(--vu-blue-shadow);
+}
+
+.chat-input-row {
+  padding: 16px 22px;
+  border-top: 1px solid rgba(15, 41, 74, 0.06);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-input-field {
+  flex: 1;
+  padding: 12px 18px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.92rem;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+.chat-input-field:focus {
+  background: white;
+  border-color: var(--vu-blue);
+  box-shadow: 0 0 0 3px var(--vu-blue-glow);
+}
+
+/* ==========================================================================
+   Modals & Overlays (Frosted Liquid Glass Modals)
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 41, 74, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-smooth);
+}
+
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-box {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 100%);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 25px 60px -15px rgba(15, 41, 74, 0.2), 0 0 40px rgba(216, 35, 42, 0.08);
+  border-radius: var(--radius-2xl);
+  width: 100%;
+  max-width: 520px;
+  padding: 34px;
+  position: relative;
+  transform: scale(0.95) translateY(10px);
+  transition: transform var(--transition-spring);
+}
+
+.modal-backdrop.open .modal-box {
+  transform: scale(1) translateY(0);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  transition: all var(--transition-fast);
+}
+.modal-close-btn:hover {
+  background: white;
+  color: var(--vu-red);
+  transform: scale(1.05);
+}
+
+/* Auth Modal Styles */
+.auth-provider-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(15, 41, 74, 0.04);
+  transition: all var(--transition-fast);
+  margin-bottom: 16px;
+}
+.auth-provider-btn:hover {
+  background: white;
+  border-color: #BFDBFE;
+  box-shadow: 0 6px 20px rgba(58, 134, 200, 0.15);
+  transform: translateY(-1px);
+}
+
+.divider-with-text {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0;
+  color: var(--text-light);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.divider-with-text::before,
+.divider-with-text::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(15, 41, 74, 0.08);
+}
+.divider-with-text span {
+  padding: 0 14px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+.form-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px);
+  outline: none;
+  transition: all var(--transition-fast);
+  color: var(--text-main);
+}
+.form-input:focus {
+  background: white;
+  border-color: var(--vu-blue);
+  box-shadow: 0 0 0 3px var(--vu-blue-glow);
+}
+
+/* OTP Code Boxes */
+.otp-boxes-wrapper {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 18px 0;
+}
+.otp-digit-box {
+  width: 48px;
+  height: 54px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.8);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+.otp-digit-box:focus {
+  background: white;
+  border-color: var(--vu-red);
+  box-shadow: 0 0 0 3px var(--vu-red-glow);
+}
+
+/* Live Interactive Toast */
+.live-toast-alert {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+  max-width: 380px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid #FECACA;
+  border-left: 4px solid var(--vu-red);
+  box-shadow: 0 16px 40px rgba(15, 41, 74, 0.12);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tour Spotlight */
+.tour-step-card {
+  position: fixed;
+  z-index: 1500;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(58, 134, 200, 0.3);
+  box-shadow: 0 20px 45px rgba(15, 41, 74, 0.2);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  max-width: 340px;
+  animation: fadeInView 0.25s ease-out;
+}
+
+/* Feature Boxes with Interactive State */
+.feature-glass-box {
+  cursor: pointer;
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth), background-color var(--transition-smooth);
+}
+.feature-glass-box:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 16px 36px rgba(15, 41, 74, 0.1);
+  border-color: rgba(216, 35, 42, 0.35);
+}
+
+.feature-box-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--vu-red);
+  text-decoration: none;
+}
+.feature-box-cta:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Primary Liquid Glass Bottom Navigation Dock
+   ========================================================================== */
+.app-bottom-dock {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+
+.dock-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-full);
+  box-shadow: 0 12px 38px 0 rgba(15, 41, 74, 0.16), 0 2px 10px rgba(216, 35, 42, 0.08);
+  pointer-events: auto;
+  transition: all var(--transition-smooth);
+}
+
+.dock-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  color: #475569;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.dock-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1E293B;
+  transform: translateY(-2px);
+}
+
+.dock-nav-btn.active {
+  background: linear-gradient(135deg, var(--vu-red) 0%, #B91C1C 100%);
+  color: #FFFFFF;
+  box-shadow: var(--vu-red-shadow);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.dock-nav-btn .dock-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.dock-nav-btn .dock-label {
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
+}
+
+.dock-badge {
+  background: rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 99px;
+  margin-left: 2px;
+}
+
+.dock-nav-btn:not(.active) .dock-badge {
+  background: var(--vu-red);
+  color: #FFFFFF;
+}
+
+/* Ensure adequate space above bottom dock */
+.app-container {
+  padding-bottom: 110px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-layout,
+  .hubs-layout,
+  .chat-workspace {
+    grid-template-columns: 1fr;
+  }
+  .hero-title {
+    font-size: 2.2rem;
+  }
+  .glass-header {
+    padding: 8px 16px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-bottom-dock {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dock-container {
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    justify-content: space-around;
+    padding: 8px 4px 14px 4px;
+    gap: 2px;
+  }
+
+  .dock-nav-btn {
+    flex-direction: column;
+    padding: 6px 8px;
+    gap: 3px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+  }
+
+  .dock-nav-btn.active {
+    background: #FEE2E2;
+    color: #D8232A;
+    box-shadow: none;
+  }
+
+  .dock-nav-btn .dock-icon {
+    font-size: 1.25rem;
+  }
+
+  .dock-nav-btn .dock-label {
+    font-size: 0.7rem;
+  }
+
+  .dock-badge {
+    position: absolute;
+    top: 2px;
+    right: 6px;
+    font-size: 0.62rem;
+    padding: 1px 4px;
+  }
+}
+
+/* ==========================================================================
+   App Boot Loader (~2s brand loading state) & Inline Button Spinners
+   ========================================================================== */
+#app-boot-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  background: radial-gradient(circle at 50% 30%, #FDF2F2 0%, #EFF6FF 100%);
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+#app-boot-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.boot-loader-ring {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 4px solid rgba(216, 35, 42, 0.15);
+  border-top-color: #D8232A;
+  animation: boot-spin 0.85s linear infinite;
+}
+.boot-loader-text {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #1E293B;
+  letter-spacing: 0.01em;
+}
+@keyframes boot-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Small inline spinner reused inside buttons while a request is pending */
+.btn-inline-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: currentColor;
+  animation: boot-spin 0.7s linear infinite;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+.btn-liquid[disabled],
+.auth-provider-btn[disabled] {
+  opacity: 0.75;
+  cursor: progress;
+  pointer-events: none;
+}
+
+/* Success "pulse" used on completed actions (sign-in, post sent, etc.) */
+@keyframes success-pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-pop-in {
+  animation: success-pop 0.35s ease-out;
+}

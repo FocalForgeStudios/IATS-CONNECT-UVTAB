@@ -1,0 +1,6 @@
+{
+  "name": "IATS CONNECT",
+  "description": "The official student networking, study partner finder, academic events & news, course discussions, and faculty collaboration platform for IATS (Institute of Advanced Technology & Studies).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

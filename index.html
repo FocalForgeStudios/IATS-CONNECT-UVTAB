@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>IATS CONNECT - Institute of Advanced Technology & Studies</title>
+    <meta name="description" content="The official student networking, study partner finder, academic events & news, course discussions, and faculty collaboration platform for IATS (Institute of Advanced Technology & Studies)." />
+    <meta property="og:title" content="IATS CONNECT - Institute of Advanced Technology & Studies" />
+    <meta property="og:description" content="The official student networking, study partner finder, academic events & news, course discussions, and faculty collaboration platform for IATS (Institute of Advanced Technology & Studies)." />
+    <meta property="og:type" content="website" />
+    
+    <!-- Custom Brand Favicon for IATS Connect -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./favicon.svg" />
+    
+    <!-- Liquid Glassmorphism Core Stylesheet with Academic Theme Colors (Relative path for GitHub Pages compatibility) -->
+    <link rel="stylesheet" href="./css/liquid-glass.css" />
+  </head>
+  <body>
+    <!-- App Boot Loader: brief branded loading state shown while the UI mounts -->
+    <div id="app-boot-loader">
+      <div class="boot-loader-ring"></div>
+      <div class="boot-loader-text">Loading IATS CONNECT…</div>
+    </div>
+
+    <!-- Fixed veil behind the header: blurs content sliding up underneath it -->
+    <div class="header-blur-veil" id="header-blur-veil"></div>
+
+    <!-- Liquid Ambient Fluid Mesh Background with Academic Theme Colors -->
+    <div class="liquid-canvas-mesh">
+      <div class="liquid-blob blob-1"></div>
+      <div class="liquid-blob blob-2"></div>
+      <div class="liquid-orb liquid-orb-1"></div>
+      <div class="liquid-orb liquid-orb-2"></div>
+      <div class="liquid-orb liquid-orb-3"></div>
+      <div style="position: absolute; bottom: -40px; right: -40px; width: 280px; height: 280px; background: rgba(58, 134, 200, 0.12); border-radius: 50%; filter: blur(70px); pointer-events: none;"></div>
+      <div style="position: absolute; top: 30%; left: -50px; width: 260px; height: 260px; background: rgba(216, 35, 42, 0.1); border-radius: 50%; filter: blur(70px); pointer-events: none;"></div>
+    </div>
+
+    <!-- Liquid Glass Navigation Header -->
+    <header class="glass-header" id="main-header">
+      <a href="#" class="brand-logo" id="brand-logo-link">
+        <!-- IATS Academic Coat of Arms / Tech Shield Crest -->
+        <div class="vu-crest-symbol">
+          <svg width="34" height="40" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Laurel Wreath at Bottom in Silver -->
+            <path d="M12 88C15 98 25 106 36 110C42 112 48 114 50 118C52 114 58 112 64 110C75 106 85 98 88 88" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+            <path d="M10 82C8 88 12 94 18 96M22 95C20 101 26 105 32 107M38 106C38 111 44 114 49 116" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M90 82C92 88 88 94 82 96M78 95C80 101 74 105 68 107M62 106C62 111 56 114 51 116" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+            
+            <!-- Outer Shield Frame -->
+            <path d="M50 4L88 14V58C88 82 68 98 50 106C32 98 12 82 12 58V14L50 4Z" fill="#CBD5E1" stroke="#94A3B8" stroke-width="2"/>
+            <path d="M50 8L84 17V56C84 78 66 93 50 100C34 93 16 78 16 56V17L50 8Z" fill="#FFFFFF"/>
+            
+            <!-- Shield 4 Quadrants: I | A || T | S with Academic Book & Tech Orbit -->
+            <g clip-path="url(#iats-header-shield-clip)">
+              <!-- Q1: Top-Left Deep Red -->
+              <rect x="18" y="10" width="32" height="46" fill="#D8232A"/>
+              <!-- Q2: Top-Right Sapphire Blue -->
+              <rect x="50" y="10" width="34" height="46" fill="#1E40AF"/>
+              <!-- Q3: Bottom-Left Cobalt Blue -->
+              <rect x="18" y="56" width="32" height="46" fill="#1E40AF"/>
+              <!-- Q4: Bottom-Right Deep Red -->
+              <rect x="50" y="56" width="34" height="46" fill="#D8232A"/>
+              
+              <!-- Q1: Serif I & A -->
+              <text x="34" y="42" font-family="'Times New Roman', Georgia, serif" font-weight="bold" font-size="20" fill="#FFFFFF" text-anchor="middle">IA</text>
+              
+              <!-- Q2: Serif T & S -->
+              <text x="67" y="42" font-family="'Times New Roman', Georgia, serif" font-weight="bold" font-size="20" fill="#FFFFFF" text-anchor="middle">TS</text>
+              
+              <!-- Q3: Academic Tech Node / Orbit -->
+              <g transform="translate(22, 63) scale(0.48)">
+                <circle cx="25" cy="25" r="7" fill="#FFFFFF"/>
+                <ellipse cx="25" cy="25" rx="20" ry="8" transform="rotate(-30 25 25)" stroke="#FFFFFF" stroke-width="2.5" fill="none"/>
+                <ellipse cx="25" cy="25" rx="20" ry="8" transform="rotate(30 25 25)" stroke="#FFFFFF" stroke-width="2.5" fill="none"/>
+              </g>
+              
+              <!-- Q4: Open Academic Knowledge Book -->
+              <g transform="translate(56, 68) scale(0.65)">
+                <path d="M14 6C10 4 5 4 0 5V22C5 21 10 21 14 23C18 21 23 21 28 22V5C23 4 18 4 14 6Z" fill="#FFFFFF"/>
+                <path d="M14 6V23" stroke="#D8232A" stroke-width="1.2"/>
+                <line x1="3" y1="9" x2="11" y2="9" stroke="#D8232A" stroke-width="0.9"/>
+                <line x1="3" y1="13" x2="11" y2="13" stroke="#D8232A" stroke-width="0.9"/>
+                <line x1="17" y1="9" x2="25" y2="9" stroke="#D8232A" stroke-width="0.9"/>
+                <line x1="17" y1="13" x2="25" y2="13" stroke="#D8232A" stroke-width="0.9"/>
+              </g>
+              
+              <!-- Quadrant Dividers -->
+              <line x1="50" y1="10" x2="50" y2="100" stroke="#FFFFFF" stroke-width="1.5"/>
+              <line x1="16" y1="56" x2="84" y2="56" stroke="#FFFFFF" stroke-width="1.5"/>
+            </g>
+            
+            <defs>
+              <clipPath id="iats-header-shield-clip">
+                <path d="M50 8L84 17V56C84 78 66 93 50 100C34 93 16 78 16 56V17L50 8Z"/>
+              </clipPath>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-logo-text">
+          <span class="brand-vu-highlight">IATS</span>
+          <span style="color: var(--text-main); font-weight: 800; letter-spacing: -0.02em;"> CONNECT</span>
+        </div>
+      </a>
+
+      <div class="header-actions" id="header-user-area">
+        <!-- Injected via JavaScript -->
+      </div>
+    </header>
+
+    <!-- Main Views Container -->
+    <main class="app-container">
+      
+      <!-- ================================================================= -->
+      <!-- VIEW 1: LANDING HERO & VU SHOWCASE -->
+      <!-- ================================================================= -->
+      <section id="view-landing" class="view-section active">
+        <div class="hero-grid">
+          <div class="hero-content">
+            <div class="hero-pill-tag">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 5px;">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+              </svg>
+              <span>IATS • Institute of Advanced Technology & Studies</span>
+            </div>
+            <h1 class="hero-title">
+              Connect with fellow <span class="highlight-red">IATS</span> scholars <span class="highlight-blue">organically</span> in real-time.
+            </h1>
+            <p class="hero-description">
+              Find compatible study partners across departments, join academic events & campus news, and collaborate in verified IATS course forums — powered by durable cloud persistence and zero-tolerance academic integrity.
+            </p>
+            
+            <div class="hero-cta-group">
+              <button class="btn-liquid btn-primary btn-lg" id="btn-hero-explore">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                <span>Join with Personal Email or Google</span>
+              </button>
+              <button class="btn-liquid btn-glass btn-lg" id="btn-hero-tour">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                </svg>
+                <span>Start Interactive Tour</span>
+              </button>
+              <button class="btn-liquid btn-glass btn-sm" id="btn-hero-logic-info" style="border-color: #FECACA; color: #D8232A;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                  <rect x="9" y="9" width="6" height="6"></rect>
+                  <line x1="9" y1="1" x2="9" y2="4"></line>
+                  <line x1="15" y1="1" x2="15" y2="4"></line>
+                  <line x1="9" y1="20" x2="9" y2="23"></line>
+                  <line x1="15" y1="20" x2="15" y2="23"></line>
+                  <line x1="20" y1="9" x2="23" y2="9"></line>
+                  <line x1="20" y1="14" x2="23" y2="14"></line>
+                  <line x1="1" y1="9" x2="4" y2="9"></line>
+                  <line x1="1" y1="14" x2="4" y2="14"></line>
+                </svg>
+                <span>Academic & Cloud Logic</span>
+              </button>
+            </div>
+
+            <!-- Quick Jump Shortcuts to all Subsystem Tabs -->
+            <div style="margin-top: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-light); text-transform: uppercase;">Quick Explore:</span>
+              <button class="btn-liquid btn-glass btn-sm" style="padding: 6px 14px; font-size: 0.82rem;" onclick="CampusApp.navigateTo('dashboard')">
+                <span>Feed / Dashboard</span>
+              </button>
+              <button class="btn-liquid btn-glass btn-sm" style="padding: 6px 14px; font-size: 0.82rem;" onclick="CampusApp.navigateTo('match')">
+                <span>Study Buddy</span>
+              </button>
+              <button class="btn-liquid btn-glass btn-sm" style="padding: 6px 14px; font-size: 0.82rem;" onclick="CampusApp.navigateTo('catchup')">
+                <span>Events & News</span>
+              </button>
+              <button class="btn-liquid btn-glass btn-sm" style="padding: 6px 14px; font-size: 0.82rem;" onclick="CampusApp.navigateTo('hubs')">
+                <span>Courses</span>
+              </button>
+              <button class="btn-liquid btn-glass btn-sm" style="padding: 6px 14px; font-size: 0.82rem;" onclick="CampusApp.navigateTo('chats')">
+                <span>Direct Chats</span>
+              </button>
+            </div>
+
+            <div class="hero-proof-strip">
+              <div class="avatar-stack">
+                <img src="./images/scholar_female.jpg" alt="IATS Student" referrerpolicy="no-referrer">
+                <img src="./images/scholar_male.jpg" alt="IATS Student" referrerpolicy="no-referrer">
+                <img src="./images/scholar_glasses.jpg" alt="IATS Student" referrerpolicy="no-referrer">
+                <img src="./images/scholar_laptop.jpg" alt="IATS Student" referrerpolicy="no-referrer">
+              </div>
+              <div style="font-size: 0.88rem; color: var(--text-muted);">
+                <strong style="color: var(--text-main); font-size: 0.95rem;">IATS Scholars Network</strong> • Dedicated to Pure Academic Excellence
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Photos and Glass Highlights -->
+          <div class="hero-visual-card">
+            <div class="glass-panel" style="padding: 12px; position: relative;">
+              <img 
+                src="./images/iats_students_study.jpg" 
+                class="hero-main-photo" 
+                alt="IATS technology and engineering scholars studying in lecture hall" 
+                onerror="this.onerror=null;this.src='./images/hero.jpg';"
+                referrerpolicy="no-referrer"
+              />
+              
+              <div class="floating-glass-badge">
+                <div class="floating-badge-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.92rem; color: #1E293B;">Study Partner Alignment</div>
+                  <div style="font-size: 0.8rem; color: #D8232A; font-weight: 600;">Department & Course Code Synergy</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Pillar Interactive Glass Feature Breakdown -->
+        <div class="features-grid">
+          <div class="glass-panel feature-glass-box" onclick="CampusApp.navigateTo('match')">
+            <div class="feature-icon-wrapper">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3>Study Partner Finder</h3>
+            <p>Connect with compatible classmates based on shared course syllabus codes, faculty modules, and peer revision schedules.</p>
+            <div class="feature-box-cta">Find Study Buddies →</div>
+          </div>
+
+          <div class="glass-panel feature-glass-box" onclick="CampusApp.navigateTo('catchup')">
+            <div class="feature-icon-wrapper feature-icon-wrapper-blue">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <h3>Events & Academic News</h3>
+            <p>Publish and discover study sprints, departmental workshops, academic seminars, and live campus announcements.</p>
+            <div class="feature-box-cta" style="color: #3A86C8;">Open Events & News Tab →</div>
+          </div>
+
+          <div class="glass-panel feature-glass-box" onclick="CampusApp.navigateTo('hubs')">
+            <div class="feature-icon-wrapper">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </div>
+            <h3>Courses & Faculty Forums</h3>
+            <p>Participate in moderated course channels, exchange revision notes, discuss lecture problem sets, and seek peer guidance.</p>
+            <div class="feature-box-cta">Open Courses Tab →</div>
+          </div>
+        </div>
+
+        <!-- Secondary Campus Atmosphere Photo Card -->
+        <div class="glass-panel" style="padding: 24px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; align-items: center;">
+          <img 
+            src="./images/iats_campus_collab.jpg" 
+            style="width: 100%; height: 260px; object-fit: cover; border-radius: var(--radius-md);" 
+            alt="IATS scholars collaborating in university library study hall" 
+            onerror="this.onerror=null;this.src='./images/study.jpg';"
+            referrerpolicy="no-referrer"
+          />
+          <div>
+            <span class="tag-pill tag-pill-highlight">IATS Academic Community</span>
+            <h2 style="font-size: 1.8rem; font-weight: 800; color: #1E293B; margin: 10px 0;">Designed exclusively for academic collaboration.</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+              Sign in with your personal email (Gmail, Outlook, Yahoo, etc.) or Google account. Connect with classmates under strict academic code of conduct and strong content protection.
+            </p>
+            <button class="btn-liquid btn-primary" onclick="CampusApp.openAuthModal()">
+              <span>Get Started with IATS CONNECT →</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Institutional Academic Footer -->
+        <footer class="glass-panel" style="margin-top: 24px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; font-size: 0.85rem; color: #64748B;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-weight: 700; color: #1E293B;">IATS CONNECT</span>
+            <span>•</span>
+            <span>Institute of Advanced Technology & Studies © 2026</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <button type="button" class="btn-link-policy" id="btn-open-privacy-policy" style="background: none; border: none; color: #3A86C8; font-weight: 600; font-size: 0.84rem; cursor: pointer; text-decoration: underline;">Privacy Policy</button>
+            <button type="button" class="btn-link-policy" id="btn-open-terms-service" style="background: none; border: none; color: #3A86C8; font-weight: 600; font-size: 0.84rem; cursor: pointer; text-decoration: underline;">Terms of Service</button>
+            <span class="tag-pill tag-pill-highlight" style="font-size: 0.72rem; padding: 2px 8px;">Academic Content Filter Active</span>
+          </div>
+        </footer>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 2: CAMPUS DASHBOARD -->
+      <!-- ================================================================= -->
+      <section id="view-dashboard" class="view-section">
+        <div class="glass-panel feed-header-banner">
+          <div>
+            <h2 style="font-size: 1.7rem; font-weight: 800; color: #1E293B;" id="dash-user-welcome">IATS Academic Feed & Dashboard</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">Live overview of scheduled events, course syllabus discussions, and academic collaborations.</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-liquid btn-glass btn-sm" onclick="CampusApp.openCreateProfileModal()">
+              <span>+ Add Scholar Profile</span>
+            </button>
+            <button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openHostCatchupModal()">
+              <span>+ Host Academic Event</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="feed-announcement">
+          <div class="pulse-dot"></div>
+          <div style="font-size: 0.92rem; color: #991B1B; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <span class="tag-pill tag-pill-highlight" style="font-size: 0.75rem; padding: 2px 8px;">NOTICE</span>
+            <span>IATS Department of Computing & Engineering Innovation Sprint submissions are open. Connect with peers in Courses.</span>
+          </div>
+        </div>
+
+        <div class="dashboard-layout">
+          <div>
+            <div class="dashboard-card-title">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D8232A" stroke-width="2.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Academic Events & Campus News</span>
+              </div>
+              <a href="#" style="font-size: 0.85rem; color: #D8232A; font-weight: 600; text-decoration: none;" onclick="CampusApp.navigateTo('catchup'); return false;">View All Events →</a>
+            </div>
+            <div id="dash-catchup-preview">
+              <!-- Injected dynamically -->
+            </div>
+
+            <div class="dashboard-card-title" style="margin-top: 28px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A86C8" stroke-width="2.5">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Trending Course & Academic Discussions</span>
+              </div>
+              <a href="#" style="font-size: 0.85rem; color: #3A86C8; font-weight: 600; text-decoration: none;" onclick="CampusApp.navigateTo('hubs'); return false;">Explore Courses →</a>
+            </div>
+            <div id="dash-hub-preview">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Right Sidebar Stats & Study Partner Teaser -->
+          <div>
+            <div class="glass-panel" style="padding: 24px; margin-bottom: 24px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D8232A" stroke-width="2.5">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #1E293B; margin: 0;">Study Partner Radar</h3>
+              </div>
+              <p style="font-size: 0.88rem; color: #475569; line-height: 1.5; margin-bottom: 18px;" id="dash-match-radar-text">
+                Connect with study partners based on shared syllabus codes and revision preferences.
+              </p>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-liquid btn-primary btn-sm" style="flex: 1;" onclick="CampusApp.navigateTo('match')">
+                  <span>Find Study Partners</span>
+                </button>
+                <button class="btn-liquid btn-glass btn-sm" onclick="CampusApp.openCreateProfileModal()" title="Add Scholar Profile">
+                  <span>+ Profile</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 24px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A86C8" stroke-width="2.5">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #1E293B; margin: 0;">IATS Quick Navigation</h3>
+              </div>
+              <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem;">
+                <li><a href="#" style="color: #D8232A; text-decoration: none; font-weight: 600;" onclick="CampusApp.navigateTo('match'); return false;">Find Study Partners & Groups →</a></li>
+                <li><a href="#" style="color: #3A86C8; text-decoration: none; font-weight: 600;" onclick="CampusApp.navigateTo('catchup'); return false;">Academic Events & Workshops →</a></li>
+                <li><a href="#" style="color: #1E293B; text-decoration: none; font-weight: 600;" onclick="CampusApp.openTermsModal(); return false;">Academic Terms of Service & Policy →</a></li>
+                <li><a href="#" style="color: #059669; text-decoration: none; font-weight: 600;" onclick="CampusApp.openPrivacyModal(); return false;">Student Data Privacy Policy →</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 3: STUDY PARTNER FINDER -->
+      <!-- ================================================================= -->
+      <section id="view-match" class="view-section">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 style="font-size: 2rem; font-weight: 800; color: #1E293B;">IATS Study Partner Finder</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Connect with compatible classmates based on shared syllabus codes, faculty modules, and revision interests.</p>
+          </div>
+          <button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openCreateProfileModal()">
+            <span>+ Add Scholar Profile</span>
+          </button>
+        </div>
+
+        <div class="match-stage" id="match-card-container">
+          <!-- Injected via JavaScript -->
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 4: EVENTS & ACADEMIC NEWS (CATCHUP) -->
+      <!-- ================================================================= -->
+      <section id="view-catchup" class="view-section">
+        <div class="glass-panel feed-header-banner">
+          <div>
+            <h2 style="font-size: 1.7rem; font-weight: 800; color: #1E293B;">Academic Events & News</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">Discover or organize study sprints, academic seminars, revision groups, and departmental news.</p>
+          </div>
+          <button class="btn-liquid btn-primary" id="btn-open-host-catchup">
+            <span>+ Host Academic Event</span>
+          </button>
+        </div>
+
+        <div class="catchup-grid" id="catchup-grid-container">
+          <!-- Injected via JavaScript -->
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 5: COURSES & FACULTY FORUMS (HUBS) -->
+      <!-- ================================================================= -->
+      <section id="view-hubs" class="view-section">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 style="font-size: 2rem; font-weight: 800; color: #1E293B;">Courses & Academic Forums</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Join focused course communities, discuss lectures, ask academic questions, and exchange study notes.</p>
+          </div>
+          <button class="btn-liquid btn-primary btn-sm" id="btn-open-create-post">
+            <span>+ New Course Discussion</span>
+          </button>
+        </div>
+
+        <div class="hubs-layout">
+          <!-- Sidebar Channels -->
+          <div class="glass-panel" style="padding: 16px;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: #D8232A; text-transform: uppercase; margin-bottom: 12px; padding: 0 8px;">IATS Academic Departments</div>
+            <ul class="hub-channel-list">
+              <li><button class="hub-channel-btn active" data-category="tech">Computing & Information Tech</button></li>
+              <li><button class="hub-channel-btn" data-category="health">Health Sciences & Nursing</button></li>
+              <li><button class="hub-channel-btn" data-category="business">Business & Management</button></li>
+              <li><button class="hub-channel-btn" data-category="humanities">Law & Social Sciences</button></li>
+              <li><button class="hub-channel-btn" data-category="all">All Academic Discussions</button></li>
+            </ul>
+          </div>
+
+          <!-- Main Feed -->
+          <div>
+            <div id="hub-posts-list">
+              <!-- Injected via JavaScript -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 6: CHATS & DIRECT MESSAGES -->
+      <!-- ================================================================= -->
+      <section id="view-chats" class="view-section">
+        <div class="glass-panel chat-workspace">
+          <!-- Left Sidebar Conversations -->
+          <div class="chat-sidebar">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 0 4px;">
+              <span style="font-weight: 700; font-size: 1.1rem; color: #1E293B;">Messages</span>
+              <button class="btn-liquid btn-glass btn-sm" style="padding: 4px 10px; font-size: 0.78rem;" id="btn-start-new-chat">
+                <span>+ New Chat</span>
+              </button>
+            </div>
+            <div id="chat-threads-container">
+              <!-- Injected via JavaScript -->
+            </div>
+          </div>
+
+          <!-- Right Active Chat Window -->
+          <div class="chat-main-window">
+            <div id="chat-active-peer-header" style="padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); background: rgba(255,255,255,0.7);">
+              <!-- Active Peer Details -->
+            </div>
+
+            <div class="chat-messages-scroll" id="chat-messages-container">
+              <!-- Messages -->
+            </div>
+
+            <form class="chat-input-row" id="chat-send-form">
+              <input type="text" class="chat-input-field" id="chat-input-message" placeholder="Type a message or share lecture notes..." autocomplete="off" />
+              <button type="submit" class="btn-liquid btn-primary btn-sm" id="btn-send-chat-message">
+                <span>Send</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 7: STUDENT PROFILE -->
+      <!-- ================================================================= -->
+      <section id="view-profile" class="view-section">
+        <div id="profile-view-container">
+          <!-- Injected via JavaScript -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 1: AUTH & REAL ACTIVE ACCOUNT VERIFICATION (Google / OTP) -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="auth-modal-backdrop">
+      <div class="modal-box">
+        <button class="modal-close-btn" id="btn-close-auth" aria-label="Close">✕</button>
+
+        <!-- Step 1: Main Provider Selection -->
+        <div id="auth-step-main">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 52px; height: 52px; border-radius: 16px; background: #FEE2E2; color: #D8232A; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h2 style="font-size: 1.5rem; font-weight: 800; color: #1E293B;">Sign In to IATS CONNECT</h2>
+            <p style="font-size: 0.88rem; color: #64748B; margin-top: 4px;">Sign in with your personal email address (e.g. Gmail, Outlook, Yahoo) or Google account.</p>
+          </div>
+
+          <!-- Real Active Google Sign In -->
+          <button class="auth-provider-btn" id="btn-auth-google">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Continue with Google Account</span>
+          </button>
+
+          <div class="divider-with-text">
+            <span>or verify with personal email</span>
+          </div>
+
+          <!-- Active Email Verification Form -->
+          <form id="form-email-auth">
+            <div class="form-group">
+              <label class="form-label" for="auth-email-input">Personal Email Address</label>
+              <input type="email" id="auth-email-input" class="form-input" placeholder="e.g. name@gmail.com, name@outlook.com, etc." required />
+            </div>
+            <button type="submit" class="btn-liquid btn-primary" id="btn-send-otp" style="width: 100%;">
+              <span>Send 6-Digit Verification Token →</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: OTP Verification Screen -->
+        <div id="auth-step-otp" style="display: none;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 52px; height: 52px; border-radius: 16px; background: #FEE2E2; color: #D8232A; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B;">Enter Verification Token</h2>
+            <p style="font-size: 0.88rem; color: #64748B; margin-top: 4px;">
+              We emailed a real 6-digit code to <b id="otp-sent-email-display" style="color: #D8232A;"></b>. Check your inbox (and spam folder).
+            </p>
+          </div>
+
+          <div class="otp-boxes-wrapper">
+            <input type="text" maxlength="1" class="otp-digit-box" autofocus />
+            <input type="text" maxlength="1" class="otp-digit-box" />
+            <input type="text" maxlength="1" class="otp-digit-box" />
+            <input type="text" maxlength="1" class="otp-digit-box" />
+            <input type="text" maxlength="1" class="otp-digit-box" />
+            <input type="text" maxlength="1" class="otp-digit-box" />
+          </div>
+
+          <div style="text-align: center; font-size: 0.85rem; color: #64748B; margin-bottom: 20px;">
+            Code expires in <span id="otp-countdown-timer" style="font-weight: 700; color: #D8232A;">60s</span>
+          </div>
+
+          <button class="btn-liquid btn-primary" id="btn-verify-otp" style="width: 100%; margin-bottom: 10px;">
+            <span>Verify & Enter IATS CONNECT</span>
+          </button>
+
+          <div style="text-align: center;">
+            <button id="btn-resend-otp" style="background: none; border: none; font-size: 0.84rem; color: #3A86C8; font-weight: 600; cursor: pointer;">
+              Resend Code
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Success Screen -->
+        <div id="auth-step-success" style="display: none; text-align: center; padding: 20px 0;">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background: #D1FAE5; color: #059669; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 style="font-size: 1.5rem; font-weight: 800; color: #059669;">Identity Verified</h2>
+          <p style="font-size: 0.92rem; color: #64748B; margin-top: 6px;">Setting up your secure IATS session...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 2: HOST AN ACADEMIC EVENT / STUDY SPRINT -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="host-catchup-modal">
+      <div class="modal-box">
+        <button class="modal-close-btn" id="btn-close-catchup-modal" aria-label="Close">✕</button>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Host an Academic Event & Study Sprint</h2>
+        <form id="host-catchup-form">
+          <div class="form-group">
+            <label class="form-label" for="new-catchup-title">Event Title / Academic Activity</label>
+            <input type="text" id="new-catchup-title" class="form-input" placeholder="e.g. BIT2101 Data Structures Problem Review" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-catchup-location">Campus Spot / Lecture Room</label>
+            <input type="text" id="new-catchup-location" class="form-input" placeholder="e.g. IATS Innovation Lab Floor 2, Tech Lab B" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="new-catchup-time">Date & Time</label>
+              <input type="text" id="new-catchup-time" class="form-input" placeholder="e.g. Today @ 3:30 PM" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-catchup-capacity">Max Scholars</label>
+              <input type="number" id="new-catchup-capacity" class="form-input" value="8" min="2" max="30" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-catchup-tag">Event Category</label>
+            <select id="new-catchup-tag" class="form-input">
+              <option value="Study Group">Study Sprint</option>
+              <option value="Academic Workshop">Department Workshop</option>
+              <option value="Exam Revision">Exam Revision Session</option>
+              <option value="Tech Seminar">Tech & Innovation Seminar</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
+            <span>Publish Academic Event →</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 3: CREATE / ADD CANDIDATE STUDENT PROFILE -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="create-profile-modal">
+      <div class="modal-box" style="max-width: 540px;">
+        <button class="modal-close-btn" id="btn-close-create-profile" aria-label="Close">✕</button>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Add Scholar Profile to Study Partner Directory</h2>
+        <form id="create-profile-form">
+          <div class="form-group">
+            <label class="form-label" for="new-student-name">Full Scholar Name</label>
+            <input type="text" id="new-student-name" class="form-input" placeholder="e.g. Sarah Namata" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="new-student-major">Department / Major</label>
+              <input type="text" id="new-student-major" class="form-input" placeholder="e.g. Computing • BIT" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-student-year">Year / Class</label>
+              <input type="text" id="new-student-year" class="form-input" placeholder="e.g. 3rd Year (Class of 2026)" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-student-courses">Course Syllabus Codes (comma separated)</label>
+            <input type="text" id="new-student-courses" class="form-input" placeholder="e.g. BIT 2101, CS 204, DATA 301" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-student-location">Study Spot / Lab</label>
+            <input type="text" id="new-student-location" class="form-input" placeholder="e.g. Innovation Lab Floor 3" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-student-bio">Academic Goals & Collaboration Interests</label>
+            <textarea id="new-student-bio" class="form-input" rows="3" placeholder="Describe your study objectives, revision schedule, or capstone interests..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-student-interests">Academic Tags & Skills (comma separated)</label>
+            <input type="text" id="new-student-interests" class="form-input" placeholder="e.g. Algorithms, Cloud Architecture, Databases, UI Design" required />
+          </div>
+          <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
+            <span>Save Scholar to Firestore Database →</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 4: CREATE NEW COURSE DISCUSSION POST -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="create-post-modal">
+      <div class="modal-box">
+        <button class="modal-close-btn" id="btn-close-post-modal" aria-label="Close">✕</button>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">New Course Discussion Post</h2>
+        <form id="create-post-form">
+          <div class="form-group">
+            <label class="form-label" for="new-post-channel">Department / Course Channel</label>
+            <select id="new-post-channel" class="form-input">
+              <option value="tech">Computing & Information Tech (BIT / BCS)</option>
+              <option value="health">Health Sciences & Nursing</option>
+              <option value="business">Business & Management</option>
+              <option value="humanities">Law & Social Sciences</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-post-title">Discussion Title</label>
+            <input type="text" id="new-post-title" class="form-input" placeholder="e.g. Study notes for Algorithms & Data Structures exam" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-post-content">Discussion Content & Lecture Resources</label>
+            <textarea id="new-post-content" class="form-input" rows="4" placeholder="Share academic insights, problem solutions, or study questions..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-post-tags">Tags (comma separated)</label>
+            <input type="text" id="new-post-tags" class="form-input" placeholder="e.g. ExamPrep, StudyNotes, BIT" />
+          </div>
+          <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
+            <span>Publish Course Discussion →</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 5: START NEW CHAT -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="new-chat-modal">
+      <div class="modal-box">
+        <button class="modal-close-btn" id="btn-close-chat-modal" aria-label="Close">✕</button>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Start a Direct Academic Chat</h2>
+        <form id="new-chat-form">
+          <div class="form-group">
+            <label class="form-label" for="new-chat-recipient">Scholar Name</label>
+            <input type="text" id="new-chat-recipient" class="form-input" placeholder="e.g. David Mukasa (BIT)" required />
+            <small style="color:#94A3B8; font-size:0.76rem;">Tip: enter the exact display name they used to sign up for instant two-way delivery.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-chat-faculty">Course / Department Topic</label>
+            <input type="text" id="new-chat-faculty" class="form-input" placeholder="e.g. Department of Computing & Tech" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-chat-first-msg">Initial Message</label>
+            <input type="text" id="new-chat-first-msg" class="form-input" placeholder="e.g. Hello! Are you available to compare lecture notes for BIT2101?" required />
+          </div>
+          <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
+            <span>Start Conversation →</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 6: STUDY PARTNERSHIP MODAL -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="match-success-modal">
+      <div class="modal-box" style="text-align: center;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #EFF6FF; color: #3A86C8; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #1E293B; margin-bottom: 4px;">Study Partnership Formed!</h2>
+        <img id="match-modal-avatar" src="" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #3A86C8; margin: 12px auto;" alt="Connected Study Partner" referrerpolicy="no-referrer">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: #1E293B;" id="match-modal-name">Scholar Name</h3>
+        <p style="font-size: 0.92rem; color: #475569; margin: 8px 0 20px 0;">You both share academic coursework and syllabus revision goals at IATS.</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-liquid btn-glass btn-sm" id="btn-match-keep-browsing">Find More Buddies</button>
+          <button class="btn-liquid btn-primary btn-sm" id="btn-match-message-now">Study Message Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 7: PRIVACY POLICY MODAL -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="privacy-policy-modal">
+      <div class="modal-box" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
+        <button class="modal-close-btn" id="btn-close-privacy" aria-label="Close">✕</button>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #D1FAE5; color: #059669; display: inline-flex; align-items: center; justify-content: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B;">IATS Student Data Privacy Policy</h2>
+            <p style="font-size: 0.82rem; color: #64748B;">Institute of Advanced Technology & Studies • Version 2.0</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.88rem; color: #334155; line-height: 1.6;">
+          <div class="glass-panel" style="padding: 16px;">
+            <h4 style="color: #059669; font-weight: 700; margin-bottom: 4px;">1. Purpose & Scope</h4>
+            <p>IATS CONNECT is dedicated strictly to scholarly collaboration, study partner connections, and institutional announcements. We never sell, monetize, or disclose student records to third parties or advertising brokers.</p>
+          </div>
+          <div class="glass-panel" style="padding: 16px;">
+            <h4 style="color: #059669; font-weight: 700; margin-bottom: 4px;">2. Collected Academic Data</h4>
+            <p>Data stored comprises student names, verified personal contact emails, registered course syllabus codes, faculty affiliations, and academic study group postings in the secure Cloud Firestore cluster.</p>
+          </div>
+          <div class="glass-panel" style="padding: 16px;">
+            <h4 style="color: #059669; font-weight: 700; margin-bottom: 4px;">3. Direct Message Confidentiality</h4>
+            <p>Scholar-to-scholar direct communications are private between connected study partners. Conversations are preserved exclusively to ensure continuous academic collaboration across campus devices.</p>
+          </div>
+          <div class="glass-panel" style="padding: 16px;">
+            <h4 style="color: #059669; font-weight: 700; margin-bottom: 4px;">4. Student Data Rights & Deletion</h4>
+            <p>Any registered student may update their coursework, change study spot preferences, or request permanent deletion of their account and associated records by contacting the IATS System Administrator.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 8: TERMS OF SERVICE & CODE OF CONDUCT MODAL -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="terms-of-service-modal">
+      <div class="modal-box" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
+        <button class="modal-close-btn" id="btn-close-terms" aria-label="Close">✕</button>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #FEE2E2; color: #D8232A; display: inline-flex; align-items: center; justify-content: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B;">Academic Terms of Service & Conduct</h2>
+            <p style="font-size: 0.82rem; color: #64748B;">Institute of Advanced Technology & Studies Academic Code</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.88rem; color: #334155; line-height: 1.6;">
+          <div class="glass-panel" style="padding: 16px; border-left: 4px solid #D8232A;">
+            <h4 style="color: #D8232A; font-weight: 700; margin-bottom: 4px;">1. Purely Academic Mandate & Zero-Tolerance Policy</h4>
+            <p>IATS CONNECT is established exclusively for higher learning, academic revision, research cooperation, and peer study partner discovery. Any use of this platform for non-academic solicitation is strictly prohibited.</p>
+          </div>
+          <div class="glass-panel" style="padding: 16px; border-left: 4px solid #D8232A;">
+            <h4 style="color: #D8232A; font-weight: 700; margin-bottom: 4px;">2. Strict Prohibition of Adult Content & Pornography</h4>
+            <p>There is an absolute, zero-tolerance prohibition against any pornographic, sexually explicit, lewd, or suggestive text, links, or media. Real-time automated content filters immediately intercept and reject non-compliant submissions.</p>
+          </div>
+          <div class="glass-panel" style="padding: 16px;">
+            <h4 style="color: #1E40AF; font-weight: 700; margin-bottom: 4px;">3. Academic Integrity & Anti-Cheating</h4>
+            <p>Collaborative discussion of lecture topics is encouraged; however, posting unauthorized exam keys or engaging in exam impersonation violates the IATS Academic Disciplinary Statute.</p>
+          </div>
+          <div class="glass-panel" style="padding: 16px;">
+            <h4 style="color: #1E40AF; font-weight: 700; margin-bottom: 4px;">4. Respectful Peer Engagement</h4>
+            <p>Scholars must maintain professional, respectful decorum across all course discussion threads and direct messaging channels. Bullying, hate speech, or harassment will result in immediate suspension.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 9: CONTENT FILTER WARNING MODAL -->
+    <!-- ================================================================= -->
+    <div class="modal-backdrop" id="content-filter-warning-modal">
+      <div class="modal-box" style="text-align: center; max-width: 480px;">
+        <button class="modal-close-btn" id="btn-close-filter-warning" aria-label="Close">✕</button>
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #991B1B;">Submission Blocked</h2>
+        <div class="tag-pill tag-pill-highlight" style="margin: 8px auto 14px; display: inline-block;">IATS Academic Content Filter Active</div>
+        <p style="font-size: 0.9rem; color: #475569; line-height: 1.6;" id="filter-warning-reason-text">
+          Your input contains words or phrases that violate the IATS Academic Code of Conduct (prohibition on adult content, pornography, or non-academic solicitation). Please revise your entry.
+        </p>
+        <button class="btn-liquid btn-primary" id="btn-ack-filter-warning" style="width: 100%; margin-top: 18px;">
+          <span>Revise Academic Content</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dedicated Primary Liquid Glass Bottom Navigation Dock -->
+    <nav class="app-bottom-dock" id="app-bottom-dock" aria-label="Main Navigation">
+      <div class="dock-container">
+        <button class="dock-nav-btn nav-item-btn active" data-view="landing" title="Home" type="button">
+          <span class="dock-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span class="dock-label">Home</span>
+        </button>
+        <button class="dock-nav-btn nav-item-btn" data-view="dashboard" title="Academic Feed & Dashboard" type="button">
+          <span class="dock-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </span>
+          <span class="dock-label">Feed</span>
+        </button>
+        <button class="dock-nav-btn nav-item-btn" data-view="match" title="Study Buddy Finder" type="button">
+          <span class="dock-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </span>
+          <span class="dock-label">Study Buddy</span>
+        </button>
+        <button class="dock-nav-btn nav-item-btn" data-view="catchup" title="Academic Events & Campus News" type="button">
+          <span class="dock-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </span>
+          <span class="dock-label">Events & News</span>
+        </button>
+        <button class="dock-nav-btn nav-item-btn" data-view="hubs" title="Course Forums & Discussions" type="button">
+          <span class="dock-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </span>
+          <span class="dock-label">Courses</span>
+        </button>
+        <button class="dock-nav-btn nav-item-btn" data-view="chats" title="Direct Scholar Chats" type="button">
+          <span class="dock-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </span>
+          <span class="dock-label">Chats</span>
+          <span class="dock-badge" id="chat-unread-badge" style="display: none;">0</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Strict Academic Content Filter Engine -->
+    <script src="./js/content-filter.js"></script>
+    <script type="module" src="./js/supabase-config.js"></script>
+
+    <!-- Supabase Auth + Postgres + Realtime Engine (Modular ES Script) -->
+    <script type="module" src="./js/supabase-service.js"></script>
+
+    <!-- Core Logic Engine Script (Vanilla JS with relative path) -->
+    <script src="./js/app.js"></script>
+  </body>
+</html>
