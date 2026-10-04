@@ -1,22 +1,12 @@
-/**
- * IATS CONNECT — Supabase Project Configuration
- * -----------------------------------------------------------------------
- * 1. Create a free project at https://supabase.com
- * 2. Go to Project Settings -> Data API / API, copy the "Project URL"
- *    and the "anon public" key (NOT the service_role key — that one
- *    must never be used in frontend code).
- * 3. Paste them below.
- * 4. Run supabase/schema.sql in the Supabase SQL Editor (see the file
- *    in the supabase/ folder of this project) to create all the
- *    tables, security policies, and rate limiting this app needs.
- * -----------------------------------------------------------------------
- * This file is intentionally the ONLY place credentials live, so the
- * rest of the app never hardcodes a project.
- */
+/** IATS CONNECT — Supabase Project Configuration */
+export const SUPABASE_URL = "https://ojobzjornniyjrqszglk.supabase.co";
 
-export const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
-export const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+export const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qb2J6am9ybm5peWpycXN6Z2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDMyOTEsImV4cCI6MjEwNjY3OTI5MX0.YYm7szj_qDQb-LrzyGA_fW0TqbUeD9JcQET404Ctl6g";
 
 if (typeof window !== "undefined") {
-  window.IATS_SUPABASE_CONFIG = { SUPABASE_URL, SUPABASE_ANON_KEY };
+  window.IATS_SUPABASE_CONFIG = {
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+  };
 }
