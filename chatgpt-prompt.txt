@@ -1,0 +1,24 @@
+==================================================
+  CHATGPT PROMPT & WORKFLOW INSTRUCTIONS
+==================================================
+
+[ESP]
+Este archivo sirve para registrar y documentar los prompts,
+instrucciones y cambios realizados en el proyecto con la ayuda de la IA.
+
+Instrucciones de uso:
+1. Pega aquí los prompts principales que le des a la IA.
+2. Agrega una breve nota con los cambios aplicados en cada versión.
+3. Guarda el archivo (Commit changes) para mantener el historial.
+
+--------------------------------------------------
+
+[ENG]
+This file is used to log and document prompts,
+instructions, and project changes made with AI assistance.
+
+Usage instructions:
+1. Paste the main prompts given to the AI here.
+2. Add a brief note detailing changes made in each version.
+3. Save the file (Commit changes) to keep a clear history.
+==================================================
