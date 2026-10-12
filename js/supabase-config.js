@@ -1,3 +1,11 @@
+/**
+ * ⚠️ ATTENTION / NOTICE:
+ * This file contains the public configuration for Supabase.
+ * For enhanced security in production environments, remember to use 
+ * environment variables (such as VITE_ or process.env) and enable 
+ * Row Level Security (RLS) in the Supabase dashboard.
+ */
+
 /** IATS CONNECT — Supabase Project Configuration */
 export const SUPABASE_URL = "https://ojobzjornniyjrqszglk.supabase.co";
 
