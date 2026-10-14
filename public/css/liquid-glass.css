@@ -1622,35 +1622,129 @@ body {
   position: fixed;
   inset: 0;
   z-index: 20000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 14px;
-  background: radial-gradient(circle at 50% 30%, #FDF2F2 0%, #EFF6FF 100%);
-  transition: opacity 0.45s ease, visibility 0.45s ease;
+  display: block;
+  overflow-y: auto;
+  background: radial-gradient(circle at 15% 5%, #FDF2F2 0%, #F7FAFF 45%, #EFF6FF 100%);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.28s ease, visibility 0.28s ease;
 }
 #app-boot-loader.is-hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
-.boot-loader-ring {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: 4px solid rgba(216, 35, 42, 0.15);
-  border-top-color: #D8232A;
-  animation: boot-spin 0.85s linear infinite;
-}
-.boot-loader-text {
-  font-weight: 700;
-  font-size: 0.92rem;
+.boot-skeleton-shell {
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 22px 0 32px;
   color: #1E293B;
-  letter-spacing: 0.01em;
 }
-@keyframes boot-spin {
-  to { transform: rotate(360deg); }
+.boot-skeleton-header {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(148, 163, 184, .18);
+  padding-bottom: 18px;
+}
+.boot-skeleton-brand, .boot-skeleton-nav, .boot-skeleton-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.boot-skeleton-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  flex: 0 0 auto;
+  background: linear-gradient(120deg, #FECACA, #BFDBFE, #FECACA);
+  background-size: 220% 100%;
+  animation: boot-shimmer 1.6s ease-in-out infinite;
+}
+.boot-skeleton-line, .boot-skeleton-pill, .boot-skeleton-button, .boot-skeleton-card {
+  background: linear-gradient(105deg, rgba(226,232,240,.8) 20%, rgba(248,250,252,.98) 40%, rgba(226,232,240,.8) 60%);
+  background-size: 220% 100%;
+  animation: boot-shimmer 1.6s ease-in-out infinite;
+}
+.boot-skeleton-line { display: block; height: 11px; border-radius: 999px; }
+.boot-skeleton-brand-name { width: 166px; height: 13px; }
+.boot-skeleton-nav { gap: 22px; }
+.boot-skeleton-nav .boot-skeleton-line { width: 58px; height: 9px; }
+.boot-skeleton-pill { width: 94px; height: 34px; border-radius: 999px; }
+.boot-skeleton-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr);
+  align-items: center;
+  gap: clamp(28px, 6vw, 76px);
+  padding: clamp(46px, 8vw, 92px) 0 54px;
+}
+.boot-skeleton-hero { min-width: 0; }
+.boot-skeleton-eyebrow { width: 210px; height: 15px; margin-bottom: 24px; }
+.boot-skeleton-title { width: 96%; height: clamp(24px, 3.2vw, 38px); margin-bottom: 12px; border-radius: 10px; }
+.boot-skeleton-title-short { width: 72%; margin-bottom: 25px; }
+.boot-skeleton-copy { width: 88%; height: 10px; margin-bottom: 12px; }
+.boot-skeleton-copy-short { width: 62%; }
+.boot-skeleton-actions { margin-top: 30px; }
+.boot-skeleton-button { width: 142px; height: 44px; border-radius: 13px; }
+.boot-skeleton-button-muted { width: 118px; opacity: .65; }
+.boot-skeleton-feature {
+  min-height: 270px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 15px;
+  border: 1px solid rgba(255,255,255,.75);
+  border-radius: 28px;
+  background: rgba(255,255,255,.62);
+  box-shadow: 0 24px 70px rgba(51,65,85,.08);
+}
+.boot-skeleton-feature-orb {
+  width: 68px; height: 68px; border-radius: 22px; margin-bottom: auto;
+  background: linear-gradient(120deg, #FECACA, #BFDBFE, #FECACA);
+  background-size: 220% 100%; animation: boot-shimmer 1.6s ease-in-out infinite;
+}
+.boot-skeleton-feature-title { width: 68%; height: 17px; }
+.boot-skeleton-feature-footer { width: 42%; height: 32px; border-radius: 10px; margin-top: 4px; }
+.boot-skeleton-card-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+.boot-skeleton-card {
+  min-height: 132px; padding: 20px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.9); animation-name: none;
+  background: rgba(255,255,255,.74); box-shadow: 0 10px 30px rgba(51,65,85,.045);
+}
+.boot-skeleton-card .boot-skeleton-line { animation-name: boot-shimmer; }
+.boot-skeleton-card-icon { width: 34px; height: 34px; border-radius: 11px; margin-bottom: 18px; }
+.boot-skeleton-card-title { width: 62%; height: 13px; margin-bottom: 14px; }
+.boot-skeleton-card .boot-skeleton-copy { width: 88%; }
+.boot-skeleton-status {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  margin-top: 28px; color: #64748B; font-size: .84rem; font-weight: 600;
+}
+.boot-skeleton-status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #D8232A;
+  box-shadow: 0 0 0 4px rgba(216,35,42,.1);
+}
+@keyframes boot-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (max-width: 760px) {
+  .boot-skeleton-shell { width: min(100% - 28px, 560px); padding-top: 14px; }
+  .boot-skeleton-nav { display: none; }
+  .boot-skeleton-main { grid-template-columns: 1fr; gap: 24px; padding: 48px 0 28px; }
+  .boot-skeleton-feature { min-height: 190px; }
+  .boot-skeleton-card-row { grid-template-columns: 1fr; gap: 12px; }
+  .boot-skeleton-card { min-height: 104px; }
+  .boot-skeleton-card:nth-child(n+3) { display: none; }
+  .boot-skeleton-title { height: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-skeleton-line, .boot-skeleton-pill, .boot-skeleton-button, .boot-skeleton-card, .boot-skeleton-mark, .boot-skeleton-feature-orb {
+    animation: none;
+  }
+  #app-boot-loader { transition-duration: 0.01ms; }
 }
 
 /* Small inline spinner reused inside buttons while a request is pending */
