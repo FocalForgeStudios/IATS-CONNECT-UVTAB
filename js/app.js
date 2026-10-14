@@ -2013,8 +2013,9 @@
         const canEdit = mine && !msg.deleted_at && Date.now() - new Date(msg.created_at).getTime() <= 120000;
         const canDelete = mine && !msg.deleted_at;
         const quoteMarkup = quoted ? `<div class="message-reply-quote"><strong>${quoted.sender_id === myId ? "You" : escapeEventText(quoted.sender_name || activeConv.name || "Scholar")}</strong><div>${quoted.deleted_at ? "Message deleted" : escapeEventText(quoted.text || "")}</div></div>` : "";
-        const sharedProfileId = !msg.deleted_at ? msg.shared_profile_id : null;        const sharedProfile = sharedProfileId ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(sharedProfileId)) : null;
-        const body = msg.deleted_at ? '<em>This message was deleted</em>' : profileShare ? "" : escapeEventText(msg.text || "");
+        const sharedProfileId = !msg.deleted_at ? msg.shared_profile_id : null;
+        const sharedProfile = sharedProfileId ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(sharedProfileId)) : null;
+        const body = msg.deleted_at ? '<em>This message was deleted</em>' : sharedProfileId ? "" : escapeEventText(msg.text || "");
         const profileShareMarkup = sharedProfileId ? `<div class="shared-profile-card"><div class="shared-profile-icon">👤</div><div class="shared-profile-copy"><strong>${escapeEventText(sharedProfile?.name || "Shared IATS student")}</strong><span>${escapeEventText(sharedProfile?.major || "Student profile")}</span></div><button type="button" class="btn-liquid btn-primary btn-sm" data-open-shared-profile="${sharedProfileId}" data-profile-name="${escapeEventText(sharedProfile?.name || "IATS Scholar")}">Message</button></div>` : "";
         const attachmentMarkup = msg.attachment_path && !msg.deleted_at ? `<div class="chat-attachment-card" data-attachment-path="${escapeEventText(msg.attachment_path)}" data-attachment-name="${escapeEventText(msg.attachment_name || "Attachment")}" data-attachment-mime="${escapeEventText(msg.attachment_mime || "")}"><span>📎 ${escapeEventText(msg.attachment_name || "Attachment")}</span><small>Preparing secure link…</small></div>` : "";
         return `<div class="message-bubble ${mine ? "msg-outgoing" : "msg-incoming"}" data-message-id="${msg.id}">
