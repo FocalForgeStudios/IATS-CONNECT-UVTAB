@@ -264,6 +264,7 @@
     syncNewsPublishingOption();
     renderNavigation();
     startConversationsSync();
+    if (isNewsPublisher() && AppState.activeView === "landing") navigateTo("admin");
   }
 
   function startConversationsSync() {
@@ -480,7 +481,7 @@
     setTimeout(() => {
       closeAuthModal();
       showToast("Signed In", message + ", " + (AppState.currentUser ? AppState.currentUser.name : "Scholar") + "!");
-      navigateTo("dashboard");
+      navigateTo(isNewsPublisher() ? "admin" : "dashboard");
     }, 700);
   }
 
