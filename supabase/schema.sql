@@ -622,6 +622,7 @@ alter table public.messages add column if not exists attachment_path text;
 alter table public.messages add column if not exists attachment_name text;
 alter table public.messages add column if not exists attachment_mime text;
 alter table public.messages add column if not exists attachment_size bigint;
+alter table public.messages add column if not exists shared_profile_id uuid references auth.users(id) on delete set null;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
