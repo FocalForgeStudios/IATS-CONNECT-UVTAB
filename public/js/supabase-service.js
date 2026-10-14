@@ -619,6 +619,18 @@ export const SupabaseService = {
     return { ...conv, peer_id: recipient.id, name: recipient.name || recipientName, avatar_url: recipient.avatar_url || conv.avatar_url };
   },
 
+  async editMessage(messageId, text) {
+    const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
+    const { error } = await supabase.from("messages").update({ text: sanitizeText(text, 500), edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString()); if (error) throw new Error(friendlyError(error));
+  },
+  async deleteMessage(messageId) {
+    const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
+    const { error } = await supabase.from("messages").update({ text: "", deleted_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id); if (error) throw new Error(friendlyError(error));
+  },
+  async removeAvatar() {
+    const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
+    const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id); if (error) throw new Error(friendlyError(error)); return true;
+  },
   /** Sends a message instantly over Realtime — DB trigger rate-limits abuse. */
   async sendMessage(conversationId, text) {
     if (!supabase || !conversationId || !text) return false;
