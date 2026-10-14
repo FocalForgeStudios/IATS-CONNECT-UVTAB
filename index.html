@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="./favicon.svg" />
     
     <!-- Liquid Glassmorphism Core Stylesheet with Academic Theme Colors (Relative path for GitHub Pages compatibility) -->
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=20261014-event-news-workflow1" />
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=20261014-chat-features1" />
   </head>
   <body>
     <!-- Accessible skeleton loader: gives the page structure while scripts initialize -->
@@ -572,6 +572,7 @@
               <!-- Messages -->
             </div>
 
+            <div id="chat-reply-preview" class="chat-reply-preview" hidden></div>
             <form class="chat-input-row" id="chat-send-form">
               <input type="text" class="chat-input-field" id="chat-input-message" placeholder="Type a message or share lecture notes..." autocomplete="off" />
               <button type="submit" class="btn-liquid btn-primary btn-sm" id="btn-send-chat-message">
@@ -899,9 +900,10 @@
       <div class="modal-box">
         <button class="modal-close-btn" id="btn-close-chat-modal" aria-label="Close">✕</button>
         <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Start a Chat</h2>
-        <form id="new-chat-form"><div class="form-group"><label class="form-label" for="new-chat-recipient">Username</label>
-        <input type="search" id="new-chat-recipient" class="form-input" placeholder="Search exact username…" autocomplete="off" required />
-        <small style="color:#64748B;font-size:.78rem;">Enter the unique username of the person you want to message.</small></div>
+        <form id="new-chat-form"><div class="form-group chat-recipient-search"><label class="form-label" for="new-chat-recipient">Find a scholar</label>
+        <input type="search" id="new-chat-recipient" class="form-input" placeholder="Start typing a name…" autocomplete="off" required aria-describedby="new-chat-search-status" />
+        <small id="new-chat-search-status" style="display:block;color:#64748B;font-size:.78rem;margin-top:6px;" aria-live="polite">Suggestions will appear as you type.</small>
+        <div id="new-chat-suggestions" class="chat-recipient-suggestions" hidden></div></div>
         <button type="submit" class="btn-liquid btn-primary" id="btn-submit-new-chat" style="width:100%;margin-top:10px;"><span>Open Chat →</span></button></form>
       </div></div>
 
@@ -1107,9 +1109,9 @@
     <script type="module" src="./js/supabase-config.js"></script>
 
     <!-- Supabase Auth + Postgres + Realtime Engine (Modular ES Script) -->
-    <script type="module" src="./js/supabase-service.js?v=20261014-event-news-workflow2"></script>
+    <script type="module" src="./js/supabase-service.js?v=20261014-chat-features1"></script>
 
     <!-- Core Logic Engine Script (Vanilla JS with relative path) -->
-    <script src="./js/app.js?v=20261014-event-news-workflow5"></script>
+    <script src="./js/app.js?v=20261014-chat-features1"></script>
   </body>
 </html>
