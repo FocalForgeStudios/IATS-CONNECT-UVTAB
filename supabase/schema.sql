@@ -439,3 +439,16 @@ begin
   return true;
 end;
 $$;
+
+
+-- Only focalforges@gmail.com may publish Campus News. Normal events stay open.
+drop policy if exists "catchups_insert_own" on public.catchups;
+create policy "catchups_insert_own" on public.catchups
+  for insert to authenticated
+  with check (
+    auth.uid() = host_id
+    and (
+      lower(coalesce(tag, '')) <> 'campus news'
+      or lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com'
+    )
+  );
