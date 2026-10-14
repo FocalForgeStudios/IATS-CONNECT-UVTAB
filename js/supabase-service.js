@@ -715,6 +715,21 @@ export const SupabaseService = {
     return { ...conv, peer_id: recipient.id, name: recipient.name || recipientName, avatar_url: recipient.avatar_url || conv.avatar_url };
   },
 
+  async sendProfileShare(conversationId, profileId) {
+    if (!supabase || !conversationId || !profileId) throw new Error("Choose a student profile to share.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("Please sign in again.");
+    if (String(profileId) === String(user.id)) throw new Error("You cannot share your own profile as another student.");
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      text: "Shared a student profile",
+      shared_profile_id: profileId
+    });
+    if (error) throw new Error(friendlyError(error));
+    return true;
+  },
+
   async hideConversation(conversationId) {
     if (!supabase || !conversationId) throw new Error("Choose a chat first.");
     const { data: { user }, error: authError } = await supabase.auth.getUser();
