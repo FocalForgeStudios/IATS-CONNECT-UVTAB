@@ -719,11 +719,11 @@ export const SupabaseService = {
     if (!supabase || !conversationId) throw new Error("Choose a chat first.");
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Please sign in again.");
-    const { error } = await supabase.from("conversation_hides").upsert(
-      { user_id: user.id, conversation_id: conversationId },
-      { onConflict: "user_id,conversation_id" }
+    const { error } = await supabase.from("conversation_hides").insert(
+      { user_id: user.id, conversation_id: conversationId }
     );
-    if (error) throw new Error(friendlyError(error));
+    // Another tab may already have hidden this same chat; treat that as success.
+    if (error && error.code !== "23505") throw new Error(friendlyError(error));
     return true;
   },
 
