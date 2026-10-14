@@ -65,7 +65,8 @@
     adminStats: null,
     adminEvents: [],
     adminFilter: "all",
-    adminSort: "soonest"
+    adminSort: "soonest",
+    editingEventId: null
   };
 
   // ==========================================
@@ -240,21 +241,28 @@
       });
     }
     const provider = (authUser.app_metadata && authUser.app_metadata.provider) || "email";
+    const developerAccount = String(authUser.email || "").trim().toLowerCase() === "focalforges@gmail.com";
     AppState.currentUser = {
       id: authUser.id,
-      name: (profile && profile.name) || "IATS Scholar",
+      name: (profile && profile.name) || (developerAccount ? "IATS CONNECT Developer" : "IATS Scholar"),
       email: authUser.email,
-      major: (profile && profile.major) || "Undeclared",
-      year: (profile && profile.year) || "Class of 2026",
-      bio: (profile && profile.bio) || "",
-      courses: (profile && profile.courses) || [],
-      interests: (profile && profile.interests) || [],
-      skills: (profile && profile.interests && profile.interests.length ? profile.interests : ["Academic Collaboration"]),
-      avatar: profile && profile.avatar_url, // may be undefined — UI already falls back to a default vector
-      location: (profile && profile.location) || "IATS Main Campus",
+      major: developerAccount ? "Developer" : ((profile && profile.major) || "Undeclared"),
+      year: developerAccount ? "Platform Administrator" : ((profile && profile.year) || "Class of 2026"),
+      bio: developerAccount ? "Developer and platform administrator for IATS CONNECT, responsible for product engineering, campus event moderation, and official campus news." : ((profile && profile.bio) || ""),
+      courses: developerAccount ? [] : ((profile && profile.courses) || []),
+      interests: developerAccount ? ["Software Engineering", "Platform Development", "System Architecture", "Database Security"] : ((profile && profile.interests) || []),
+      skills: developerAccount ? ["Software Engineering", "Platform Development", "System Architecture", "Database Security"] : ((profile && profile.interests && profile.interests.length ? profile.interests : ["Academic Collaboration"])),
+      avatar: profile && profile.avatar_url,
+      location: developerAccount ? "IATS CONNECT Platform" : ((profile && profile.location) || "IATS Main Campus"),
       authProvider: provider === "google" ? "Google Account (Verified)" : "Personal Email (Verified)",
-      isVerified: true
+      isVerified: true,
+      isDeveloper: developerAccount
     };
+    if (developerAccount && window.SupabaseService && typeof window.SupabaseService.saveUser === "function" &&
+        (!profile || profile.major !== "Developer" || profile.year !== "Platform Administrator")) {
+      const savedDeveloperProfile = await window.SupabaseService.saveUser(AppState.currentUser);
+      if (savedDeveloperProfile) AppState.currentUser.avatar = savedDeveloperProfile.avatar_url || AppState.currentUser.avatar;
+    }
     syncNewsPublishingOption();
     renderNavigation();
     startConversationsSync();
@@ -378,7 +386,7 @@
         <div class="user-profile-pill" id="btn-header-profile" title="View Profile" style="cursor: pointer;">
           <img src="${resolveAssetUrl(AppState.currentUser.avatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" class="user-avatar-sm" alt="${AppState.currentUser.name}">
           <span style="font-weight: 700; font-size: 0.88rem; color: #1E293B;">${AppState.currentUser.name}</span>
-          <span class="tag-pill tag-pill-highlight" style="font-size: 0.72rem; padding: 2px 8px;">IATS Verified</span>
+          <span class="tag-pill tag-pill-highlight" style="font-size: 0.72rem; padding: 2px 8px;">${isNewsPublisher() ? "Developer · Admin" : "IATS Verified"}</span>
         </div>
         ${isNewsPublisher() ? '<button class="btn-liquid btn-glass btn-sm" id="btn-header-admin" type="button"><span>Admin Dashboard</span></button>' : ''}
         <button class="btn-liquid btn-glass btn-sm" id="btn-header-logout" title="Sign Out">
@@ -1747,7 +1755,7 @@
   }
 
   // ==========================================
-  // Student Profile Logic View
+  // Account profile view (developer account is not classified as a student)
   // ==========================================
   function renderProfileView() {
     const user = AppState.currentUser || {
