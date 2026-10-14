@@ -107,13 +107,26 @@
   function initApp() {
     // Reveal the real page immediately; database/auth sync must never hold the boot screen.
     hideBootLoaderWhenReady();
-    renderNavigation();
-    bindEvents();
-    renderActiveView();
-    updateUnreadBadge();
-    initHeaderScrollBlur();
-    initSupabaseSync();
-    if (!eventTicker) eventTicker = window.setInterval(tickEventCountdowns, 1000);
+    try {
+      renderNavigation();
+      bindEvents();
+      renderActiveView();
+      updateUnreadBadge();
+      initHeaderScrollBlur();
+      initSupabaseSync();
+      if (!eventTicker) eventTicker = window.setInterval(tickEventCountdowns, 1000);
+    } catch (error) {
+      // Never leave users with a blank screen if a non-critical initializer fails.
+      console.error("[IATS CONNECT] App initialization failed; restoring the public landing view.", error);
+      document.querySelectorAll(".view-section").forEach(section => section.classList.remove("active"));
+      const landing = document.getElementById("view-landing");
+      if (landing) landing.classList.add("active");
+      const loader = document.getElementById("app-boot-loader");
+      if (loader) {
+        loader.classList.add("is-hidden");
+        window.setTimeout(() => loader.remove(), 300);
+      }
+    }
   }
 
   // Dismiss the boot skeleton once the app has mounted. Do not wait for
@@ -207,7 +220,8 @@
         AppState.activeMessages = [];
         AppState.activeChatId = null;
         renderNavigation();
-        navigateTo("landing");
+        // The signed-out state should be visible from the Profile tab, not hidden on Home.
+        navigateTo("profile");
       }
     });
 
@@ -345,7 +359,8 @@
       const authModal = document.getElementById("auth-modal-backdrop");
       if (authModal) authModal.classList.remove("open");
       renderNavigation();
-      navigateTo("landing");
+      // Keep the user on Profile after sign-out so sign-in is available in-place.
+      navigateTo("profile");
       window.scrollTo({ top: 0, behavior: "auto" });
     }
     if (signOutError) {
