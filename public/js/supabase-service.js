@@ -287,6 +287,25 @@ export const SupabaseService = {
   // ===========================================================
   // 4. Academic events / news (catchups)
   // ===========================================================
+  async fetchAdminOverview() {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user || String(user.email || "").toLowerCase() !== "focalforges@gmail.com") {
+      throw new Error("Administrator access is required.");
+    }
+    const [students, events, eventRows] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("catchups").select("id", { count: "exact", head: true }),
+      supabase.from("catchups")
+        .select("id,title,host,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
+        .order("created_at", { ascending: false }).limit(200)
+    ]);
+    if (students.error) throw new Error(friendlyError(students.error));
+    if (events.error) throw new Error(friendlyError(events.error));
+    if (eventRows.error) throw new Error(friendlyError(eventRows.error));
+    return { studentCount: students.count || 0, eventCount: events.count || 0, events: eventRows.data || [] };
+  },
+
   subscribeCatchups(onUpdate) {
     if (!supabase) return () => {};
     supabase.from("catchups").select("*").order("created_at", { ascending: false }).limit(50)
@@ -312,7 +331,9 @@ export const SupabaseService = {
         host_avatar: sanitizeAvatar(catchup.hostAvatar),
         host_id: user ? user.id : null,
         location: sanitizeText(catchup.location, 100),
-        event_time: sanitizeText(catchup.time, 60),
+        event_time: sanitizeText(catchup.time, 100),
+        event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
+        event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
         tag: sanitizeText(catchup.tag, 40) || "Academic Event",
         attendees: 1,
         max_attendees: catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees),
