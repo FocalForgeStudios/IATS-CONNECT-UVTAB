@@ -1087,6 +1087,7 @@
       + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>"
       + formatEventCountdown(start, end) + "</div>"
       + "<h3 style='font-size:1.15rem;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;'>" + escapeEventText(event.title) + "</h3>"
+      + (event.description ? "<p style='font-size:.88rem;color:#475569;line-height:1.55;margin:0 0 10px;white-space:pre-wrap;'>" + escapeEventText(event.description) + "</p>" : "")
       + "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location || "Location not set") + "</div>"
       + "<div style='font-size:.86rem;color:#64748B;margin-bottom:8px;'>" + ICONS.clock + " " + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.time || event.event_time || "Date/time not set") : formatEventDateTime(start))
       + (end ? " – " + escapeEventText(new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })) : "") + "</div>"
@@ -1206,6 +1207,7 @@
       return "<div class='glass-panel' style='padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;'>"
         + "<div style='min-width:200px;flex:1;'><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;'><strong>" + escapeEventText(event.title) + "</strong><span class='tag-pill tag-pill-blue' data-event-status-label>" + label + "</span></div>"
         + "<div style='font-size:.85rem;color:#64748B;'>" + escapeEventText(event.tag || "Academic Event") + " · " + escapeEventText(event.location || "Location not set") + " · Host: " + escapeEventText(event.host || "IATS Scholar") + "</div>"
+        + (event.description ? "<div style='font-size:.82rem;color:#475569;margin-top:5px;line-height:1.45;'>" + escapeEventText(event.description.slice(0, 220)) + (event.description.length > 220 ? "…" : "") + "</div>" : "")
         + "<div style='font-size:.82rem;color:#64748B;margin-top:5px;'>" + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.event_time || "Date/time not set") : formatEventDateTime(start)) + " · " + escapeEventText(cap) + "</div></div>"
         + "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'><div style='font-size:.82rem;font-weight:700;color:#D8232A;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end, now) + "</div>"
         + "<button type='button' class='btn-liquid btn-glass btn-sm btn-admin-edit-event' data-id='" + escapeEventText(event.id) + "'>Edit</button>"
@@ -1317,6 +1319,7 @@
     AppState.editingEventId = event ? event.id : null;
     const titleInput = document.getElementById("new-catchup-title");
     const locationInput = document.getElementById("new-catchup-location");
+    const descriptionInput = document.getElementById("new-catchup-description");
     const startInput = document.getElementById("new-catchup-start");
     const endInput = document.getElementById("new-catchup-end");
     const capacityInput = document.getElementById("new-catchup-capacity");
@@ -1325,6 +1328,7 @@
     const submitLabel = document.getElementById("host-catchup-submit-label");
     if (titleInput) titleInput.value = event ? (event.title || "") : "";
     if (locationInput) locationInput.value = event ? (event.location || "") : "";
+    if (descriptionInput) descriptionInput.value = event ? (event.description || "") : "";
     if (startInput) startInput.value = event ? toLocalDateTimeInput(getEventStart(event)) : "";
     if (endInput) endInput.value = event ? toLocalDateTimeInput(getEventEnd(event)) : "";
     if (capacityInput) capacityInput.value = event && event.max_attendees != null ? event.max_attendees : "";
@@ -1344,6 +1348,7 @@
     e.preventDefault();
     const title = document.getElementById("new-catchup-title") ? document.getElementById("new-catchup-title").value.trim() : "";
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
+    const description = document.getElementById("new-catchup-description") ? document.getElementById("new-catchup-description").value.trim() : "";
     const startValue = document.getElementById("new-catchup-start")?.value || "";
     const endValue = document.getElementById("new-catchup-end")?.value || "";
     const startsAt = startValue ? new Date(startValue) : null;
@@ -1351,8 +1356,13 @@
     const time = startsAt && Number.isFinite(startsAt.getTime())
       ? startsAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
     const tag = document.getElementById("new-catchup-tag") ? document.getElementById("new-catchup-tag").value : "Study Group";
-    if (String(tag).toLowerCase().replace(/\s+/g, "") === "campusnews" && !isNewsPublisher()) {
+    const isCampusNews = String(tag).toLowerCase().replace(/\s+/g, "") === "campusnews";
+    if (isCampusNews && !isNewsPublisher()) {
       alert("Only focalforges@gmail.com can publish Campus News. Scholars can still publish academic events."); return;
+    }
+    if (isCampusNews && !description) {
+      alert("Please add the full announcement details before publishing Campus News.");
+      return;
     }
     const capacityInput = document.getElementById("new-catchup-capacity");
     const capacityValue = capacityInput ? capacityInput.value.trim() : "";
@@ -1401,6 +1411,7 @@
 
     const newCatchup = {
       title,
+      description,
       host: hostName,
       hostAvatar,
       location,
