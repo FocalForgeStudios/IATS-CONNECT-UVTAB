@@ -694,6 +694,10 @@
                 <div style="font-size: 0.82rem; color: #64748B; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
                   ${ICONS.pin} <span>${c.location}</span> • <b>${c.time}</b>
                 </div>
+                <div style="font-size:.78rem;font-weight:700;color:#D8232A;margin-top:5px;display:flex;align-items:center;gap:6px;">
+                  <span class="tag-pill tag-pill-blue" data-event-status-label>${eventStatus(c) === "live" ? "LIVE NOW" : eventStatus(c) === "past" ? "PAST" : "UPCOMING"}</span>
+                  <span data-event-countdown data-event-status="${eventStatus(c)}" data-start-iso="${getEventStart(c) || ""}" data-end-iso="${getEventEnd(c) || ""}">${formatEventCountdown(getEventStart(c), getEventEnd(c))}</span>
+                </div>
               </div>
             </div>
             <button class="btn-liquid ${c.isJoined ? 'btn-glass' : 'btn-primary'} btn-sm btn-join-catchup" data-id="${c.id}">
@@ -1196,6 +1200,7 @@
   function tickEventCountdowns() {
     const now = Date.now();
     let publicStatusChanged = false;
+    let dashboardStatusChanged = false;
     let adminStatusChanged = false;
     document.querySelectorAll("[data-event-countdown]").forEach(el => {
       const start = el.getAttribute("data-start-iso") || "";
@@ -1208,10 +1213,12 @@
         const label = el.parentElement && el.parentElement.querySelector("[data-event-status-label]");
         if (label) label.textContent = newStatus === "live" ? "LIVE NOW" : newStatus === "past" ? "PAST" : "UPCOMING";
         if (AppState.activeView === "catchup") publicStatusChanged = true;
+        if (AppState.activeView === "dashboard") dashboardStatusChanged = true;
         if (AppState.activeView === "admin") adminStatusChanged = true;
       }
     });
     if (publicStatusChanged) renderCatchUpView();
+    if (dashboardStatusChanged) renderDashboardView();
     if (adminStatusChanged) renderAdminEventsList();
   }
 
