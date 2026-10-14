@@ -478,12 +478,17 @@
 
       <!-- ADMIN-ONLY DASHBOARD: rendered only for focalforges@gmail.com -->
       <section id="view-admin" class="view-section">
-        <div class="glass-panel feed-header-banner">
+        <div class="glass-panel feed-header-banner" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
           <div>
             <h2 style="font-size:1.7rem;font-weight:800;color:#1E293B;">IATS CONNECT Administration</h2>
             <p style="color:var(--text-muted);font-size:.95rem;margin-top:4px;">Platform overview, scholar totals, and event management.</p>
           </div>
-          <span class="tag-pill tag-pill-highlight">Administrator</span>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="tag-pill tag-pill-highlight">Administrator</span>
+            <button type="button" class="btn-liquid btn-primary btn-sm" id="btn-admin-signout-home" title="Sign out and return to the public guest home">
+              <span>Sign Out · Guest Home</span>
+            </button>
+          </div>
         </div>
         <div id="admin-dashboard-content" style="margin-top:18px;">
           <div class="glass-panel" style="padding:24px;text-align:center;">Loading administration overview…</div>
@@ -1091,6 +1096,6 @@
     <script type="module" src="./js/supabase-service.js?v=20261014-nav-profile1"></script>
 
     <!-- Core Logic Engine Script (Vanilla JS with relative path) -->
-    <script src="./js/app.js?v=20261014-duplicate-container-fix1"></script>
+    <script src="./js/app.js?v=20261014-admin-guest-signout1"></script>
   </body>
 </html>
