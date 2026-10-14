@@ -173,6 +173,12 @@
     // Restore an existing real session (if any) on page load/refresh.
     window.SupabaseService.getSession().then((session) => {
       if (session && session.user) hydrateSessionFromAuthUser(session.user);
+      const recoveryRequested = new URLSearchParams(window.location.search).get("password-recovery") === "1";
+      if (recoveryRequested && session && session.user) {
+        const modal = document.getElementById("auth-modal-backdrop");
+        if (modal) modal.classList.add("open");
+        showAuthStep("password-recovery");
+      }
     });
 
     // React instantly to real sign-in / sign-out / token refresh events.
