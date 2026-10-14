@@ -1,0 +1,46 @@
+IATS CONNECT — Full Backup and Recovery Guide
+Project ref: ojobzjornniyjrqszglk
+Capture date: 2026-10-14
+
+WHAT THIS REPOSITORY BACKUP COVERS
+- Consolidated schema reference at supabase/schema.sql
+- Migration version/name ledger in this folder
+- This recovery guide
+
+WHAT IT DOES NOT CONTAIN
+- Actual production table rows (profiles, messages, conversations, events/news, etc.)
+- Auth user credential material or project secrets
+- Uploaded profile photos or chat-attachment bytes
+- All dashboard settings, OAuth secrets, SMTP credentials, Edge Function secrets
+- Original SQL bodies for every historical migration unless the original files exist in supabase/migrations
+
+CREATE A REAL POSTGRES BACKUP
+Use a trusted computer with the Supabase CLI/Postgres client and the database connection string obtained from Supabase Dashboard > Project Settings > Database. Never paste the database password into chat or commit it to a public repository.
+
+Custom-format full database dump:
+  pg_dump "$DATABASE_URL" --format=custom --no-owner --no-acl --file iats-connect-db.dump
+
+Schema-only SQL dump:
+  pg_dump "$DATABASE_URL" --schema-only --no-owner --no-acl --file iats-connect-schema.sql
+
+Plain SQL data + schema dump:
+  pg_dump "$DATABASE_URL" --no-owner --no-acl --file iats-connect-full.sql
+
+Set DATABASE_URL securely in your local shell first. Keep dumps containing personal data and private messages encrypted and private; do not upload them to public GitHub.
+
+BACK UP STORAGE
+Copy every object from buckets including profile-photos and chat-attachments using authenticated Storage tooling. Preserve object paths and verify file counts/sizes. SQL schema does not include the binary contents.
+
+AUTH / CONFIGURATION
+Record enabled providers, Site URL and redirect allow-list, email templates, SMTP setup, OAuth configuration, Edge Function names and non-secret settings. Store secrets in a password manager, not this repo.
+
+RESTORE TEST
+1. Create a separate staging Supabase project.
+2. Restore the native dump with pg_restore (custom format) or psql (plain SQL), following current Supabase guidance and avoiding system-managed schemas unless instructed.
+3. Restore Storage objects.
+4. Reconfigure Auth providers and redirect URLs.
+5. Verify row counts, RLS, sign-in, events/news, unique direct chats, messages, attachments and read receipts.
+6. Keep production unchanged until the staging restore passes.
+
+MIGRATION HISTORY NOTE
+The ledger is version/name metadata from the live Supabase migration list, not each migration's SQL text. Preserve the repository's supabase/migrations folder if it contains the originals. Historical migration SQL cannot be reconstructed with certainty from version/name metadata alone.
