@@ -1895,7 +1895,7 @@
       avatar: "./images/scholar_female.jpg"
     };
 
-    const container = document.getElementById("profile-view-container");
+    // Reuse the container declared at the start of renderProfileView().
     if (!container) return;
 
     container.innerHTML = `
