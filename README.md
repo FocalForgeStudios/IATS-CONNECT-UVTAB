@@ -1,6 +1,6 @@
 # 🎓 IATS CONNECT
 
-**IATS CONNECT** is an interactive web platform designed exclusively for academic collaboration among students at the *Institute of Advanced Technology & Studies*. It allows students to connect in real-time, find study partners using course syllabus codes, stay updated with campus events, and participate in moderated departmental forums.
+**IATS CONNECT** is an interactive web platform designed exclusively for academic collaboration among students at the *Institute of Advanced Technical Studies*. It allows students to connect in real-time, find study partners using course syllabus codes, stay updated with campus events, and participate in moderated departmental forums.
 
 ---
 
@@ -68,4 +68,4 @@ This repository integrates **chatgpt-c00lkidd**, an automated AI assistant. If y
 
 ## ⚖️ License & Code of Conduct
 
-This project is governed by the academic integrity statutes of the **Institute of Advanced Technology & Studies**. Using this platform for commercial solicitation, distributing copyrighted materials without authorization, or transmitting explicit media is strictly prohibited and subject to disciplinary action.
+This project is governed by the academic integrity statutes of the **Institute of Advanced Technical Studies**. Using this platform for commercial solicitation, distributing copyrighted materials without authorization, or transmitting explicit media is strictly prohibited and subject to disciplinary action.
