@@ -188,6 +188,28 @@ export const SupabaseService = {
   },
 
   // ===========================================================
+  // Realtime presence: online only while an authenticated client is connected.
+  async subscribePresence(onUpdate) {
+    if (!supabase) return () => {};
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return () => {};
+    const channel = supabase.channel("iats-global-presence", { config: { presence: { key: user.id } } });
+    const publish = () => {
+      const state = channel.presenceState();
+      onUpdate(Object.keys(state));
+    };
+    channel.on("presence", { event: "sync" }, publish)
+      .on("presence", { event: "join" }, publish)
+      .on("presence", { event: "leave" }, publish)
+      .subscribe(async status => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+          publish();
+        }
+      });
+    return () => supabase.removeChannel(channel);
+  },
+
   // 2. Profiles (created on first sign-in, no photo required)
   // ===========================================================
   async fetchProfile(userId) {
