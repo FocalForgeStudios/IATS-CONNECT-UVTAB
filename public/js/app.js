@@ -58,7 +58,7 @@
     otpSecondsRemaining: 60,
     currentMatchIndex: 0,
     activeChatId: null,
-    activeHubCategory: "all",
+    activeHubCategory: "faculty",
     activeHubFaculty: "Institute of Advanced Technical Studies",
     
     // Live Cloud Database collections
@@ -1480,9 +1480,13 @@
     coursePanel.innerHTML = "<div style='font-weight:800;margin:0 0 10px;color:#1E293B;'>Courses in this faculty</div>" + facultyCourses.map(c =>
       "<button type='button' class='hub-course-btn " + (AppState.activeHubCategory === c.code ? "active" : "") + "' data-course='" + c.code + "' style='display:block;width:100%;text-align:left;padding:9px 10px;margin:4px 0;border:1px solid #E2E8F0;border-radius:10px;background:" + (AppState.activeHubCategory === c.code ? "#FEE2E2" : "transparent") + ";color:#1E293B;cursor:pointer;'>" + c.code + " · " + c.name + "</button>"
     ).join("");
-    const filtered = AppState.hubPosts.filter(p => AppState.activeHubCategory === "all" || String(p.category || "").toUpperCase() === String(AppState.activeHubCategory).toUpperCase());
     const selectedCourse = IATS_COURSES.find(c => c.code === AppState.activeHubCategory);
     const heading = selectedCourse ? selectedCourse.name : AppState.activeHubCategory === "all" ? "All Course Discussions" : AppState.activeHubFaculty;
+    if (AppState.activeHubCategory === "faculty") {
+      listContainer.innerHTML = "<div style='margin-bottom:14px;'><h3 style='font-size:1.2rem;font-weight:800;color:#1E293B;margin:0 0 6px;'>" + escapeEventText(AppState.activeHubFaculty) + "</h3><p style='color:#64748B;font-size:.9rem;margin:0;'>Choose one of the official programmes below to open its course community.</p></div><div class='hub-course-grid' style='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;'>" + facultyCourses.map(c => "<button type='button' class='glass-panel hub-course-card' data-course='" + c.code + "' style='text-align:left;padding:16px;border:1px solid #E2E8F0;cursor:pointer;min-width:0;'><span style='display:inline-block;font-size:.76rem;font-weight:800;color:#D8232A;margin-bottom:7px;'>" + c.code + "</span><span style='display:block;font-weight:750;color:#1E293B;line-height:1.4;'>" + escapeEventText(c.name) + "</span><span style='display:block;color:#64748B;font-size:.8rem;margin-top:9px;'>Open course community →</span></button>").join("") + "</div>";
+      listContainer.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course; renderHubsView(); }));
+    } else {
+    const filtered = AppState.hubPosts.filter(p => AppState.activeHubCategory === "all" || String(p.category || "").toUpperCase() === String(AppState.activeHubCategory).toUpperCase());
     if (filtered.length === 0) {
       listContainer.innerHTML = "<div class='glass-panel' style='text-align:center;padding:36px 20px;'><div style='font-weight:800;font-size:1.1rem;color:#1E293B;margin-bottom:6px;'>" + heading + "</div><p style='font-size:.9rem;color:#64748B;max-width:440px;margin:0 auto 18px;'>No discussions in this course yet. Be the first to share notes, questions or revision resources.</p><button class='btn-liquid btn-primary btn-sm' id='btn-post-in-selected-course' type='button'>+ Post in this course</button></div>";
       const postBtn = document.getElementById("btn-post-in-selected-course");
@@ -1494,8 +1498,9 @@
       }).join("");
       listContainer.querySelectorAll(".btn-upvote-post").forEach(btn => btn.addEventListener("click", () => toggleUpvotePost(btn.dataset.id)));
     }
-    sidebar.querySelectorAll("[data-faculty]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubFaculty = btn.dataset.faculty; const first = IATS_COURSES.find(c => c.faculty === AppState.activeHubFaculty); AppState.activeHubCategory = first ? first.code : "all"; renderHubsView(); }));
-    sidebar.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course; if (btn.dataset.course !== "all") { const c = IATS_COURSES.find(x => x.code === btn.dataset.course); if (c) AppState.activeHubFaculty = c.faculty; } renderHubsView(); }));
+    }
+    sidebar.querySelectorAll("[data-faculty]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubFaculty = btn.dataset.faculty; AppState.activeHubCategory = "faculty"; renderHubsView(); }));
+    sidebar.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course === "all" ? "all" : btn.dataset.course; if (btn.dataset.course !== "all") { const c = IATS_COURSES.find(x => x.code === btn.dataset.course); if (c) AppState.activeHubFaculty = c.faculty; } renderHubsView(); }));
     coursePanel.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course; renderHubsView(); }));
   }
 
