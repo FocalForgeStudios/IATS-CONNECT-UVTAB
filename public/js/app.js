@@ -1294,8 +1294,37 @@
       if (select) select.value = "Study Group";
     }
   }
-  function openHostCatchupModal() {
+  function toLocalDateTimeInput(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+
+  function openHostCatchupModal(eventId = null, forceNews = false) {
     syncNewsPublishingOption();
+    const event = eventId ? (AppState.adminEvents || []).find(item => String(item.id) === String(eventId)) : null;
+    if (eventId && (!isNewsPublisher() || !event)) {
+      showToast("Administrator Only", "Refresh the admin panel and try again.");
+      return;
+    }
+    AppState.editingEventId = event ? event.id : null;
+    const titleInput = document.getElementById("new-catchup-title");
+    const locationInput = document.getElementById("new-catchup-location");
+    const startInput = document.getElementById("new-catchup-start");
+    const endInput = document.getElementById("new-catchup-end");
+    const capacityInput = document.getElementById("new-catchup-capacity");
+    const tagSelect = document.getElementById("new-catchup-tag");
+    const modalTitle = document.getElementById("host-catchup-modal-title");
+    const submitLabel = document.getElementById("host-catchup-submit-label");
+    if (titleInput) titleInput.value = event ? (event.title || "") : "";
+    if (locationInput) locationInput.value = event ? (event.location || "") : "";
+    if (startInput) startInput.value = event ? toLocalDateTimeInput(getEventStart(event)) : "";
+    if (endInput) endInput.value = event ? toLocalDateTimeInput(getEventEnd(event)) : "";
+    if (capacityInput) capacityInput.value = event && event.max_attendees != null ? event.max_attendees : "";
+    if (tagSelect) tagSelect.value = forceNews ? "Campus News" : (event ? (event.tag || "Study Group") : "Study Group");
+    if (modalTitle) modalTitle.textContent = forceNews ? "Publish Official Campus News" : event ? "Edit Event / Campus News" : "Create an Academic Event";
+    if (submitLabel) submitLabel.textContent = forceNews ? "Publish Campus News →" : event ? "Save Changes →" : "Publish Academic Event →";
     const hostModal = document.getElementById("host-catchup-modal");
     if (hostModal) hostModal.classList.add("open");
   }
@@ -1333,6 +1362,10 @@
     }
     if (endsAt <= startsAt) {
       alert("The event end date and time must be after the start date and time.");
+      return;
+    }
+    if (AppState.editingEventId && !isNewsPublisher()) {
+      showToast("Administrator Only", "Only the platform developer can edit published events.");
       return;
     }
 
@@ -1375,10 +1408,13 @@
       if (!window.SupabaseService || typeof window.SupabaseService.addCatchup !== "function") {
         throw new Error("The event service is unavailable. Please refresh and try again.");
       }
-      const saved = await window.SupabaseService.addCatchup(newCatchup);
-      if (!saved || !saved.id) {
-        throw new Error("The event could not be saved. Please check your connection and try again.");
+      let saved;
+      if (AppState.editingEventId) {
+        saved = await window.SupabaseService.updateCatchup(AppState.editingEventId, newCatchup);
+      } else {
+        saved = await window.SupabaseService.addCatchup(newCatchup);
       }
+      if (!saved || !saved.id) throw new Error("The item could not be saved. Please check your connection and try again.");
       Object.assign(newCatchup, {
         id: saved.id,
         hostAvatar: saved.host_avatar ?? newCatchup.hostAvatar,
@@ -1386,20 +1422,31 @@
         event_starts_at: saved.event_starts_at ?? newCatchup.event_starts_at,
         event_ends_at: saved.event_ends_at ?? newCatchup.event_ends_at,
         maxAttendees: saved.max_attendees ?? newCatchup.maxAttendees,
-        attendees: saved.attendees ?? 1
+        attendees: saved.attendees ?? newCatchup.attendees
       });
-      AppState.catchups.unshift(newCatchup);
+      if (AppState.editingEventId) {
+        const editingId = String(AppState.editingEventId);
+        AppState.catchups = AppState.catchups.map(item => String(item.id) === editingId ? { ...item, ...newCatchup } : item);
+        AppState.adminEvents = AppState.adminEvents.map(item => String(item.id) === editingId ? { ...item, ...saved } : item);
+      } else {
+        AppState.catchups.unshift(newCatchup);
+        AppState.adminEvents.unshift(saved);
+      }
     } catch (err) {
       console.error("Academic event publish failed:", err);
       showToast("Event Not Published", err.message || "Could not publish the event. Please try again.");
       return;
     }
 
+    const wasEditing = !!AppState.editingEventId;
+    AppState.editingEventId = null;
     closeHostCatchupModal();
     const hostForm = document.getElementById("host-catchup-form");
     if (hostForm) hostForm.reset();
-    showToast("Event Hosted", `"${newCatchup.title}" is now published on the academic feed.`);
+    showToast(wasEditing ? "Changes Saved" : (String(tag).toLowerCase() === "campus news" ? "Campus News Published" : "Event Hosted"),
+      `"${newCatchup.title}" ${wasEditing ? "has been updated." : "is now published on IATS CONNECT."}`);
     renderCatchUpView();
+    if (isNewsPublisher() && AppState.activeView === "admin") renderAdminDashboardView();
   }
 
   // ==========================================
