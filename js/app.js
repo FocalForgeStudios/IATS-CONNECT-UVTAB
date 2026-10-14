@@ -1076,28 +1076,27 @@
     }
   }
 
-  function startChatWithStudent(student) {
-    let conv = AppState.conversations.find(c => c.peer_id && student.id && c.peer_id === student.id);
-    if (!conv) {
-      conv = {
-        id: String(Date.now()),
-        name: student.name,
-        avatar: student.avatar || DEFAULT_AVATAR_PLACEHOLDER,
-        status: "online",
-        major: student.major,
-        unread: 0,
-        messages: [
-          { sender: "them", text: `Hello! Great to connect as study buddies! I see we share ${student.courses && student.courses[0] ? student.courses[0] : 'coursework at IATS'}.`, time: "Just now" }
-        ]
-      };
-      AppState.conversations.unshift(conv);
-
-      if (window.SupabaseService && typeof window.SupabaseService.saveConversation === "function") {
-        window.SupabaseService.saveConversation(conv);
-      }
+  async function startChatWithStudent(student) {
+    if (!AppState.currentUser) { openAuthModal(); return; }
+    const recipientId = student && (student.owner_id || student.id);
+    if (!recipientId) { showToast("Cannot Open Chat", "This study buddy does not have a linked account ID."); return; }
+    try {
+      // Always ask Supabase for the canonical direct thread; never create a local/fake conversation.
+      const conv = await window.SupabaseService.createConversation({
+        recipientId,
+        recipientName: student.name || "IATS Scholar",
+        major: student.major || "IATS Scholar",
+        firstMessage: "",
+        avatar: student.avatar || student.avatar_url || DEFAULT_AVATAR_PLACEHOLDER
+      });
+      if (!conv) throw new Error("Could not open this scholar's conversation. Please try again.");
+      AppState.activeChatId = conv.id;
+      startActiveMessagesSync(conv.id);
+      navigateTo("chats");
+    } catch (error) {
+      console.error("[IATS CONNECT] Could not open Study Buddy chat:", error);
+      showToast("Chat Unavailable", error.message || "Could not open this scholar's chat.");
     }
-    AppState.activeChatId = conv.id;
-    navigateTo("chats");
   }
 
   // Create Profile Modal
@@ -1902,9 +1901,9 @@
       <div class="chat-thread-item ${String(c.id) === String(activeConv.id) ? 'active' : ''}" data-id="${c.id}">
         <img src="${resolveAssetUrl(c.avatar_url || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover;" alt="${c.name}">
         <div style="flex: 1; min-width: 0;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-weight: 700; font-size: 0.92rem; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.name}</div>
-            ${c.unread ? `<span class="nav-badge">${c.unread}</span>` : ''}
+          <div style="display: flex; align-items: center; justify-content: space-between; gap:6px;">
+            <div style="font-weight: 700; font-size: 0.92rem; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeEventText(c.name || "IATS Scholar")}</div>
+            <button type="button" class="chat-delete-thread-btn" data-delete-conversation="${c.id}" title="Remove this chat from your inbox" aria-label="Delete chat with ${escapeEventText(c.name || "scholar")}">×</button>
           </div>
           <div style="font-size: 0.8rem; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             ${c.last_message ? c.last_message : 'No messages yet'}
@@ -1918,7 +1917,8 @@
     `).join("");
 
     threadsList.querySelectorAll(".chat-thread-item").forEach(item => {
-      item.addEventListener("click", () => {
+      item.addEventListener("click", (event) => {
+        if (event.target.closest("[data-delete-conversation]")) return;
         AppState.activeChatId = item.dataset.id;
         const selected = AppState.conversations.find(c => String(c.id) === String(AppState.activeChatId));
         if (selected) {
@@ -1927,6 +1927,33 @@
         }
         startActiveMessagesSync(AppState.activeChatId);
         renderChatsView();
+      });
+    });
+
+    threadsList.querySelectorAll("[data-delete-conversation]").forEach(button => {
+      button.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const conversationId = button.dataset.deleteConversation;
+        const conversation = AppState.conversations.find(c => String(c.id) === String(conversationId));
+        const peerName = conversation?.name || "this scholar";
+        if (!window.confirm(`Remove your chat with ${peerName} from your inbox? The other person will keep their chat and messages.`)) return;
+        button.disabled = true;
+        try {
+          await window.SupabaseService.hideConversation(conversationId);
+          AppState.conversations = AppState.conversations.filter(c => String(c.id) !== String(conversationId));
+          delete AppState.unreadChatCounts[conversationId];
+          if (String(AppState.activeChatId) === String(conversationId)) {
+            AppState.activeChatId = AppState.conversations[0]?.id || null;
+            if (AppState.activeChatId) startActiveMessagesSync(AppState.activeChatId);
+            else { if (unsubActiveMessages) { unsubActiveMessages(); unsubActiveMessages = null; } AppState.activeMessages = []; }
+          }
+          updateNotificationBadges();
+          renderChatsView();
+          showToast("Chat Removed", "The chat was removed from your inbox only.");
+        } catch (error) {
+          button.disabled = false;
+          showToast("Could Not Delete Chat", error.message || "Please try again.");
+        }
       });
     });
 
