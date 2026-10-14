@@ -430,6 +430,20 @@
         </div>
       </section>
 
+      <!-- ADMIN-ONLY DASHBOARD: rendered only for focalforges@gmail.com -->
+      <section id="view-admin" class="view-section">
+        <div class="glass-panel feed-header-banner">
+          <div>
+            <h2 style="font-size:1.7rem;font-weight:800;color:#1E293B;">IATS CONNECT Administration</h2>
+            <p style="color:var(--text-muted);font-size:.95rem;margin-top:4px;">Platform overview, scholar totals, and event management.</p>
+          </div>
+          <span class="tag-pill tag-pill-highlight">Administrator</span>
+        </div>
+        <div id="admin-dashboard-content" style="margin-top:18px;">
+          <div class="glass-panel" style="padding:24px;text-align:center;">Loading administration overview…</div>
+        </div>
+      </section>
+
       <!-- ================================================================= -->
       <!-- VIEW 4: EVENTS & ACADEMIC NEWS (CATCHUP) -->
       <!-- ================================================================= -->
@@ -684,16 +698,20 @@
             <label class="form-label" for="new-catchup-location">Campus Spot / Lecture Room</label>
             <input type="text" id="new-catchup-location" class="form-input" placeholder="e.g. IATS Innovation Lab Floor 2, Tech Lab B" required />
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label" for="new-catchup-time">Date & Time</label>
-              <input type="text" id="new-catchup-time" class="form-input" placeholder="e.g. Today @ 3:30 PM" required />
+              <label class="form-label" for="new-catchup-start">Event start date & time</label>
+              <input type="datetime-local" id="new-catchup-start" class="form-input" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-catchup-capacity">Max Scholars (optional)</label>
-              <input type="number" id="new-catchup-capacity" class="form-input" min="2" step="1" placeholder="Unlimited — leave blank" aria-describedby="catchup-capacity-help" />
-              <small id="catchup-capacity-help" style="display:block; margin-top:5px; color:#64748B;">Leave blank to allow unlimited scholars. Enter a number only if you want to set a limit.</small>
+              <label class="form-label" for="new-catchup-end">Event end date & time</label>
+              <input type="datetime-local" id="new-catchup-end" class="form-input" required />
             </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-catchup-capacity">Max Scholars (optional)</label>
+            <input type="number" id="new-catchup-capacity" class="form-input" min="2" step="1" placeholder="Unlimited — leave blank" aria-describedby="catchup-capacity-help" />
+            <small id="catchup-capacity-help" style="display:block;margin-top:5px;color:#64748B;">Leave blank to allow unlimited scholars. Enter a number only if you want to set a limit.</small>
           </div>
           <div class="form-group">
             <label class="form-label" for="new-catchup-tag">Event Category</label>
