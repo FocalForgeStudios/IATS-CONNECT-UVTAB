@@ -104,6 +104,8 @@
   // Initialization & Real Database Synchronization
   // ==========================================
   function initApp() {
+    // Reveal the real page immediately; database/auth sync must never hold the boot screen.
+    hideBootLoaderWhenReady();
     renderNavigation();
     bindEvents();
     renderActiveView();
@@ -111,19 +113,22 @@
     initHeaderScrollBlur();
     initSupabaseSync();
     if (!eventTicker) eventTicker = window.setInterval(tickEventCountdowns, 1000);
-    hideBootLoaderWhenReady();
   }
 
   // Dismiss the boot skeleton once the app has mounted. Do not wait for
   // every image/font/network request: those can be slow on mobile connections.
   function hideBootLoaderWhenReady() {
-    window.setTimeout(() => {
+    const reveal = () => {
       const loader = document.getElementById("app-boot-loader");
       if (loader) {
         loader.classList.add("is-hidden");
-        window.setTimeout(() => loader.remove(), 350);
+        window.setTimeout(() => loader.remove(), 180);
       }
-    }, 320);
+    };
+    // Two frames lets the browser paint the app shell first; no network request is awaited.
+    window.requestAnimationFrame(() => window.requestAnimationFrame(reveal));
+    // Safety fallback in case rendering or a browser extension delays animation frames.
+    window.setTimeout(reveal, 900);
   }
 
   // Adds a subtle progressive blur to anything scrolling up past the
@@ -269,7 +274,10 @@
       if (savedDeveloperProfile) AppState.currentUser.avatar = savedDeveloperProfile.avatar_url || AppState.currentUser.avatar;
     }
     if (!developerAccount && profile && IATS_COURSES.some(c=>c.name===profile.major) && IATS_COHORTS.includes(profile.year)) {
-      try { const buddy=await window.SupabaseService.upsertMatchProfile({...AppState.currentUser,owner_id:authUser.id,course_code:IATS_COURSES.find(c=>c.name===profile.major).code,cohort:profile.year,is_former_student:false}); if(buddy) AppState.matchProfiles=[buddy,...AppState.matchProfiles.filter(p=>p.owner_id!==authUser.id)]; } catch(err) { console.warn("Study Buddy profile sync failed",err); }
+      // Run directory sync in the background so a slow database round-trip cannot delay sign-in UI.
+      window.SupabaseService.upsertMatchProfile({...AppState.currentUser,owner_id:authUser.id,course_code:IATS_COURSES.find(c=>c.name===profile.major).code,cohort:profile.year,is_former_student:false})
+        .then(buddy => { if (buddy) AppState.matchProfiles=[buddy,...AppState.matchProfiles.filter(p=>p.owner_id!==authUser.id)]; })
+        .catch(err => console.warn("Study Buddy profile sync failed",err));
     }
     syncNewsPublishingOption();
     renderNavigation();
