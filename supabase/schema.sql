@@ -457,7 +457,7 @@ create policy "catchups_insert_own" on public.catchups
   with check (
     auth.uid() = host_id
     and (
-      lower(coalesce(tag, '')) <> 'campus news'
+      lower(regexp_replace(coalesce(tag, ''), '[[:space:]]+', '', 'g')) <> 'campusnews'
       or lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com'
     )
   );
