@@ -1027,8 +1027,20 @@ body {
    ========================================================================== */
 .catchup-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.campus-news-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
+.catchup-card { min-width: 0; padding: 20px; }
+.catchup-card p, .catchup-card h3 { overflow-wrap: anywhere; }
+@media (min-width: 1200px) {
+  .catchup-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .campus-news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .catchup-grid, .campus-news-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .catchup-card { padding: 16px; }
 }
 
 .catchup-card {
