@@ -1849,7 +1849,7 @@
   // ==========================================
   function renderProfileView() {
     const container = document.getElementById("profile-view-container");
-    if (!AppState.currentUser) {
+    if (!AppState.currentUser || AppState.currentUser.authProvider === "Guest Session (Preview)") {
       if (container) {
         container.innerHTML = `
           <div class="glass-panel signed-out-profile-panel" style="max-width:760px;margin:32px auto;padding:clamp(24px,5vw,48px);text-align:center;">
