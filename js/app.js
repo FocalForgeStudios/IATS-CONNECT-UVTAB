@@ -47,7 +47,7 @@
 
   const IATS_COURSES = [{"code":"CTH","name":"Certificate in Tourism and Hospitality Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NIT","name":"National Certificate in Information and Communication Technology","faculty":"Institute of Advanced Technical Studies"},{"code":"CLI","name":"National Certificate in Library and Information Science","faculty":"Institute of Advanced Technical Studies"},{"code":"CSW","name":"National Certificate in Social Work and Social Administration","faculty":"Institute of Advanced Technical Studies"},{"code":"CCF","name":"Certificate in Clearing and Forwarding","faculty":"Institute of Advanced Technical Studies"},{"code":"CTV","name":"Certificate in CCTV Installation and Surveillance Systems","faculty":"Institute of Advanced Technical Studies"},{"code":"CJM","name":"Certificate in Journalism and Media Studies","faculty":"Institute of Advanced Technical Studies"},{"code":"NCS","name":"National Certificate in Secretarial and Office Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NHR","name":"National Certificate in Human Resource Management","faculty":"Institute of Advanced Technical Studies"},{"code":"CEC","name":"Certificate in Early Childhood Education","faculty":"Institute of Advanced Technical Studies"},{"code":"CPA","name":"Certificate in Public Administration and Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NCB","name":"National Certificate in Cosmetology and Beauty Therapy","faculty":"Institute of Advanced Technical Studies"},{"code":"CPM","name":"Certificate in Procurement and Logistics Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NCR","name":"National Certificate in Computer Repair and Maintenance","faculty":"Institute of Advanced Technical Studies"},{"code":"CSF","name":"Professional Certificate in Software Engineering","faculty":"Institute of Advanced Technical Studies"},{"code":"NAF","name":"National Certificate in Accounting and Finance","faculty":"Institute of Advanced Technical Studies"},{"code":"CBA","name":"National Certificate in Business Administration","faculty":"Institute of Advanced Technical Studies"},{"code":"NCM","name":"Certificate in Digital Marketing","faculty":"Institute of Advanced Technical Studies"},{"code":"CHI","name":"Certificate in Hotel Management and Institutional Catering","faculty":"Institute of Advanced Technical Studies"},{"code":"CRM","name":"Certificate in Records and Information Management","faculty":"Institute of Advanced Technical Studies"},{"code":"CGC","name":"National Certificate in Guidance and Counselling","faculty":"Institute of Advanced Technical Studies"},{"code":"NCA","name":"National Certificate in Agriculture","faculty":"Institute of Advanced Technical Studies"},{"code":"HEG","name":"Higher Education Certificate (HEC) General","faculty":"Faculty of Humanities and Social Sciences"},{"code":"HEB","name":"Higher Education Certificate in Biological Sciences","faculty":"Faculty of Health Sciences"},{"code":"HEP","name":"Higher Education Certificate Physical Sciences","faculty":"Faculty of Science and Technology"},{"code":"HET","name":"Higher Education Certificate General","faculty":"Institute of Education and Life-Long Learning"},{"code":"HEE","name":"Higher Education Certificate Evening","faculty":"Institute of Education and Life-Long Learning"}];
   const IATS_COHORTS = ["1.1", "1.2", "2.1", "2.2"];
-  const getActiveBuddyProfiles = () => { const u = AppState.currentUser; const course = String(u?.major || "").toLowerCase(); return AppState.matchProfiles.filter(p => !p.is_former_student && p.owner_id !== u?.id && (!course || String(p.major || "").toLowerCase() === course)); };
+  const getActiveBuddyProfiles = () => { const u = AppState.currentUser; const ownCourse = IATS_COURSES.find(c => c.name === u?.major); const code = String(ownCourse?.code || u?.course_code || "").toUpperCase(); const major = String(u?.major || "").trim().toLowerCase(); return AppState.matchProfiles.filter(p => !p.is_former_student && p.owner_id !== u?.id && (code ? String(p.course_code || "").toUpperCase() === code : (major && String(p.major || "").trim().toLowerCase() === major))); };
 
   // Global Dynamic State Store (Strictly Cloud Firestore Driven, No LocalStorage Mock Data)
   const AppState = {
@@ -1886,11 +1886,27 @@
             <button class="btn-liquid btn-glass btn-sm" id="btn-profile-terms-link" style="color: #3A86C8;">
               <span>Terms of Service</span>
             </button>
+            <button class="btn-liquid btn-glass btn-sm" id="btn-profile-signout"><span>Sign Out</span></button>
+            ${isDeveloperAccount ? "" : '<button class="btn-liquid btn-sm" id="btn-delete-account" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;"><span>Delete My Account</span></button>'}
           </div>
         </div>
       </div>
     `;
 
+    document.getElementById("btn-profile-signout")?.addEventListener("click", handleSignOut);
+    document.getElementById("btn-delete-account")?.addEventListener("click", async () => {
+      if (!AppState.currentUser || !confirm("Delete your IATS CONNECT profile and associated scholar-directory record? This cannot be undone. You will be signed out. If you also want your authentication account permanently erased, contact the platform administrator.")) return;
+      const button = document.getElementById("btn-delete-account");
+      if (button) button.disabled = true;
+      try {
+        await window.SupabaseService.deleteOwnProfileData();
+        showToast("Profile data removed", "Your scholar profile and directory entry have been deleted.");
+        await handleSignOut();
+      } catch (error) {
+        showToast("Could not delete profile", error.message || "Please try again.");
+        if (button) button.disabled = false;
+      }
+    });
     const photoInput = document.getElementById("profile-photo-upload");
     if (photoInput) photoInput.addEventListener("change", async () => {
       const file = photoInput.files && photoInput.files[0];
