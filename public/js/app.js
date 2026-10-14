@@ -393,6 +393,12 @@
           <span>Sign Out</span>
         </button>
       `;
+      document.querySelectorAll(".dock-nav-btn[data-view]").forEach(btn => {
+        const view = btn.dataset.view;
+        btn.style.display = isNewsPublisher()
+          ? (view === "catchup" ? "" : "none")
+          : "";
+      });
       const profBtn = document.getElementById("btn-header-profile");
       if (profBtn) profBtn.addEventListener("click", () => navigateTo("profile"));
       const adminBtn = document.getElementById("btn-header-admin");
@@ -1385,8 +1391,13 @@
       return;
     }
 
-    const hostName = AppState.currentUser.name;
-    const hostAvatar = AppState.currentUser.avatar || DEFAULT_AVATAR_PLACEHOLDER;
+    const editingEvent = AppState.editingEventId
+      ? (AppState.adminEvents || []).find(item => String(item.id) === String(AppState.editingEventId))
+      : null;
+    const hostName = editingEvent ? (editingEvent.host || AppState.currentUser.name) : AppState.currentUser.name;
+    const hostAvatar = editingEvent
+      ? (editingEvent.host_avatar || DEFAULT_AVATAR_PLACEHOLDER)
+      : (AppState.currentUser.avatar || DEFAULT_AVATAR_PLACEHOLDER);
 
     const newCatchup = {
       title,
@@ -2066,7 +2077,7 @@
     if (brandLink) {
       brandLink.addEventListener("click", (e) => {
         e.preventDefault();
-        navigateTo(AppState.currentUser ? "dashboard" : "landing");
+        navigateTo(AppState.currentUser ? (isNewsPublisher() ? "admin" : "dashboard") : "landing");
       });
     }
 
