@@ -1155,7 +1155,7 @@
     const onlineUrl = /^https?:\/\//i.test(String(event.online_url || "")) ? String(event.online_url) : "";
     const description = String(event.description || "");
     const excerpt = description.length > 200 ? description.slice(0, 200).trimEnd() + "…" : description;
-    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:14px;'>"
+    return "<article class='glass-panel catchup-card' data-open-details='" + escapeEventText(event.id) + "' style='cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:14px;'>"
       + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'><span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span><span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
       + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end) + "</div>"
       + "<h3 style='font-size:1.15rem;font-weight:800;color:#1E293B;line-height:1.35;margin:0 0 7px;'>" + escapeEventText(event.title) + "</h3>"
@@ -1220,7 +1220,10 @@
     grid.innerHTML = markup;
     grid.querySelectorAll(".btn-catchup-toggle").forEach(btn => btn.addEventListener("click", () => toggleJoinCatchup(btn.dataset.id)));
     grid.querySelectorAll(".btn-open-catchup-details").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); openCatchupDetails(btn.dataset.id); }));
-    grid.querySelectorAll("[data-open-details]").forEach(card => card.addEventListener("click", () => openCatchupDetails(card.dataset.openDetails)));
+    grid.querySelectorAll("[data-open-details]").forEach(card => card.addEventListener("click", event => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      openCatchupDetails(card.dataset.openDetails);
+    }));
   }
 
   function renderAdminDashboardView() {
