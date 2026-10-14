@@ -18,10 +18,43 @@
     <link rel="stylesheet" href="./css/liquid-glass.css" />
   </head>
   <body>
-    <!-- App Boot Loader: brief branded loading state shown while the UI mounts -->
-    <div id="app-boot-loader">
-      <div class="boot-loader-ring"></div>
-      <div class="boot-loader-text">Loading IATS CONNECT…</div>
+    <!-- Accessible skeleton loader: gives the page structure while scripts initialize -->
+    <div id="app-boot-loader" role="status" aria-label="Loading IATS CONNECT" aria-live="polite">
+      <div class="boot-skeleton-shell">
+        <div class="boot-skeleton-header">
+          <div class="boot-skeleton-brand">
+            <span class="boot-skeleton-mark"></span>
+            <span class="boot-skeleton-line boot-skeleton-brand-name"></span>
+          </div>
+          <div class="boot-skeleton-nav">
+            <span class="boot-skeleton-line"></span><span class="boot-skeleton-line"></span><span class="boot-skeleton-line"></span>
+          </div>
+          <span class="boot-skeleton-pill"></span>
+        </div>
+        <div class="boot-skeleton-main">
+          <div class="boot-skeleton-hero">
+            <span class="boot-skeleton-line boot-skeleton-eyebrow"></span>
+            <span class="boot-skeleton-line boot-skeleton-title"></span>
+            <span class="boot-skeleton-line boot-skeleton-title boot-skeleton-title-short"></span>
+            <span class="boot-skeleton-line boot-skeleton-copy"></span>
+            <span class="boot-skeleton-line boot-skeleton-copy boot-skeleton-copy-short"></span>
+            <div class="boot-skeleton-actions"><span class="boot-skeleton-button"></span><span class="boot-skeleton-button boot-skeleton-button-muted"></span></div>
+          </div>
+          <div class="boot-skeleton-feature">
+            <span class="boot-skeleton-feature-orb"></span>
+            <span class="boot-skeleton-line boot-skeleton-feature-title"></span>
+            <span class="boot-skeleton-line boot-skeleton-copy"></span>
+            <span class="boot-skeleton-line boot-skeleton-copy boot-skeleton-copy-short"></span>
+            <span class="boot-skeleton-line boot-skeleton-feature-footer"></span>
+          </div>
+        </div>
+        <div class="boot-skeleton-card-row">
+          <div class="boot-skeleton-card"><span class="boot-skeleton-line boot-skeleton-card-icon"></span><span class="boot-skeleton-line boot-skeleton-card-title"></span><span class="boot-skeleton-line boot-skeleton-copy"></span></div>
+          <div class="boot-skeleton-card"><span class="boot-skeleton-line boot-skeleton-card-icon"></span><span class="boot-skeleton-line boot-skeleton-card-title"></span><span class="boot-skeleton-line boot-skeleton-copy"></span></div>
+          <div class="boot-skeleton-card"><span class="boot-skeleton-line boot-skeleton-card-icon"></span><span class="boot-skeleton-line boot-skeleton-card-title"></span><span class="boot-skeleton-line boot-skeleton-copy"></span></div>
+        </div>
+        <div class="boot-skeleton-status"><span class="boot-skeleton-status-dot"></span>Preparing your IATS CONNECT workspace…</div>
+      </div>
     </div>
 
     <!-- Fixed veil behind the header: blurs content sliding up underneath it -->
