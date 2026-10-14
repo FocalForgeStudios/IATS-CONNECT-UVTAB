@@ -1848,6 +1848,26 @@
   // Account profile view (developer account is not classified as a student)
   // ==========================================
   function renderProfileView() {
+    const container = document.getElementById("profile-view-container");
+    if (!AppState.currentUser) {
+      if (container) {
+        container.innerHTML = `
+          <div class="glass-panel signed-out-profile-panel" style="max-width:760px;margin:32px auto;padding:clamp(24px,5vw,48px);text-align:center;">
+            <div style="width:64px;height:64px;margin:0 auto 18px;border-radius:20px;display:grid;place-items:center;background:#FEE2E2;color:#DC2626;">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 20 7v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <h1 style="margin:0 0 10px;font-size:clamp(1.5rem,3vw,2rem);">Welcome to IATS CONNECT</h1>
+            <p style="max-width:520px;margin:0 auto 24px;color:var(--text-muted,#64748b);line-height:1.65;">Sign in to continue to your scholar profile, chats, study communities and campus updates. New here? You can create an account too.</p>
+            <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+              <button class="btn-liquid btn-primary" id="btn-profile-signin" type="button"><span>Sign In / Verify</span></button>
+              <button class="btn-liquid btn-glass" id="btn-profile-signup" type="button"><span>Create Account</span></button>
+            </div>
+          </div>`;
+        document.getElementById("btn-profile-signin")?.addEventListener("click", openAuthModal);
+        document.getElementById("btn-profile-signup")?.addEventListener("click", () => { openAuthModal(); showAuthStep("main"); });
+      }
+      return;
+    }
     const isDeveloperAccount = isNewsPublisher();
     const user = AppState.currentUser || {
       name: "IATS Scholar",
