@@ -2188,6 +2188,7 @@
         avatar: DEFAULT_AVATAR_PLACEHOLDER
       });
       if (conv) {
+        if (!AppState.conversations.some(c => String(c.id) === String(conv.id))) AppState.conversations.unshift(conv);
         AppState.activeChatId = conv.id;
         startActiveMessagesSync(conv.id);
       }
