@@ -149,11 +149,13 @@ alter table public.catchups add column if not exists event_format text not null 
 alter table public.catchups add column if not exists online_url text;
 alter table public.catchups add column if not exists registration_deadline timestamptz;
 update public.catchups set item_type = case when lower(replace(coalesce(tag,''),' ',''))='campusnews' then 'news' else 'event' end;
+update public.catchups c set is_official = true from auth.users u where c.host_id = u.id and lower(coalesce(u.email,'')) = 'focalforges@gmail.com';
 alter table public.catchups drop constraint if exists catchups_item_type_check;
 alter table public.catchups add constraint catchups_item_type_check check (item_type in ('event','news'));
 alter table public.catchups drop constraint if exists catchups_event_format_check;
 alter table public.catchups add constraint catchups_event_format_check check (event_format in ('physical','online','hybrid'));
 create index if not exists catchups_item_type_created_at_idx on public.catchups (item_type, created_at desc);
+create index if not exists catchups_official_created_at_idx on public.catchups (is_official desc, created_at desc);
 create index if not exists catchups_event_starts_at_idx on public.catchups (event_starts_at);
 
 alter table public.catchups enable row level security;
