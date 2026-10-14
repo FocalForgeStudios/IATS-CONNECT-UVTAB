@@ -257,6 +257,23 @@ export const SupabaseService = {
     return () => supabase.removeChannel(channel);
   },
 
+  async upsertMatchProfile(profile) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user || user.id !== profile.owner_id) throw new Error("Sign in again before saving your scholar profile.");
+    const payload = { owner_id:user.id, name:sanitizeText(profile.name,80), major:sanitizeText(profile.major,150), year:sanitizeText(profile.cohort || profile.year,10), university:"IATS", compat_score:90, bio:sanitizeText(profile.bio,500), courses:Array.isArray(profile.courses)?profile.courses.slice(0,6):[], interests:Array.isArray(profile.interests)?profile.interests.slice(0,6):[], avatar_url:sanitizeAvatar(profile.avatar), location:sanitizeText(profile.location,80)||"IATS Main Campus", course_code:sanitizeText(profile.course_code,10), cohort:sanitizeText(profile.cohort || profile.year,10), is_former_student:!!profile.is_former_student };
+    const { data, error } = await supabase.from("match_profiles").upsert(payload,{onConflict:"owner_id"}).select().single();
+    if (error) throw new Error(friendlyError(error));
+    return data;
+  },
+
+  async promoteCohort(fromCohort) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const { data, error } = await supabase.rpc("admin_promote_cohort",{p_from_cohort:fromCohort});
+    if (error) throw new Error(friendlyError(error));
+    return data;
+  },
+
   async addMatchProfile(profile) {
     if (!supabase) return null;
     if (!throttled("match_profiles:add", 1500)) return null;
