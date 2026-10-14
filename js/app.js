@@ -406,6 +406,7 @@
       const logoutBtn = document.getElementById("btn-header-logout");
       if (logoutBtn) logoutBtn.addEventListener("click", clearSession);
     } else {
+      document.querySelectorAll(".dock-nav-btn[data-view]").forEach(btn => { btn.style.display = ""; });
       userContainer.innerHTML = `
         <button class="btn-liquid btn-glass btn-sm" id="btn-open-system-tour" style="display: flex; align-items: center; gap: 6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
