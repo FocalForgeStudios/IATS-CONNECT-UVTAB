@@ -1300,10 +1300,10 @@
       const cap = isCampusNewsItem(event) ? "News · no registration" : Number(event.attendees || 0) + (event.max_attendees == null ? " registered" : "/" + event.max_attendees + " registered");
       return "<div class='glass-panel' style='padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;'>"
         + "<div style='min-width:200px;flex:1;'><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;'><strong>" + escapeEventText(event.title) + "</strong><span class='tag-pill " + (isCampusNewsItem(event) ? "tag-pill-highlight" : "tag-pill-blue") + "'>" + (isCampusNewsItem(event) ? "OFFICIAL NEWS" : label) + "</span></div>"
-        + "<div style='font-size:.85rem;color:#64748B;'>" + escapeEventText(event.tag || "Academic Event") + " · " + escapeEventText(event.location || "Location not set") + " · Host: " + escapeEventText(event.host || "IATS Scholar") + "</div>"
+        + "<div style='font-size:.85rem;color:#64748B;'>" + (isCampusNewsItem(event) ? "Official campus announcement" : escapeEventText(event.tag || "Academic Event") + " · " + escapeEventText(event.event_format === "online" ? "Online" : event.event_format === "hybrid" ? "Physical + Online" : (event.location || "Location not set")) + (event.online_url ? " · Meeting link provided" : "")) + " · Host: " + escapeEventText(event.host || "IATS Scholar") + "</div>"
         + (event.description ? "<div style='font-size:.82rem;color:#475569;margin-top:5px;line-height:1.45;'>" + escapeEventText(event.description.slice(0, 220)) + (event.description.length > 220 ? "…" : "") + "</div>" : "")
         + "<div style='font-size:.82rem;color:#64748B;margin-top:5px;'>" + (isCampusNewsItem(event) ? "Published " + escapeEventText(formatEventDateTime(event.created_at)) + " · No registration required" : escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.event_time || "Date/time not set") : formatEventDateTime(start)) + " · " + escapeEventText(cap) + (event.registration_deadline ? " · Register by " + escapeEventText(formatEventDateTime(event.registration_deadline)) : "")) + "</div></div>"
-        + "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'><div style='font-size:.82rem;font-weight:700;color:#D8232A;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end, now) + "</div>"
+        + "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'>" + (isCampusNewsItem(event) ? "" : "<div style='font-size:.82rem;font-weight:700;color:#D8232A;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end, now) + "</div>")
         + "<button type='button' class='btn-liquid btn-glass btn-sm btn-admin-edit-event' data-id='" + escapeEventText(event.id) + "'>Edit</button>"
         + "<button type='button' class='btn-liquid btn-glass btn-sm btn-admin-delete-event' data-id='" + escapeEventText(event.id) + "' style='color:#B91C1C;'>Delete</button></div></div>";
     }).join("");
@@ -1481,7 +1481,7 @@
       return;
     }
     const capacityInput = document.getElementById("new-catchup-capacity");
-    const capacityValue = capacityInput ? capacityInput.value.trim() : "";
+    const capacityValue = !isCampusNews && capacityInput ? capacityInput.value.trim() : "";
     const capacity = capacityValue ? Number.parseInt(capacityValue, 10) : null;
     if (capacityValue && (!Number.isInteger(capacity) || capacity < 1)) {
       alert("Enter a capacity of at least 1 scholar, or leave the field blank for unlimited registration.");
