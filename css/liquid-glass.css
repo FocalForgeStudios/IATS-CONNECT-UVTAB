@@ -1903,3 +1903,14 @@ img, video, iframe { max-width: 100%; }
 .chat-attachment-image{display:block;max-width:min(300px,65vw);max-height:280px;object-fit:contain;border-radius:8px}
 .chat-attachment-video{display:block;width:min(320px,68vw);max-height:280px;border-radius:8px;margin-bottom:6px}
 @media(max-width:640px){.chat-share-profile-controls{align-items:stretch;flex-direction:column}.chat-share-profile-controls button{width:100%}.chat-composer-tool{width:34px;height:38px}.chat-input-row{gap:6px}.chat-share-profile-panel{padding:8px}}
+
+
+/* Chat workspace viewport fit: reduce side/bottom whitespace while keeping the fixed nav dock clear. */
+.chat-workspace{width:100%;max-width:none;height:min(calc(100dvh - 190px),860px);min-height:420px;grid-template-columns:minmax(250px,28%) minmax(0,1fr);gap:12px}
+.chat-sidebar{min-width:0;padding:12px}
+.chat-main-window{min-width:0;min-height:0;height:100%}
+.chat-messages-scroll{min-height:0;padding:16px;gap:12px}
+.chat-input-row{padding:10px 14px;gap:8px}
+.message-bubble{overflow-wrap:anywhere}
+@media(max-width:900px){.chat-workspace{height:auto;min-height:0;grid-template-columns:minmax(0,1fr);gap:10px}.chat-sidebar{max-height:190px}.chat-main-window{min-height:min(58dvh,560px)}.chat-messages-scroll{padding:12px}.chat-input-row{padding:10px}}
+@media(max-width:640px){.chat-workspace{height:auto;gap:8px}.chat-sidebar{padding:8px;max-height:150px}.chat-main-window{min-height:calc(100dvh - 300px);border-radius:18px}.chat-messages-scroll{padding:10px;gap:10px}.message-bubble{max-width:88%;padding:10px 13px}}
