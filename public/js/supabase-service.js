@@ -143,6 +143,25 @@ export const SupabaseService = {
     return data.session || null;
   },
 
+  /** Sign in with an existing email/password account; no email is sent. */
+  async signInWithPassword(email, password) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) throw new Error(friendlyError(error));
+    return data;
+  },
+
+  /** Create an account; Supabase may still require email confirmation. */
+  async signUpWithPassword(email, password) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(), password,
+      options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) throw new Error(friendlyError(error));
+    return data;
+  },
+
   async signOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -278,22 +297,12 @@ export const SupabaseService = {
   async toggleCatchupAttendance(catchupId, _userId, isJoining) {
     if (!supabase || !catchupId) return false;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-      const { data: row } = await supabase.from("catchups").select("attendees, attendee_ids").eq("id", catchupId).maybeSingle();
-      if (!row) return false;
-      let ids = Array.isArray(row.attendee_ids) ? row.attendee_ids : [];
-      let attendees = row.attendees || 0;
-      if (isJoining) {
-        if (!ids.includes(user.id)) ids.push(user.id);
-        attendees += 1;
-      } else {
-        ids = ids.filter(id => id !== user.id);
-        attendees = Math.max(0, attendees - 1);
-      }
-      const { error } = await supabase.from("catchups").update({ attendees, attendee_ids: ids }).eq("id", catchupId);
+      const { data, error } = await supabase.rpc("toggle_catchup_attendance", {
+        p_catchup_id: catchupId,
+        p_joining: !!isJoining
+      });
       if (error) throw error;
-      return true;
+      return data === true;
     } catch (e) {
       console.warn("toggleCatchupAttendance failed:", friendlyError(e));
       return false;
@@ -350,22 +359,12 @@ export const SupabaseService = {
   async togglePostUpvote(postId, _userId, isUpvoting) {
     if (!supabase || !postId) return false;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-      const { data: row } = await supabase.from("hub_posts").select("upvotes, upvoter_ids").eq("id", postId).maybeSingle();
-      if (!row) return false;
-      let ids = Array.isArray(row.upvoter_ids) ? row.upvoter_ids : [];
-      let upvotes = row.upvotes || 0;
-      if (isUpvoting) {
-        if (!ids.includes(user.id)) ids.push(user.id);
-        upvotes += 1;
-      } else {
-        ids = ids.filter(id => id !== user.id);
-        upvotes = Math.max(0, upvotes - 1);
-      }
-      const { error } = await supabase.from("hub_posts").update({ upvotes, upvoter_ids: ids }).eq("id", postId);
+      const { data, error } = await supabase.rpc("toggle_hub_post_upvote", {
+        p_post_id: postId,
+        p_upvoting: !!isUpvoting
+      });
       if (error) throw error;
-      return true;
+      return data === true;
     } catch (e) {
       console.warn("togglePostUpvote failed:", friendlyError(e));
       return false;
