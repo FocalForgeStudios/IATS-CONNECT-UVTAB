@@ -95,6 +95,23 @@ drop policy if exists "match_profiles_delete_own" on public.match_profiles;
 create policy "match_profiles_delete_own" on public.match_profiles
   for delete using (auth.uid() = owner_id);
 
+-- Admin-only cohort promotion. The function checks the signed-in JWT email before updating all scholars.
+create or replace function public.admin_promote_cohort(p_from_cohort text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_to_cohort text; v_count integer := 0; v_graduated boolean := false;
+begin
+ if lower(coalesce(auth.jwt() ->> 'email','')) <> 'focalforges@gmail.com' then raise exception 'Administrator access is required.' using errcode='42501'; end if;
+ if p_from_cohort not in ('1.1','1.2','2.1','2.2') then raise exception 'Invalid cohort.' using errcode='22023'; end if;
+ v_graduated := p_from_cohort='2.2';
+ v_to_cohort := case p_from_cohort when '1.1' then '1.2' when '1.2' then '2.1' when '2.1' then '2.2' else null end;
+ update public.profiles set year=coalesce(v_to_cohort,'Former Student'),updated_at=now() where year=p_from_cohort and lower(coalesce(email,'')) <> 'focalforges@gmail.com';
+ get diagnostics v_count = row_count;
+ update public.match_profiles set year=coalesce(v_to_cohort,'Former Student'),cohort=coalesce(v_to_cohort,'Former Student'),is_former_student=v_graduated,graduated_at=case when v_graduated then now() else null end where cohort=p_from_cohort or (cohort is null and year=p_from_cohort);
+ return jsonb_build_object('from',p_from_cohort,'to',coalesce(v_to_cohort,'Former Student'),'affected',v_count,'graduated',v_graduated);
+end; $$;
+revoke all on function public.admin_promote_cohort(text) from public;
+grant execute on function public.admin_promote_cohort(text) to authenticated;
+
 create unique index if not exists match_profiles_owner_id_unique on public.match_profiles(owner_id) where owner_id is not null;
 
 -- =========================================================================
