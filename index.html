@@ -866,27 +866,12 @@
     <div class="modal-backdrop" id="new-chat-modal">
       <div class="modal-box">
         <button class="modal-close-btn" id="btn-close-chat-modal" aria-label="Close">✕</button>
-        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Start a Direct Academic Chat</h2>
-        <form id="new-chat-form">
-          <div class="form-group">
-            <label class="form-label" for="new-chat-recipient">Scholar Name</label>
-            <input type="text" id="new-chat-recipient" class="form-input" placeholder="e.g. David Mukasa (BIT)" required />
-            <small style="color:#94A3B8; font-size:0.76rem;">Tip: enter the exact display name they used to sign up for instant two-way delivery.</small>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="new-chat-faculty">Course / Department Topic</label>
-            <input type="text" id="new-chat-faculty" class="form-input" placeholder="e.g. Department of Computing & Tech" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="new-chat-first-msg">Initial Message</label>
-            <input type="text" id="new-chat-first-msg" class="form-input" placeholder="e.g. Hello! Are you available to compare lecture notes for BIT2101?" required />
-          </div>
-          <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
-            <span>Start Conversation →</span>
-          </button>
-        </form>
-      </div>
-    </div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Start a Chat</h2>
+        <form id="new-chat-form"><div class="form-group"><label class="form-label" for="new-chat-recipient">Username</label>
+        <input type="search" id="new-chat-recipient" class="form-input" placeholder="Search exact username…" autocomplete="off" required />
+        <small style="color:#64748B;font-size:.78rem;">Enter the unique username of the person you want to message.</small></div>
+        <button type="submit" class="btn-liquid btn-primary" id="btn-submit-new-chat" style="width:100%;margin-top:10px;"><span>Open Chat →</span></button></form>
+      </div></div>
 
     <!-- ================================================================= -->
     <!-- MODAL 6: STUDY PARTNERSHIP MODAL -->
