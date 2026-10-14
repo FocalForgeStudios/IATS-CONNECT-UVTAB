@@ -2140,7 +2140,7 @@
 
     // Create Course Discussion Post form
     const openPostBtn = document.getElementById("btn-open-create-post");
-    if (openPostBtn) openPostBtn.addEventListener("click", openCreatePostModal);
+    if (openPostBtn) openPostBtn.addEventListener("click", () => openCreatePostModal(AppState.activeHubCategory === "all" ? IATS_COURSES[0]?.code : AppState.activeHubCategory));
 
     const postForm = document.getElementById("create-post-form");
     if (postForm) postForm.addEventListener("submit", handleCreatePost);
