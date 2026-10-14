@@ -1351,7 +1351,7 @@
     const time = startsAt && Number.isFinite(startsAt.getTime())
       ? startsAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
     const tag = document.getElementById("new-catchup-tag") ? document.getElementById("new-catchup-tag").value : "Study Group";
-    if (String(tag).toLowerCase().replace(/[\\s]+/g, "") === "campusnews" && !isNewsPublisher()) {
+    if (String(tag).toLowerCase().replace(/\s+/g, "") === "campusnews" && !isNewsPublisher()) {
       alert("Only focalforges@gmail.com can publish Campus News. Scholars can still publish academic events."); return;
     }
     const capacityInput = document.getElementById("new-catchup-capacity");
