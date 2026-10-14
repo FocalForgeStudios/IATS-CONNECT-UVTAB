@@ -1456,11 +1456,13 @@
     const start = document.getElementById("new-catchup-start");
     const end = document.getElementById("new-catchup-end");
     const url = document.getElementById("new-catchup-online-url");
+    const deadline = document.getElementById("new-catchup-registration-deadline");
     const urlGroup = document.getElementById("catchup-online-url-group");
     if (location) location.required = !isNews && format !== "online";
     if (start) start.required = !isNews;
     if (end) end.required = !isNews;
     if (url) url.required = !isNews && format !== "physical";
+    if (deadline) deadline.required = !isNews;
     if (urlGroup) urlGroup.style.display = isNews || format === "physical" ? "none" : "";
   }
 
@@ -1507,8 +1509,8 @@
         alert("Please provide a valid online meeting URL beginning with https:// or http://.");
         return;
       }
-      if (registrationDeadline && (!Number.isFinite(registrationDeadline.getTime()) || registrationDeadline > startsAt)) {
-        alert("The registration deadline must be a valid date/time before the event starts.");
+      if (!registrationDeadline || !Number.isFinite(registrationDeadline.getTime()) || registrationDeadline > startsAt) {
+        alert("Please set a valid registration deadline before the event starts.");
         return;
       }
     }
