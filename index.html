@@ -676,8 +676,9 @@
               <input type="text" id="new-catchup-time" class="form-input" placeholder="e.g. Today @ 3:30 PM" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-catchup-capacity">Max Scholars</label>
-              <input type="number" id="new-catchup-capacity" class="form-input" value="8" min="2" max="30" />
+              <label class="form-label" for="new-catchup-capacity">Max Scholars (optional)</label>
+              <input type="number" id="new-catchup-capacity" class="form-input" min="2" step="1" placeholder="Unlimited — leave blank" aria-describedby="catchup-capacity-help" />
+              <small id="catchup-capacity-help" style="display:block; margin-top:5px; color:#64748B;">Leave blank to allow unlimited scholars. Enter a number only if you want to set a limit.</small>
             </div>
           </div>
           <div class="form-group">
