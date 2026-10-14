@@ -2012,7 +2012,7 @@
         const canEdit = mine && !msg.deleted_at && Date.now() - new Date(msg.created_at).getTime() <= 120000;
         const canDelete = mine && !msg.deleted_at;
         const quoteMarkup = quoted ? `<div class="message-reply-quote"><strong>${quoted.sender_id === myId ? "You" : escapeEventText(quoted.sender_name || activeConv.name || "Scholar")}</strong><div>${quoted.deleted_at ? "Message deleted" : escapeEventText(quoted.text || "")}</div></div>` : "";
-        const profileShare = !msg.deleted_at ? String(msg.text || "").match(/^\\[\\[IATS_PROFILE_SHARE:([0-9a-f-]+)\\]\\]$/i) : null;
+        const profileShare = !msg.deleted_at ? String(msg.text || "").match(/^\[\[IATS_PROFILE_SHARE:([0-9a-f-]+)\]\]$/i) : null;
         const sharedProfile = profileShare ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(profileShare[1])) : null;
         const body = msg.deleted_at ? '<em>This message was deleted</em>' : profileShare ? "" : escapeEventText(msg.text || "");
         const profileShareMarkup = profileShare ? `<div class="shared-profile-card"><div class="shared-profile-icon">👤</div><div class="shared-profile-copy"><strong>${escapeEventText(sharedProfile?.name || "Shared IATS student")}</strong><span>${escapeEventText(sharedProfile?.major || "Student profile")}</span></div><button type="button" class="btn-liquid btn-primary btn-sm" data-open-shared-profile="${profileShare[1]}" data-profile-name="${escapeEventText(sharedProfile?.name || "IATS Scholar")}">Message</button></div>` : "";
