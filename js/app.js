@@ -66,6 +66,7 @@
     catchups: [],
     hubPosts: [],
     conversations: [],
+    onlineUserIds: [],
     activeMessages: [],
     adminStats: null,
     adminEvents: [],
@@ -282,6 +283,7 @@
     syncNewsPublishingOption();
     renderNavigation();
     startConversationsSync();
+    if (window.SupabaseService.subscribePresence) window.SupabaseService.subscribePresence(ids => { AppState.onlineUserIds = ids || []; if (AppState.activeView === "chats") renderChatsView(); }).catch(err => console.warn("Presence sync failed", err));
     if (isNewsPublisher() && AppState.activeView === "landing") navigateTo("admin");
   }
 
@@ -1645,6 +1647,7 @@
     }
 
     const activeConv = AppState.conversations.find(c => String(c.id) === String(AppState.activeChatId)) || AppState.conversations[0];
+    const peerOnline = !!(activeConv && AppState.onlineUserIds.includes(activeConv.peer_id));
     if (activeConv) AppState.activeChatId = activeConv.id;
 
     // Render Left Sidebar Threads
@@ -1684,8 +1687,8 @@
           <div>
             <div style="font-weight: 700; font-size: 1rem; color: #1E293B;">${activeConv.name}</div>
             <div style="font-size: 0.8rem; color: #059669; display: flex; align-items: center; gap: 5px;">
-              <span style="width: 7px; height: 7px; border-radius: 50%; background: #059669; display: inline-block;"></span>
-              ${activeConv.status || 'online'}
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: ${peerOnline ? "#059669" : "#94A3B8"}; display: inline-block;"></span>
+              ${peerOnline ? "Online" : "Offline"}
             </div>
           </div>
         </div>
