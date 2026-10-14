@@ -295,7 +295,7 @@ export const SupabaseService = {
         event_time: sanitizeText(catchup.time, 60),
         tag: sanitizeText(catchup.tag, 40) || "Academic Event",
         attendees: 1,
-        max_attendees: Math.min(Number(catchup.maxAttendees) || 8, 30),
+        max_attendees: catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees),
         attendee_ids: user ? [user.id] : []
       };
       const { data, error } = await supabase.from("catchups").insert(payload).select().single();
