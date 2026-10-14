@@ -203,7 +203,11 @@
         showAuthStep("password-recovery");
       } else if (event === "SIGNED_OUT") {
         AppState.currentUser = null;
+        AppState.conversations = [];
+        AppState.activeMessages = [];
+        AppState.activeChatId = null;
         renderNavigation();
+        navigateTo("landing");
       }
     });
 
@@ -319,18 +323,36 @@
   }
 
   async function clearSession() {
-    if (window.SupabaseService && typeof window.SupabaseService.signOut === "function") {
-      await window.SupabaseService.signOut();
+    // Always reset the visible UI, even if Supabase reports a network/sign-out error.
+    // The service clears the local session as well as requesting remote sign-out.
+    let signOutError = null;
+    try {
+      if (window.SupabaseService && typeof window.SupabaseService.signOut === "function") {
+        await window.SupabaseService.signOut();
+      }
+    } catch (error) {
+      signOutError = error;
+      console.warn("Remote sign-out did not complete cleanly:", error);
+      try { await window.SupabaseService?.clearLocalSession?.(); } catch (_) {}
+    } finally {
+      AppState.currentUser = null;
+      AppState.conversations = [];
+      AppState.activeMessages = [];
+      AppState.activeChatId = null;
+      AppState.activeMessagesChannel = null;
+      if (unsubConversations) { unsubConversations(); unsubConversations = null; }
+      if (unsubActiveMessages) { unsubActiveMessages(); unsubActiveMessages = null; }
+      const authModal = document.getElementById("auth-modal-backdrop");
+      if (authModal) authModal.classList.remove("open");
+      renderNavigation();
+      navigateTo("landing");
+      window.scrollTo({ top: 0, behavior: "auto" });
     }
-    AppState.currentUser = null;
-    AppState.conversations = [];
-    AppState.activeMessages = [];
-    AppState.activeChatId = null;
-    if (unsubConversations) unsubConversations();
-    if (unsubActiveMessages) unsubActiveMessages();
-    renderNavigation();
-    navigateTo("landing");
-    showToast("Signed Out", "You've been signed out of your IATS CONNECT account.");
+    if (signOutError) {
+      showToast("Signed out on this device", "The local session was cleared. If you are signed back in after refresh, check your connection and try again.");
+    } else {
+      showToast("Signed Out", "You have been signed out. Choose Sign In / Verify to sign in again or create an account.");
+    }
   }
 
   // ==========================================
