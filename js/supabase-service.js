@@ -358,7 +358,7 @@ export const SupabaseService = {
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
           const { data, error } = await supabase.from("catchups")
-            .select("id,title,description,host,host_avatar,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
+            .select("id,title,description,host,host_avatar,host_id,location,event_time,event_starts_at,event_ends_at,tag,item_type,event_format,online_url,registration_deadline,attendees,max_attendees,attendee_ids,created_at")
             .order("created_at", { ascending: false })
             .range(offset, offset + pageSize - 1);
           if (error) throw new Error(friendlyError(error));
@@ -403,9 +403,13 @@ export const SupabaseService = {
         event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
         event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
         tag: sanitizeText(catchup.tag, 40) || "Academic Event",
-        attendees: 1,
-        max_attendees: catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees),
-        attendee_ids: user ? [user.id] : []
+        item_type: catchup.item_type === "news" ? "news" : "event",
+        event_format: ["physical", "online", "hybrid"].includes(catchup.event_format) ? catchup.event_format : "physical",
+        online_url: catchup.online_url ? sanitizeText(catchup.online_url, 500) : null,
+        registration_deadline: catchup.registration_deadline || null,
+        attendees: 0,
+        max_attendees: catchup.item_type === "news" || catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees),
+        attendee_ids: []
       };
       const { data, error } = await supabase.from("catchups").insert(payload).select().single();
       if (error) throw error;
@@ -430,7 +434,11 @@ export const SupabaseService = {
       event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
       event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
       tag: sanitizeText(catchup.tag, 40) || "Academic Event",
-      max_attendees: catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees)
+      item_type: catchup.item_type === "news" ? "news" : "event",
+      event_format: ["physical", "online", "hybrid"].includes(catchup.event_format) ? catchup.event_format : "physical",
+      online_url: catchup.online_url ? sanitizeText(catchup.online_url, 500) : null,
+      registration_deadline: catchup.registration_deadline || null,
+      max_attendees: catchup.item_type === "news" || catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees)
     };
     const { data, error } = await supabase.from("catchups").update(payload).eq("id", catchupId).select().single();
     if (error) throw new Error(friendlyError(error));
@@ -448,6 +456,13 @@ export const SupabaseService = {
     return true;
   },
 
+  async fetchCatchupById(catchupId) {
+    if (!supabase || !catchupId) return null;
+    const { data, error } = await supabase.from("catchups").select("*").eq("id", catchupId).maybeSingle();
+    if (error) throw new Error(friendlyError(error));
+    return data || null;
+  },
+
   async toggleCatchupAttendance(catchupId, _userId, isJoining) {
     if (!supabase || !catchupId) return false;
     try {
@@ -455,11 +470,11 @@ export const SupabaseService = {
         p_catchup_id: catchupId,
         p_joining: !!isJoining
       });
-      if (error) throw error;
-      return data === true;
+      if (error) throw new Error(friendlyError(error));
+      if (data !== true) throw new Error("Registration could not be confirmed. The event may be full.");
+      return true;
     } catch (e) {
-      console.warn("toggleCatchupAttendance failed:", friendlyError(e));
-      return false;
+      throw new Error(friendlyError(e));
     }
   },
 
