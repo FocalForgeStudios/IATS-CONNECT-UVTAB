@@ -298,20 +298,29 @@ create policy "messages_insert_participant" on public.messages
   );
 
 drop policy if exists "messages_update_own" on public.messages;
-create policy "messages_update_own" on public.messages
-  for update using (auth.uid() = sender_id and exists (
-    select 1 from public.conversations c where c.id = conversation_id
-      and (c.created_by = auth.uid() or c.participant_id = auth.uid())
-  )) with check (auth.uid() = sender_id and exists (
-    select 1 from public.conversations c where c.id = conversation_id
-      and (c.created_by = auth.uid() or c.participant_id = auth.uid())
-  ));
+create policy "messages_update_own" on public.messages for update
+using (
+  (auth.uid() = sender_id and exists (select 1 from public.conversations c where c.id = conversation_id and (c.created_by = auth.uid() or c.participant_id = auth.uid())))
+  or
+  (auth.uid() <> sender_id and read_at is null and exists (select 1 from public.conversations c where c.id = conversation_id and (c.created_by = auth.uid() or c.participant_id = auth.uid())))
+)
+with check (
+  (auth.uid() = sender_id and exists (select 1 from public.conversations c where c.id = conversation_id and (c.created_by = auth.uid() or c.participant_id = auth.uid())))
+  or
+  (auth.uid() <> sender_id and read_at is not null and exists (select 1 from public.conversations c where c.id = conversation_id and (c.created_by = auth.uid() or c.participant_id = auth.uid())))
+);
 
 create or replace function public.guard_message_update()
 returns trigger language plpgsql security definer set search_path = public as $
 begin
-  if new.sender_id <> old.sender_id or new.conversation_id <> old.conversation_id or new.created_at <> old.created_at then
-    raise exception 'Message ownership and creation details cannot be changed.';
+  if new.sender_id <> old.sender_id or new.conversation_id <> old.conversation_id or new.created_at <> old.created_at or new.reply_to is distinct from old.reply_to then
+    raise exception 'Message ownership, reply target, and creation details cannot be changed.';
+  end if;
+  if auth.uid() is distinct from old.sender_id then
+    if old.read_at is not null or new.read_at is null or new.text is distinct from old.text or new.edited_at is distinct from old.edited_at or new.deleted_at is distinct from old.deleted_at then
+      raise exception 'Recipients may only mark a received message as read.';
+    end if;
+    return new;
   end if;
   if old.deleted_at is not null then raise exception 'This message has already been deleted.'; end if;
   if new.deleted_at is null and new.text is distinct from old.text and old.created_at < now() - interval '2 minutes' then
