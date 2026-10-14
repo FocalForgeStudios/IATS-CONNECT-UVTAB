@@ -200,16 +200,17 @@
 
     console.log("✓ Connecting IATS CONNECT to live Supabase collections...");
 
-    // Restore an existing real session (if any) on page load/refresh.
+    // The INITIAL_SESSION auth event below restores the persisted session.
+    // Keep this separate lookup only for password-recovery routing so startup
+    // does not hydrate the same user twice and issue duplicate database requests.
     window.SupabaseService.getSession().then((session) => {
-      if (session && session.user) hydrateSessionFromAuthUser(session.user);
       const recoveryRequested = new URLSearchParams(window.location.search).get("password-recovery") === "1";
       if (recoveryRequested && session && session.user) {
         const modal = document.getElementById("auth-modal-backdrop");
         if (modal) modal.classList.add("open");
         showAuthStep("password-recovery");
       }
-    });
+    }).catch(error => console.warn("[IATS CONNECT] Could not check password-recovery session:", error));
 
     // React instantly to real sign-in / sign-out / token refresh events.
     window.SupabaseService.onAuthStateChange((event, session) => {
