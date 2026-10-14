@@ -561,3 +561,19 @@ set major = 'Developer',
     interests = array['Software Engineering','Platform Development','System Architecture','Database Security'],
     updated_at = now()
 where lower(coalesce(email, '')) = 'focalforges@gmail.com';
+
+
+-- Per-user read receipts for official campus news. A row means the item has been opened/read.
+create table if not exists public.news_reads (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  catchup_id uuid not null references public.catchups(id) on delete cascade,
+  read_at timestamptz not null default now(),
+  primary key (user_id, catchup_id)
+);
+alter table public.news_reads enable row level security;
+drop policy if exists news_reads_select_own on public.news_reads;
+create policy news_reads_select_own on public.news_reads for select using (auth.uid() = user_id);
+drop policy if exists news_reads_insert_own on public.news_reads;
+create policy news_reads_insert_own on public.news_reads for insert with check (auth.uid() = user_id);
+drop policy if exists news_reads_update_own on public.news_reads;
+create policy news_reads_update_own on public.news_reads for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
