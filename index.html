@@ -57,6 +57,19 @@
       </div>
     </div>
 
+    <!-- Independent boot-loader watchdog: the page must remain usable even if app.js fails to load. -->
+    <script>
+      (function () {
+        window.setTimeout(function () {
+          var loader = document.getElementById("app-boot-loader");
+          if (!loader) return;
+          console.error("[IATS CONNECT] Boot loader timed out; revealing the page shell.");
+          loader.classList.add("is-hidden");
+          window.setTimeout(function () { if (loader.parentNode) loader.remove(); }, 350);
+        }, 5000);
+      })();
+    </script>
+
     <!-- Fixed veil behind the header: blurs content sliding up underneath it -->
     <div class="header-blur-veil" id="header-blur-veil"></div>
 
