@@ -565,7 +565,29 @@
           </button>
 
           <div class="divider-with-text">
-            <span>or verify with personal email</span>
+            <span>or continue with email and password</span>
+          </div>
+
+          <form id="form-password-auth" autocomplete="on">
+            <div class="form-group">
+              <label class="form-label" for="auth-password-email">Email Address</label>
+              <input type="email" id="auth-password-email" class="form-input" autocomplete="username" placeholder="you@example.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="auth-password-input">Password</label>
+              <input type="password" id="auth-password-input" class="form-input" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required />
+            </div>
+            <button type="submit" class="btn-liquid btn-primary" id="btn-password-signin" style="width: 100%;">
+              <span>Sign In with Password →</span>
+            </button>
+            <button type="button" class="btn-liquid btn-glass" id="btn-password-signup" style="width: 100%; margin-top: 8px;">
+              <span>Create Account with Password</span>
+            </button>
+            <p style="font-size: .78rem; line-height: 1.45; color: #64748B; margin-top: 8px;">Password sign-in does not need email delivery. New accounts may still require email confirmation if that setting is enabled in Supabase.</p>
+          </form>
+
+          <div class="divider-with-text">
+            <span>or verify with a one-time email code</span>
           </div>
 
           <!-- Active Email Verification Form -->
