@@ -296,14 +296,24 @@ export const SupabaseService = {
     const [students, events, eventRows] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }).neq("email", "focalforges@gmail.com"),
       supabase.from("catchups").select("id", { count: "exact", head: true }),
-      supabase.from("catchups")
-        .select("id,title,host,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
-        .order("created_at", { ascending: false }).limit(200)
+      (async () => {
+        const allRows = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const { data, error } = await supabase.from("catchups")
+            .select("id,title,host,host_avatar,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
+            .order("created_at", { ascending: false })
+            .range(offset, offset + pageSize - 1);
+          if (error) throw new Error(friendlyError(error));
+          allRows.push(...(data || []));
+          if (!data || data.length < pageSize) break;
+        }
+        return allRows;
+      })()
     ]);
     if (students.error) throw new Error(friendlyError(students.error));
     if (events.error) throw new Error(friendlyError(events.error));
-    if (eventRows.error) throw new Error(friendlyError(eventRows.error));
-    return { studentCount: students.count || 0, eventCount: events.count || 0, events: eventRows.data || [] };
+    return { studentCount: students.count || 0, eventCount: events.count || 0, events: eventRows || [] };
   },
 
   subscribeCatchups(onUpdate) {
