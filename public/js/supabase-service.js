@@ -200,6 +200,17 @@ export const SupabaseService = {
     return data;
   },
 
+  async deleteOwnProfileData() {
+    if (!supabase) throw new Error("Service unavailable.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("Please sign in again.");
+    const { error: matchError } = await supabase.from("match_profiles").delete().eq("owner_id", user.id);
+    if (matchError) throw new Error(friendlyError(matchError));
+    const { error: profileError } = await supabase.from("profiles").delete().eq("id", user.id);
+    if (profileError) throw new Error(friendlyError(profileError));
+    return true;
+  },
+
   /** Upload a member-selected profile image to their own Storage folder. */
   async uploadAvatar(file, userId) {
     if (!supabase) throw new Error("Supabase is not configured yet.");
