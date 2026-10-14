@@ -1090,6 +1090,7 @@
         avatar: student.avatar || student.avatar_url || DEFAULT_AVATAR_PLACEHOLDER
       });
       if (!conv) throw new Error("Could not open this scholar's conversation. Please try again.");
+      if (!AppState.conversations.some(c => String(c.id) === String(conv.id))) AppState.conversations.unshift(conv);
       AppState.activeChatId = conv.id;
       startActiveMessagesSync(conv.id);
       navigateTo("chats");
@@ -2639,6 +2640,7 @@
     // Chat composer: text, emoji picker and secure file attachments.
     const chatForm = document.getElementById("chat-send-form");
     if (chatForm) chatForm.addEventListener("submit", handleSendMessage);
+    document.getElementById("btn-chat-attach")?.addEventListener("click", () => document.getElementById("chat-attachment-input")?.click());
     document.getElementById("btn-chat-emoji")?.addEventListener("click", () => {
       const picker = document.getElementById("chat-emoji-picker");
       if (picker) picker.hidden = !picker.hidden;
