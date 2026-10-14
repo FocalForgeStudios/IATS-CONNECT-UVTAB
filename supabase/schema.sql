@@ -587,3 +587,116 @@ drop policy if exists news_reads_insert_own on public.news_reads;
 create policy news_reads_insert_own on public.news_reads for insert with check (auth.uid() = user_id);
 drop policy if exists news_reads_update_own on public.news_reads;
 create policy news_reads_update_own on public.news_reads for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+
+-- =========================================================================
+-- DIRECT CHAT UPGRADE: canonical threads, per-user inbox removal, attachments
+-- =========================================================================
+create unique index if not exists conversations_one_direct_thread_per_pair
+on public.conversations (least(created_by, participant_id), greatest(created_by, participant_id))
+where participant_id is not null;
+
+create table if not exists public.conversation_hides (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  conversation_id uuid not null references public.conversations(id) on delete cascade,
+  hidden_at timestamptz not null default now(),
+  primary key (user_id, conversation_id)
+);
+alter table public.conversation_hides enable row level security;
+drop policy if exists "users_read_own_conversation_hides" on public.conversation_hides;
+create policy "users_read_own_conversation_hides" on public.conversation_hides
+for select to authenticated using (auth.uid() = user_id);
+drop policy if exists "users_hide_own_conversations" on public.conversation_hides;
+create policy "users_hide_own_conversations" on public.conversation_hides
+for insert to authenticated with check (
+  auth.uid() = user_id and exists (
+    select 1 from public.conversations c
+    where c.id = conversation_id and (c.created_by = auth.uid() or c.participant_id = auth.uid())
+  )
+);
+drop policy if exists "users_unhide_own_conversations" on public.conversation_hides;
+create policy "users_unhide_own_conversations" on public.conversation_hides
+for delete to authenticated using (auth.uid() = user_id);
+
+alter table public.messages add column if not exists attachment_path text;
+alter table public.messages add column if not exists attachment_name text;
+alter table public.messages add column if not exists attachment_mime text;
+alter table public.messages add column if not exists attachment_size bigint;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'chat-attachments', 'chat-attachments', false, 52428800,
+  array[
+    'image/jpeg','image/png','image/webp','image/gif',
+    'video/mp4','video/webm','video/quicktime',
+    'application/pdf','text/plain','application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  ]
+)
+on conflict (id) do update set public = false, file_size_limit = 52428800, allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "chat participants read attachments" on storage.objects;
+create policy "chat participants read attachments" on storage.objects for select to authenticated using (
+  bucket_id = 'chat-attachments' and exists (
+    select 1 from public.conversations c where c.id::text = (storage.foldername(name))[1]
+    and (c.created_by = auth.uid() or c.participant_id = auth.uid())
+  )
+);
+drop policy if exists "chat participants upload own attachments" on storage.objects;
+create policy "chat participants upload own attachments" on storage.objects for insert to authenticated with check (
+  bucket_id = 'chat-attachments' and (storage.foldername(name))[2] = auth.uid()::text and exists (
+    select 1 from public.conversations c where c.id::text = (storage.foldername(name))[1]
+    and (c.created_by = auth.uid() or c.participant_id = auth.uid())
+  )
+);
+drop policy if exists "chat participants delete own attachments" on storage.objects;
+create policy "chat participants delete own attachments" on storage.objects for delete to authenticated using (
+  bucket_id = 'chat-attachments' and (storage.foldername(name))[2] = auth.uid()::text and exists (
+    select 1 from public.conversations c where c.id::text = (storage.foldername(name))[1]
+    and (c.created_by = auth.uid() or c.participant_id = auth.uid())
+  )
+);
+
+create or replace function public.get_or_create_direct_conversation(
+  p_recipient_id uuid,
+  p_major text default 'IATS Scholar',
+  p_avatar_url text default null
+)
+returns public.conversations
+language plpgsql
+security definer
+set search_path = public, auth
+as $function$
+declare
+  v_user_id uuid := auth.uid();
+  v_conv public.conversations;
+begin
+  if v_user_id is null then raise exception 'Sign in required'; end if;
+  if p_recipient_id is null or p_recipient_id = v_user_id then raise exception 'Choose another scholar'; end if;
+  if not exists (select 1 from public.profiles where id = p_recipient_id) then raise exception 'Scholar account not found'; end if;
+
+  select * into v_conv from public.conversations
+  where participant_id is not null
+    and least(created_by, participant_id) = least(v_user_id, p_recipient_id)
+    and greatest(created_by, participant_id) = greatest(v_user_id, p_recipient_id)
+  order by created_at limit 1;
+  if found then return v_conv; end if;
+
+  insert into public.conversations(created_by, participant_id, name, major, avatar_url, status)
+  values(v_user_id, p_recipient_id, (select name from public.profiles where id = p_recipient_id),
+         left(coalesce(p_major, 'IATS Scholar'), 100), p_avatar_url, 'online')
+  on conflict do nothing returning * into v_conv;
+
+  if v_conv.id is null then
+    select * into v_conv from public.conversations
+    where participant_id is not null
+      and least(created_by, participant_id) = least(v_user_id, p_recipient_id)
+      and greatest(created_by, participant_id) = greatest(v_user_id, p_recipient_id)
+    order by created_at limit 1;
+  end if;
+  return v_conv;
+end;
+$function$;
+grant execute on function public.get_or_create_direct_conversation(uuid,text,text) to authenticated;
