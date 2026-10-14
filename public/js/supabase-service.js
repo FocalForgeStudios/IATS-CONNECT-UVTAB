@@ -151,6 +151,26 @@ export const SupabaseService = {
     return data;
   },
 
+  async requestPasswordRecovery(email) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const cleanEmail = String(email || "").trim();
+    if (!cleanEmail) throw new Error("Enter your account email address first.");
+    if (!throttled("auth:password-recovery:" + cleanEmail.toLowerCase(), 15000)) throw new Error("Please wait a few seconds before requesting another recovery email.");
+    const redirectUrl = new URL(window.location.href);
+    redirectUrl.searchParams.set("password-recovery", "1"); redirectUrl.hash = "";
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo: redirectUrl.toString() });
+    if (error) throw new Error(friendlyError(error));
+    return true;
+  },
+
+  async updatePassword(newPassword) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    if (typeof newPassword !== "string" || newPassword.length < 8) throw new Error("Use a password of at least 8 characters.");
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(friendlyError(error));
+    return data.user;
+  },
+
   /** Create an account; Supabase may still require email confirmation. */
   async signUpWithPassword(email, password) {
     if (!supabase) throw new Error("Supabase is not configured yet.");
