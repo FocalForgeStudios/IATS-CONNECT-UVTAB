@@ -1893,7 +1893,7 @@
       </div>
     `;
 
-    document.getElementById("btn-profile-signout")?.addEventListener("click", handleSignOut);
+    document.getElementById("btn-profile-signout")?.addEventListener("click", clearSession);
     document.getElementById("btn-delete-account")?.addEventListener("click", async () => {
       if (!AppState.currentUser || !confirm("Delete your IATS CONNECT profile and associated scholar-directory record? This cannot be undone. You will be signed out. If you also want your authentication account permanently erased, contact the platform administrator.")) return;
       const button = document.getElementById("btn-delete-account");
@@ -1901,7 +1901,7 @@
       try {
         await window.SupabaseService.deleteOwnProfileData();
         showToast("Profile data removed", "Your scholar profile and directory entry have been deleted.");
-        await handleSignOut();
+        await clearSession();
       } catch (error) {
         showToast("Could not delete profile", error.message || "Please try again.");
         if (button) button.disabled = false;
