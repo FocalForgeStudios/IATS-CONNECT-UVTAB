@@ -130,6 +130,7 @@ create table if not exists public.catchups (
   event_ends_at   timestamptz,
   tag            text default 'Academic Event',
   item_type      text not null default 'event' check (item_type in ('event','news')),
+  is_official    boolean not null default false,
   event_format   text not null default 'physical' check (event_format in ('physical','online','hybrid')),
   online_url     text,
   registration_deadline timestamptz,
@@ -143,6 +144,7 @@ alter table public.catchups add column if not exists event_starts_at timestamptz
 alter table public.catchups add column if not exists event_ends_at timestamptz;
 alter table public.catchups add column if not exists description text;
 alter table public.catchups add column if not exists item_type text not null default 'event';
+alter table public.catchups add column if not exists is_official boolean not null default false;
 alter table public.catchups add column if not exists event_format text not null default 'physical';
 alter table public.catchups add column if not exists online_url text;
 alter table public.catchups add column if not exists registration_deadline timestamptz;
@@ -492,7 +494,9 @@ begin
   end if;
   return true;
 end;
-$$;
+$;
+revoke all on function public.toggle_catchup_attendance(uuid, boolean) from public;
+grant execute on function public.toggle_catchup_attendance(uuid, boolean) to authenticated;
 
 
 -- Only focalforges@gmail.com may publish Campus News. Normal events stay open.
@@ -502,7 +506,7 @@ create policy "catchups_insert_own" on public.catchups
   with check (
     auth.uid() = host_id
     and (
-      lower(regexp_replace(coalesce(tag, ''), '[[:space:]]+', '', 'g')) <> 'campusnews'
+      (not is_official and lower(regexp_replace(coalesce(tag, ''), '[[:space:]]+', '', 'g')) <> 'campusnews')
       or lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com'
     )
   );
