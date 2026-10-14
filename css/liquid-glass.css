@@ -1868,3 +1868,12 @@ img, video, iframe { max-width: 100%; }
 .chat-recipient-option strong, .chat-recipient-option small { display:block; }
 .chat-recipient-option small { color:#64748b; margin-top:2px; }
 @media (max-width:640px) { .message-bubble { max-width:92%; padding:10px 12px; } .chat-messages-scroll { padding:14px; } .message-actions { gap:5px; } }
+
+
+/* Unread message and campus-news indicators */
+.dock-label { display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+.nav-notification-badge, .chat-unread-badge { display:inline-flex; align-items:center; justify-content:center; min-width:19px; height:19px; padding:0 5px; border-radius:999px; background:#dc2626; color:#fff; font-size:.68rem; line-height:1; font-weight:850; box-shadow:0 1px 4px rgba(127,29,29,.18); }
+.chat-unread-badge { align-self:flex-start; margin:4px 0 0 auto; flex-shrink:0; }
+.campus-news-unread { border:1px solid rgba(37,99,235,.34) !important; box-shadow:0 8px 24px rgba(37,99,235,.08); }
+.news-unread-pill { display:inline-flex; align-items:center; background:#dc2626; color:white; font-size:.64rem; font-weight:850; letter-spacing:.04em; padding:3px 7px; border-radius:999px; vertical-align:middle; }
+@media (max-width:640px) { .nav-notification-badge { min-width:17px; height:17px; font-size:.62rem; } }
