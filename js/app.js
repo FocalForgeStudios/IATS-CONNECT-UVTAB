@@ -1150,7 +1150,7 @@
       container.innerHTML = "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;'>"
         + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>COMMUNITY PROFILES</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.studentCount + "</div></div>"
         + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>TOTAL EVENTS & NEWS</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.eventCount + "</div></div></div>"
-        + "<div class='glass-panel' style='padding:20px;'><div style='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;'>"
+        + "<div class='glass-panel' style='padding:20px;'>"
         + "<div style='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;'><h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;'>Event & News Management</h3><div style='display:flex;gap:8px;flex-wrap:wrap;'>"
         + "<button type='button' id='btn-admin-create-event' class='btn-liquid btn-primary btn-sm'>+ Create Event</button><button type='button' id='btn-admin-create-news' class='btn-liquid btn-glass btn-sm'>+ Publish Campus News</button></div></div>"
         + "<div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;'>"
