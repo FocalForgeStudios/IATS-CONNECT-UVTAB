@@ -45,7 +45,7 @@
   // Neutral placeholder shown until a member uploads their own profile photo.
   const DEFAULT_AVATAR_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2250%22 fill=%22%23E2E8F0%22/%3E%3Ccircle cx=%2250%22 cy=%2237%22 r=%2218%22 fill=%22%2394A3B8%22/%3E%3Cpath d=%22M15 92c2-22 16-34 35-34s33 12 35 34%22 fill=%22%2394A3B8%22/%3E%3C/svg%3E";
 
-  const IATS_COURSES = [{"code":"CTH","name":"Certificate in Tourism and Hospitality Management"},{"code":"NIT","name":"National Certificate in Information and Communication Technology"},{"code":"CLI","name":"National Certificate in Library and Information Science"},{"code":"CSW","name":"National Certificate in Social Work and Social Administration"},{"code":"CCF","name":"Certificate in Clearing and Forwarding"},{"code":"CTV","name":"Certificate in CCTV Installation and Surveillance Systems"},{"code":"CJM","name":"Certificate in Journalism and Media Studies"},{"code":"NCS","name":"National Certificate in Secretarial and Office Management"},{"code":"NHR","name":"National Certificate in Human Resource Management"},{"code":"CEC","name":"Certificate in Early Childhood Education"},{"code":"CPA","name":"Certificate in Public Administration and Management"},{"code":"NCB","name":"National Certificate in Cosmetology and Beauty Therapy"},{"code":"CPM","name":"Certificate in Procurement and Logistics Management"},{"code":"NCR","name":"National Certificate in Computer Repair and Maintenance"},{"code":"CSF","name":"Professional Certificate in Software Engineering"},{"code":"NAF","name":"National Certificate in Accounting and Finance"},{"code":"CBA","name":"National Certificate in Business Administration"},{"code":"NCM","name":"Certificate in Digital Marketing"},{"code":"CHI","name":"Certificate in Hotel Management and Institutional Catering"},{"code":"CRM","name":"Certificate in Records and Information Management"},{"code":"CGC","name":"National Certificate in Guidance and Counselling"},{"code":"NCA","name":"National Certificate in Agriculture"},{"code":"HEG","name":"Higher Education Certificate (HEC) General"},{"code":"HEB","name":"Higher Education Certificate in Biological Sciences"},{"code":"HEP","name":"Higher Education Certificate Physical Sciences"},{"code":"HET","name":"Higher Education Certificate General"},{"code":"HEE","name":"Higher Education Certificate Evening"}];
+  const IATS_COURSES = [{"code":"CTH","name":"Certificate in Tourism and Hospitality Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NIT","name":"National Certificate in Information and Communication Technology","faculty":"Institute of Advanced Technical Studies"},{"code":"CLI","name":"National Certificate in Library and Information Science","faculty":"Institute of Advanced Technical Studies"},{"code":"CSW","name":"National Certificate in Social Work and Social Administration","faculty":"Institute of Advanced Technical Studies"},{"code":"CCF","name":"Certificate in Clearing and Forwarding","faculty":"Institute of Advanced Technical Studies"},{"code":"CTV","name":"Certificate in CCTV Installation and Surveillance Systems","faculty":"Institute of Advanced Technical Studies"},{"code":"CJM","name":"Certificate in Journalism and Media Studies","faculty":"Institute of Advanced Technical Studies"},{"code":"NCS","name":"National Certificate in Secretarial and Office Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NHR","name":"National Certificate in Human Resource Management","faculty":"Institute of Advanced Technical Studies"},{"code":"CEC","name":"Certificate in Early Childhood Education","faculty":"Institute of Advanced Technical Studies"},{"code":"CPA","name":"Certificate in Public Administration and Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NCB","name":"National Certificate in Cosmetology and Beauty Therapy","faculty":"Institute of Advanced Technical Studies"},{"code":"CPM","name":"Certificate in Procurement and Logistics Management","faculty":"Institute of Advanced Technical Studies"},{"code":"NCR","name":"National Certificate in Computer Repair and Maintenance","faculty":"Institute of Advanced Technical Studies"},{"code":"CSF","name":"Professional Certificate in Software Engineering","faculty":"Institute of Advanced Technical Studies"},{"code":"NAF","name":"National Certificate in Accounting and Finance","faculty":"Institute of Advanced Technical Studies"},{"code":"CBA","name":"National Certificate in Business Administration","faculty":"Institute of Advanced Technical Studies"},{"code":"NCM","name":"Certificate in Digital Marketing","faculty":"Institute of Advanced Technical Studies"},{"code":"CHI","name":"Certificate in Hotel Management and Institutional Catering","faculty":"Institute of Advanced Technical Studies"},{"code":"CRM","name":"Certificate in Records and Information Management","faculty":"Institute of Advanced Technical Studies"},{"code":"CGC","name":"National Certificate in Guidance and Counselling","faculty":"Institute of Advanced Technical Studies"},{"code":"NCA","name":"National Certificate in Agriculture","faculty":"Institute of Advanced Technical Studies"},{"code":"HEG","name":"Higher Education Certificate (HEC) General","faculty":"Faculty of Humanities and Social Sciences"},{"code":"HEB","name":"Higher Education Certificate in Biological Sciences","faculty":"Faculty of Health Sciences"},{"code":"HEP","name":"Higher Education Certificate Physical Sciences","faculty":"Faculty of Science and Technology"},{"code":"HET","name":"Higher Education Certificate General","faculty":"Institute of Education and Life-Long Learning"},{"code":"HEE","name":"Higher Education Certificate Evening","faculty":"Institute of Education and Life-Long Learning"}];
   const IATS_COHORTS = ["1.1", "1.2", "2.1", "2.2"];
   const getActiveBuddyProfiles = () => { const u = AppState.currentUser; const course = String(u?.major || "").toLowerCase(); return AppState.matchProfiles.filter(p => !p.is_former_student && p.owner_id !== u?.id && (!course || String(p.major || "").toLowerCase() === course)); };
 
@@ -58,7 +58,8 @@
     otpSecondsRemaining: 60,
     currentMatchIndex: 0,
     activeChatId: null,
-    activeHubCategory: "tech",
+    activeHubCategory: "all",
+    activeHubFaculty: "Institute of Advanced Technical Studies",
     
     // Live Cloud Database collections
     matchProfiles: [],
@@ -1459,75 +1460,43 @@
   // ==========================================
   function renderHubsView() {
     const listContainer = document.getElementById("hub-posts-list");
-    if (!listContainer) return;
-
-    const filtered = AppState.hubPosts.filter(p => {
-      if (AppState.activeHubCategory === "all") return true;
-      return p.category === AppState.activeHubCategory;
-    });
-
-    if (filtered.length === 0) {
-      listContainer.innerHTML = `
-        <div class="glass-panel" style="text-align: center; padding: 48px 24px;">
-          <div style="font-weight: 700; font-size: 1.1rem; color: #1E293B; margin-bottom: 6px;">No Discussions in this Course Channel</div>
-          <p style="font-size: 0.88rem; color: #64748B; max-width: 440px; margin: 0 auto 20px auto;">
-            Be the first scholar to post lecture notes, course problem sets, or research questions in this faculty forum.
-          </p>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openCreatePostModal()">
-              <span>+ Post in This Channel</span>
-            </button>
-          </div>
-        </div>
-      `;
-    } else {
-      listContainer.innerHTML = filtered.map(post => `
-        <div class="glass-panel thread-post-card" style="margin-bottom: 16px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <img src="${resolveAssetUrl(post.authorAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" alt="${post.author}">
-              <div>
-                <div style="font-weight: 700; font-size: 0.92rem; color: #1E293B;">${post.author}</div>
-                <div style="font-size: 0.78rem; color: #64748B;">${post.authorRole || 'IATS Scholar'} • ${post.timeAgo || 'Recent'}</div>
-              </div>
-            </div>
-            <span class="tag-pill tag-pill-highlight">${(post.category || 'TECH').toUpperCase()}</span>
-          </div>
-
-          <h3 style="font-size: 1.15rem; font-weight: 700; color: #1E293B; margin-bottom: 8px;">${post.title}</h3>
-          <p style="font-size: 0.92rem; color: #334155; line-height: 1.6; margin-bottom: 14px;">${post.content}</p>
-
-          <div class="tag-list" style="margin-bottom: 16px;">
-            ${(post.tags || []).map(t => `<span class="tag-pill tag-pill-blue">#${t}</span>`).join("")}
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.05);">
-            <button class="btn-liquid btn-glass btn-sm btn-upvote-post" data-id="${post.id}" style="${post.hasUpvoted ? 'color: #D8232A; font-weight: 700; border-color: #FECACA;' : ''}">
-              <span style="display: inline-flex; align-items: center; gap: 4px;">
-                ${ICONS.upvote} ${post.upvotes || 0} Upvotes
-              </span>
-            </button>
-            <span style="font-size: 0.82rem; color: #64748B; display: flex; align-items: center; gap: 4px;">
-              ${ICONS.chat} ${post.commentsCount || 0} Discussions
-            </span>
-          </div>
-        </div>
-      `).join("");
-
-      listContainer.querySelectorAll(".btn-upvote-post").forEach(btn => {
-        btn.addEventListener("click", () => toggleUpvotePost(btn.dataset.id));
-      });
+    const sidebar = document.querySelector(".hub-channel-list");
+    if (!listContainer || !sidebar) return;
+    const faculties = [...new Set(IATS_COURSES.map(c => c.faculty))];
+    if (!faculties.includes(AppState.activeHubFaculty)) AppState.activeHubFaculty = faculties[0];
+    sidebar.innerHTML = faculties.map(faculty => {
+      const count = IATS_COURSES.filter(c => c.faculty === faculty).length;
+      return "<li><button class='hub-channel-btn " + (AppState.activeHubFaculty === faculty ? "active" : "") + "' data-faculty='" + faculty.replace(/'/g,"&#39;") + "' type='button'>" + faculty + " <span style='opacity:.7'>(" + count + ")</span></button></li>";
+    }).join("") + "<li><button class='hub-channel-btn " + (AppState.activeHubCategory === "all" ? "active" : "") + "' data-course='all' type='button'>All Course Discussions</button></li>";
+    let coursePanel = document.getElementById("hub-course-list");
+    if (!coursePanel) {
+      coursePanel = document.createElement("div");
+      coursePanel.id = "hub-course-list";
+      coursePanel.className = "glass-panel";
+      coursePanel.style.cssText = "padding:14px;margin-top:12px;";
+      sidebar.parentElement.appendChild(coursePanel);
     }
-
-    // Handle channel selection
-    document.querySelectorAll(".hub-channel-btn").forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll(".hub-channel-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        AppState.activeHubCategory = btn.dataset.category;
-        renderHubsView();
-      };
-    });
+    const facultyCourses = IATS_COURSES.filter(c => c.faculty === AppState.activeHubFaculty);
+    coursePanel.innerHTML = "<div style='font-weight:800;margin:0 0 10px;color:#1E293B;'>Courses in this faculty</div>" + facultyCourses.map(c =>
+      "<button type='button' class='hub-course-btn " + (AppState.activeHubCategory === c.code ? "active" : "") + "' data-course='" + c.code + "' style='display:block;width:100%;text-align:left;padding:9px 10px;margin:4px 0;border:1px solid #E2E8F0;border-radius:10px;background:" + (AppState.activeHubCategory === c.code ? "#FEE2E2" : "transparent") + ";color:#1E293B;cursor:pointer;'>" + c.code + " · " + c.name + "</button>"
+    ).join("");
+    const filtered = AppState.hubPosts.filter(p => AppState.activeHubCategory === "all" || String(p.category || "").toUpperCase() === String(AppState.activeHubCategory).toUpperCase());
+    const selectedCourse = IATS_COURSES.find(c => c.code === AppState.activeHubCategory);
+    const heading = selectedCourse ? selectedCourse.name : AppState.activeHubCategory === "all" ? "All Course Discussions" : AppState.activeHubFaculty;
+    if (filtered.length === 0) {
+      listContainer.innerHTML = "<div class='glass-panel' style='text-align:center;padding:36px 20px;'><div style='font-weight:800;font-size:1.1rem;color:#1E293B;margin-bottom:6px;'>" + heading + "</div><p style='font-size:.9rem;color:#64748B;max-width:440px;margin:0 auto 18px;'>No discussions in this course yet. Be the first to share notes, questions or revision resources.</p><button class='btn-liquid btn-primary btn-sm' id='btn-post-in-selected-course' type='button'>+ Post in this course</button></div>";
+      const postBtn = document.getElementById("btn-post-in-selected-course");
+      if (postBtn) postBtn.addEventListener("click", () => openCreatePostModal(AppState.activeHubCategory));
+    } else {
+      listContainer.innerHTML = "<h3 style='font-size:1.15rem;font-weight:800;margin:0 0 14px;color:#1E293B;'>" + heading + "</h3>" + filtered.map(post => {
+        const course = IATS_COURSES.find(c => c.code === String(post.category || "").toUpperCase());
+        return "<div class='glass-panel thread-post-card' style='margin-bottom:16px;padding:18px;'><div style='display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;'><div style='display:flex;align-items:center;gap:10px;'><img src='" + resolveAssetUrl(post.authorAvatar || DEFAULT_AVATAR_PLACEHOLDER) + "' onerror=\"this.onerror=null;this.src='" + DEFAULT_AVATAR_PLACEHOLDER + "';\" style='width:38px;height:38px;border-radius:50%;object-fit:cover;' alt='Scholar avatar'><div><div style='font-weight:700;color:#1E293B;'>" + escapeEventText(post.author || "IATS Scholar") + "</div><div style='font-size:.78rem;color:#64748B;'>" + escapeEventText(post.authorRole || "IATS Scholar") + " · " + escapeEventText(post.timeAgo || "Recent") + "</div></div></div><span class='tag-pill tag-pill-highlight'>" + escapeEventText(course ? course.code : String(post.category || "COURSE").toUpperCase()) + "</span></div><h3 style='font-size:1.1rem;font-weight:700;color:#1E293B;margin-bottom:8px;'>" + escapeEventText(post.title || "") + "</h3><p style='font-size:.92rem;color:#334155;line-height:1.6;margin-bottom:14px;'>" + escapeEventText(post.content || "") + "</p><div class='tag-list' style='margin-bottom:16px;'>" + (post.tags || []).map(t => "<span class='tag-pill tag-pill-blue'>#" + escapeEventText(t) + "</span>").join("") + "</div><div style='display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(0,0,0,.05);'><button class='btn-liquid btn-glass btn-sm btn-upvote-post' data-id='" + post.id + "'>" + ICONS.upvote + " " + (post.upvotes || 0) + " Upvotes</button><span style='font-size:.82rem;color:#64748B;'>" + ICONS.chat + " " + (post.commentsCount || 0) + " Discussions</span></div></div>";
+      }).join("");
+      listContainer.querySelectorAll(".btn-upvote-post").forEach(btn => btn.addEventListener("click", () => toggleUpvotePost(btn.dataset.id)));
+    }
+    sidebar.querySelectorAll("[data-faculty]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubFaculty = btn.dataset.faculty; const first = IATS_COURSES.find(c => c.faculty === AppState.activeHubFaculty); AppState.activeHubCategory = first ? first.code : "all"; renderHubsView(); }));
+    sidebar.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course; if (btn.dataset.course !== "all") { const c = IATS_COURSES.find(x => x.code === btn.dataset.course); if (c) AppState.activeHubFaculty = c.faculty; } renderHubsView(); }));
+    coursePanel.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course; renderHubsView(); }));
   }
 
   function toggleUpvotePost(id) {
@@ -1550,8 +1519,10 @@
     renderHubsView();
   }
 
-  function openCreatePostModal() {
+  function openCreatePostModal(courseCode) {
     const modal = document.getElementById("create-post-modal");
+    const select = document.getElementById("new-post-channel");
+    if (select && courseCode && IATS_COURSES.some(c => c.code === courseCode)) select.value = courseCode;
     if (modal) modal.classList.add("open");
   }
 
