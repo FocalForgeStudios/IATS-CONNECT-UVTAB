@@ -120,14 +120,17 @@ create policy "catchups_insert_own" on public.catchups
   for insert with check (auth.uid() = host_id);
 
 drop policy if exists "catchups_update_authenticated" on public.catchups;
--- Any signed-in scholar may update attendee counts when joining/leaving;
--- app code only ever changes attendees/attendee_ids for this table.
-create policy "catchups_update_authenticated" on public.catchups
-  for update using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+drop policy if exists "catchups_update_admin_only" on public.catchups;
+create policy "catchups_update_admin_only" on public.catchups
+  for update to authenticated
+  using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com')
+  with check (lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com');
 
 drop policy if exists "catchups_delete_own" on public.catchups;
-create policy "catchups_delete_own" on public.catchups
-  for delete using (auth.uid() = host_id);
+drop policy if exists "catchups_delete_admin_only" on public.catchups;
+create policy "catchups_delete_admin_only" on public.catchups
+  for delete to authenticated
+  using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com');
 
 -- =========================================================================
 -- 4. HUB_POSTS  (faculty / guild discussion posts)
@@ -458,3 +461,12 @@ create policy "catchups_insert_own" on public.catchups
       or lower(coalesce(auth.jwt() ->> 'email', '')) = 'focalforges@gmail.com'
     )
   );
+
+-- Developer-only profile classification.
+update public.profiles
+set major = 'Developer',
+    year = 'Platform Administrator',
+    bio = 'Developer and platform administrator for IATS CONNECT, responsible for product engineering, campus event moderation, and official campus news.',
+    interests = array['Software Engineering','Platform Development','System Architecture','Database Security'],
+    updated_at = now()
+where lower(coalesce(email, '')) = 'focalforges@gmail.com';
