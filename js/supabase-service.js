@@ -494,11 +494,24 @@ export const SupabaseService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return () => {};
 
-    const load = () => {
-      supabase.from("conversations").select("*")
+    const load = async () => {
+      const { data, error } = await supabase.from("conversations").select("*")
         .or(`created_by.eq.${user.id},participant_id.eq.${user.id}`)
-        .order("updated_at", { ascending: false })
-        .then(({ data, error }) => { if (!error) onUpdate(data || []); });
+        .order("updated_at", { ascending: false });
+      if (error) return;
+      const convs = data || [];
+      const peerIds = [...new Set(convs.map(c => c.created_by === user.id ? c.participant_id : c.created_by).filter(Boolean))];
+      let peers = [];
+      if (peerIds.length) {
+        const result = await supabase.from("profiles").select("id,name,avatar_url").in("id", peerIds);
+        if (!result.error) peers = result.data || [];
+      }
+      const byId = new Map(peers.map(p => [p.id, p]));
+      onUpdate(convs.map(c => {
+        const peerId = c.created_by === user.id ? c.participant_id : c.created_by;
+        const peer = byId.get(peerId);
+        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url };
+      }));
     };
     load();
 
@@ -512,9 +525,20 @@ export const SupabaseService = {
   subscribeMessages(conversationId, onUpdate) {
     if (!supabase || !conversationId) return () => {};
     const load = () => {
-      supabase.from("messages").select("*").eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true }).limit(200)
-        .then(({ data, error }) => { if (!error) onUpdate(data || []); });
+      (async () => {
+        const { data, error } = await supabase.from("messages").select("*").eq("conversation_id", conversationId)
+          .order("created_at", { ascending: true }).limit(200);
+        if (error) return;
+        const messages = data || [];
+        const senderIds = [...new Set(messages.map(m => m.sender_id).filter(Boolean))];
+        let profiles = [];
+        if (senderIds.length) {
+          const result = await supabase.from("profiles").select("id,name").in("id", senderIds);
+          if (!result.error) profiles = result.data || [];
+        }
+        const names = new Map(profiles.map(p => [p.id, p.name]));
+        onUpdate(messages.map(m => ({ ...m, sender_name: names.get(m.sender_id) || "IATS Scholar" })));
+      })();
     };
     load();
 
@@ -539,29 +563,27 @@ export const SupabaseService = {
     if (!throttled("conversations:add", 1500)) return null;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("You need to sign in first.");
+    if (!recipientName) throw new Error("Enter the name of the scholar you want to message.");
 
-    let participantId = null;
-    if (recipientName) {
-      const { data: match } = await supabase.from("profiles").select("id")
-        .ilike("name", recipientName.trim()).neq("id", user.id).limit(1).maybeSingle();
-      if (match) participantId = match.id;
-    }
+    const { data: matches, error: lookupError } = await supabase.from("profiles")
+      .select("id,name,avatar_url").ilike("name", recipientName.trim()).neq("id", user.id).limit(2);
+    if (lookupError) throw new Error(friendlyError(lookupError));
+    if (!matches || matches.length === 0) throw new Error("No other scholar was found with that name. Check the name and try again.");
+    if (matches.length > 1) throw new Error("More than one scholar has that name. Use a unique display name to start the chat.");
+    const recipient = matches[0];
 
-    const payload = {
-      created_by: user.id,
-      participant_id: participantId,
-      name: sanitizeText(recipientName, 80),
-      major: sanitizeText(major, 100),
-      avatar_url: sanitizeAvatar(avatar),
-      status: "online"
-    };
-    const { data: conv, error } = await supabase.from("conversations").insert(payload).select().single();
+    const { data: existing } = await supabase.from("conversations").select("id")
+      .or(`and(created_by.eq.${user.id},participant_id.eq.${recipient.id}),and(created_by.eq.${recipient.id},participant_id.eq.${user.id})`)
+      .limit(1).maybeSingle();
+    const { data: conv, error } = await supabase.rpc("get_or_create_direct_conversation", {
+      p_recipient_id: recipient.id,
+      p_major: sanitizeText(major, 100) || "IATS Scholar",
+      p_avatar_url: sanitizeAvatar(recipient.avatar_url || avatar)
+    });
     if (error) throw new Error(friendlyError(error));
-
-    if (firstMessage) {
-      await this.sendMessage(conv.id, firstMessage);
-    }
-    return conv;
+    if (!conv) throw new Error("Could not open the conversation. Please try again.");
+    if (firstMessage && !existing) await this.sendMessage(conv.id, firstMessage);
+    return { ...conv, peer_id: recipient.id, name: recipient.name || recipientName, avatar_url: recipient.avatar_url || conv.avatar_url };
   },
 
   /** Sends a message instantly over Realtime — DB trigger rate-limits abuse. */
