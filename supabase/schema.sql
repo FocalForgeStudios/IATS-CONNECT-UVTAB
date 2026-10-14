@@ -105,6 +105,8 @@ create table if not exists public.catchups (
   created_at     timestamptz not null default now()
 );
 
+alter table public.catchups add column if not exists event_starts_at timestamptz;
+alter table public.catchups add column if not exists event_ends_at timestamptz;
 create index if not exists catchups_event_starts_at_idx on public.catchups (event_starts_at);
 
 alter table public.catchups enable row level security;
