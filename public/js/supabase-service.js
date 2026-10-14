@@ -294,7 +294,7 @@ export const SupabaseService = {
       throw new Error("Administrator access is required.");
     }
     const [students, events, eventRows] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).neq("email", "focalforges@gmail.com"),
       supabase.from("catchups").select("id", { count: "exact", head: true }),
       supabase.from("catchups")
         .select("id,title,host,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
@@ -346,6 +346,37 @@ export const SupabaseService = {
       console.warn("addCatchup failed:", friendlyError(e));
       throw e;
     }
+  },
+
+  async updateCatchup(catchupId, catchup) {
+    if (!supabase || !catchupId) throw new Error("An event ID is required.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user || String(user.email || "").toLowerCase() !== "focalforges@gmail.com") {
+      throw new Error("Only the platform developer can moderate events.");
+    }
+    const payload = {
+      title: sanitizeText(catchup.title, 120),
+      location: sanitizeText(catchup.location, 100),
+      event_time: sanitizeText(catchup.time, 100),
+      event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
+      event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
+      tag: sanitizeText(catchup.tag, 40) || "Academic Event",
+      max_attendees: catchup.maxAttendees == null || catchup.maxAttendees === "" ? null : Number(catchup.maxAttendees)
+    };
+    const { data, error } = await supabase.from("catchups").update(payload).eq("id", catchupId).select().single();
+    if (error) throw new Error(friendlyError(error));
+    return data;
+  },
+
+  async deleteCatchup(catchupId) {
+    if (!supabase || !catchupId) throw new Error("An event ID is required.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user || String(user.email || "").toLowerCase() !== "focalforges@gmail.com") {
+      throw new Error("Only the platform developer can moderate events.");
+    }
+    const { error } = await supabase.from("catchups").delete().eq("id", catchupId);
+    if (error) throw new Error(friendlyError(error));
+    return true;
   },
 
   async toggleCatchupAttendance(catchupId, _userId, isJoining) {
