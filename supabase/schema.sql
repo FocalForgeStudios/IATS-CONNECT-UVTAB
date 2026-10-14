@@ -96,12 +96,16 @@ create table if not exists public.catchups (
   host_id        uuid references auth.users(id) on delete set null,
   location       text,
   event_time     text,
+  event_starts_at timestamptz,
+  event_ends_at   timestamptz,
   tag            text default 'Academic Event',
   attendees      int default 1,
   max_attendees  int default null,
   attendee_ids   uuid[] default '{}',
   created_at     timestamptz not null default now()
 );
+
+create index if not exists catchups_event_starts_at_idx on public.catchups (event_starts_at);
 
 alter table public.catchups enable row level security;
 
