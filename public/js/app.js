@@ -1,6 +1,6 @@
 /**
  * IATS CONNECT - Core Engine & Interactive State Manager
- * Institute of Advanced Technology & Studies Student Hub
+ * Institute of Advanced Technical Studies Student Hub
  * Frosted Liquid Glass UI (Crimson Red #D8232A & Royal Blue #3A86C8)
  * Strict Academic Content Moderation & Cloud Firestore Persistence
  */
@@ -42,17 +42,8 @@
     return url;
   }
 
-  // Curated African student portrait collection for authentic representation (100% local, offline-safe relative paths)
-  const AFRICAN_SCHOLAR_AVATARS = [
-    "./images/scholar_female.jpg",
-    "./images/scholar_male.jpg",
-    "./images/scholar_glasses.jpg",
-    "./images/scholar_laptop.jpg"
-  ];
-
-  function getRandomAfricanAvatar() {
-    return AFRICAN_SCHOLAR_AVATARS[Math.floor(Math.random() * AFRICAN_SCHOLAR_AVATARS.length)];
-  }
+  // Neutral placeholder shown until a member uploads their own profile photo.
+  const DEFAULT_AVATAR_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2250%22 fill=%22%23E2E8F0%22/%3E%3Ccircle cx=%2250%22 cy=%2237%22 r=%2218%22 fill=%22%2394A3B8%22/%3E%3Cpath d=%22M15 92c2-22 16-34 35-34s33 12 35 34%22 fill=%22%2394A3B8%22/%3E%3C/svg%3E";
 
   // Global Dynamic State Store (Strictly Cloud Firestore Driven, No LocalStorage Mock Data)
   const AppState = {
@@ -355,7 +346,7 @@
     if (AppState.currentUser) {
       userContainer.innerHTML = `
         <div class="user-profile-pill" id="btn-header-profile" title="View Profile" style="cursor: pointer;">
-          <img src="${resolveAssetUrl(AppState.currentUser.avatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" class="user-avatar-sm" alt="${AppState.currentUser.name}">
+          <img src="${resolveAssetUrl(AppState.currentUser.avatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" class="user-avatar-sm" alt="${AppState.currentUser.name}">
           <span style="font-weight: 700; font-size: 0.88rem; color: #1E293B;">${AppState.currentUser.name}</span>
           <span class="tag-pill tag-pill-highlight" style="font-size: 0.72rem; padding: 2px 8px;">IATS Verified</span>
         </div>
@@ -625,7 +616,7 @@
         quickCatchupList.innerHTML = AppState.catchups.slice(0, 2).map(c => `
           <div class="glass-panel" style="padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <img src="${resolveAssetUrl(c.hostAvatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" alt="host">
+              <img src="${resolveAssetUrl(c.hostAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" alt="host">
               <div>
                 <div style="font-weight: 700; font-size: 0.94rem; color: #1E293B;">${c.title}</div>
                 <div style="font-size: 0.82rem; color: #64748B; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
@@ -663,7 +654,7 @@
           <div class="glass-panel" style="padding: 16px; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="${resolveAssetUrl(p.authorAvatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" alt="author">
+                <img src="${resolveAssetUrl(p.authorAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" alt="author">
                 <span style="font-weight: 700; font-size: 0.85rem; color: #1E293B;">${p.author}</span>
               </div>
               <span class="tag-pill tag-pill-highlight" style="font-size: 0.75rem;">${(p.category || 'TECH').toUpperCase()}</span>
@@ -754,7 +745,7 @@
     container.innerHTML = `
       <div class="glass-panel match-card-main">
         <div class="match-photo-holder">
-          <img src="${resolveAssetUrl(student.avatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" alt="${student.name}" referrerpolicy="no-referrer">
+          <img src="${resolveAssetUrl(student.avatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" alt="${student.name}" referrerpolicy="no-referrer">
           <div class="match-compat-chip">
             <span style="display: inline-flex; align-items: center; gap: 4px;">
               ${ICONS.spark} ${student.compatScore || 92}% Syllabus Alignment
@@ -826,7 +817,7 @@
     if (nameElem) nameElem.textContent = student.name;
     const avatarElem = document.getElementById("match-modal-avatar");
     if (avatarElem) {
-      avatarElem.src = resolveAssetUrl(student.avatar || getRandomAfricanAvatar());
+      avatarElem.src = resolveAssetUrl(student.avatar || DEFAULT_AVATAR_PLACEHOLDER);
       avatarElem.onerror = () => { avatarElem.src = "./images/scholar_female.jpg"; };
     }
     modal.classList.add("open");
@@ -856,7 +847,7 @@
       conv = {
         id: String(Date.now()),
         name: student.name,
-        avatar: student.avatar || getRandomAfricanAvatar(),
+        avatar: student.avatar || DEFAULT_AVATAR_PLACEHOLDER,
         status: "online",
         major: student.major,
         unread: 0,
@@ -925,7 +916,7 @@
       bio,
       courses: courses.length ? courses : ["CS 201", "IT Core"],
       interests: interests.length ? interests : ["Research", "Algorithms"],
-      avatar: getRandomAfricanAvatar(),
+      avatar: DEFAULT_AVATAR_PLACEHOLDER,
       location: location || "IATS Main Campus"
     };
 
@@ -993,7 +984,7 @@
 
         <div class="catchup-attendees">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="${resolveAssetUrl(c.hostAvatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" alt="${c.host}">
+            <img src="${resolveAssetUrl(c.hostAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" alt="${c.host}">
             <span style="font-size: 0.82rem; font-weight: 500;">Host: <b>${c.host}</b></span>
           </div>
           <button class="btn-liquid ${c.isJoined ? 'btn-glass' : 'btn-primary'} btn-sm btn-catchup-toggle" data-id="${c.id}">
@@ -1069,7 +1060,7 @@
     }
 
     const hostName = AppState.currentUser ? AppState.currentUser.name : "IATS Scholar";
-    const hostAvatar = AppState.currentUser ? AppState.currentUser.avatar : getRandomAfricanAvatar();
+    const hostAvatar = AppState.currentUser ? AppState.currentUser.avatar : DEFAULT_AVATAR_PLACEHOLDER;
 
     const newCatchup = {
       title,
@@ -1128,7 +1119,7 @@
         <div class="glass-panel thread-post-card" style="margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <img src="${resolveAssetUrl(post.authorAvatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" alt="${post.author}">
+              <img src="${resolveAssetUrl(post.authorAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" alt="${post.author}">
               <div>
                 <div style="font-weight: 700; font-size: 0.92rem; color: #1E293B;">${post.author}</div>
                 <div style="font-size: 0.78rem; color: #64748B;">${post.authorRole || 'IATS Scholar'} • ${post.timeAgo || 'Recent'}</div>
@@ -1227,7 +1218,7 @@
     const tags = tagsStr.split(",").map(t => t.trim().replace(/^#/, "")).filter(Boolean);
     const author = AppState.currentUser ? AppState.currentUser.name : "IATS Scholar";
     const authorRole = AppState.currentUser ? (AppState.currentUser.major || "IATS Scholar") : "IATS Department";
-    const authorAvatar = AppState.currentUser ? AppState.currentUser.avatar : getRandomAfricanAvatar();
+    const authorAvatar = AppState.currentUser ? AppState.currentUser.avatar : DEFAULT_AVATAR_PLACEHOLDER;
 
     const newPost = {
       category: channel,
@@ -1309,7 +1300,7 @@
     // Render Left Sidebar Threads
     threadsList.innerHTML = AppState.conversations.map(c => `
       <div class="chat-thread-item ${String(c.id) === String(activeConv.id) ? 'active' : ''}" data-id="${c.id}">
-        <img src="${resolveAssetUrl(c.avatar_url || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover;" alt="${c.name}">
+        <img src="${resolveAssetUrl(c.avatar_url || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover;" alt="${c.name}">
         <div style="flex: 1; min-width: 0;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="font-weight: 700; font-size: 0.92rem; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.name}</div>
@@ -1339,7 +1330,7 @@
     if (activeHeader && activeConv) {
       activeHeader.innerHTML = `
         <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="${resolveAssetUrl(activeConv.avatar_url || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" alt="${activeConv.name}">
+          <img src="${resolveAssetUrl(activeConv.avatar_url || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" alt="${activeConv.name}">
           <div>
             <div style="font-weight: 700; font-size: 1rem; color: #1E293B;">${activeConv.name}</div>
             <div style="font-size: 0.8rem; color: #059669; display: flex; align-items: center; gap: 5px;">
@@ -1460,7 +1451,7 @@
         recipientName: recipient,
         major: faculty || "IATS Scholar",
         firstMessage: firstMsg,
-        avatar: getRandomAfricanAvatar()
+        avatar: DEFAULT_AVATAR_PLACEHOLDER
       });
       if (conv) {
         AppState.activeChatId = conv.id;
@@ -1486,7 +1477,7 @@
   function renderProfileView() {
     const user = AppState.currentUser || {
       name: "IATS Scholar",
-      university: "Institute of Advanced Technology & Studies",
+      university: "Institute of Advanced Technical Studies",
       major: "Faculty of Computing & Information Tech",
       year: "3rd Year (Class of 2026)",
       bio: "Active IATS scholar specializing in distributed cloud computing, modern UI systems, and academic peer collaboration.",
@@ -1501,7 +1492,12 @@
     container.innerHTML = `
       <div class="glass-panel" style="padding: 32px; max-width: 680px; margin: 0 auto;">
         <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 24px; flex-wrap: wrap;">
-          <img src="${resolveAssetUrl(user.avatar || getRandomAfricanAvatar())}" onerror="this.onerror=null;this.src='./images/scholar_female.jpg';" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #D8232A; box-shadow: 0 4px 16px rgba(216,35,42,0.15);" alt="${user.name}">
+          <img id="current-profile-avatar" src="${resolveAssetUrl(user.avatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #D8232A; box-shadow: 0 4px 16px rgba(216,35,42,0.15);" alt="${user.name}">
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+            <label for="profile-photo-upload" class="btn-liquid btn-glass btn-sm" style="cursor:pointer;">Upload your photo</label>
+            <input type="file" id="profile-photo-upload" accept="image/png,image/jpeg,image/webp" style="display:none;">
+            <span style="font-size:.78rem;color:#64748B;">Use your own photo (JPG, PNG or WebP; max 5 MB).</span>
+          </div>
           <div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <h2 style="font-size: 1.6rem; font-weight: 800; color: #1E293B;">${user.name}</h2>
@@ -1545,6 +1541,23 @@
       </div>
     `;
 
+    const photoInput = document.getElementById("profile-photo-upload");
+    if (photoInput) photoInput.addEventListener("change", async () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file || !AppState.currentUser) return;
+      try {
+        showToast("Uploading Photo", "Saving your profile picture securely…");
+        const avatarUrl = await window.SupabaseService.uploadAvatar(file, AppState.currentUser.id);
+        const updated = { ...AppState.currentUser, avatar: avatarUrl };
+        const saved = await window.SupabaseService.saveUser(updated);
+        if (!saved) throw new Error("Photo uploaded but profile could not be saved. Please try again.");
+        AppState.currentUser.avatar = avatarUrl;
+        renderNavigation();
+        renderProfileView();
+        showToast("Profile Photo Updated", "Your photo is saved to your profile.");
+      } catch (err) { alert(err.message || "Could not upload your photo."); }
+      finally { photoInput.value = ""; }
+    });
     const privBtn = document.getElementById("btn-profile-privacy-link");
     if (privBtn) {
       privBtn.addEventListener("click", () => {
@@ -1567,7 +1580,7 @@
   const tourSteps = [
     {
       title: "1. Liquid Glass Header & Authentic IATS Shield",
-      desc: "Welcome to IATS CONNECT. The top bar features the official Institute of Advanced Technology & Studies shield crest, frosted liquid glass navigation, and instant authentication via personal email or Google.",
+      desc: "Welcome to IATS CONNECT. The top bar features the official Institute of Advanced Technical Studies shield crest, frosted liquid glass navigation, and instant authentication via personal email or Google.",
       view: "landing"
     },
     {
