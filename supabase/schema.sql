@@ -129,7 +129,11 @@ create table if not exists public.catchups (
   event_starts_at timestamptz,
   event_ends_at   timestamptz,
   tag            text default 'Academic Event',
-  attendees      int default 1,
+  item_type      text not null default 'event' check (item_type in ('event','news')),
+  event_format   text not null default 'physical' check (event_format in ('physical','online','hybrid')),
+  online_url     text,
+  registration_deadline timestamptz,
+  attendees      int default 0,
   max_attendees  int default null,
   attendee_ids   uuid[] default '{}',
   created_at     timestamptz not null default now()
@@ -138,6 +142,16 @@ create table if not exists public.catchups (
 alter table public.catchups add column if not exists event_starts_at timestamptz;
 alter table public.catchups add column if not exists event_ends_at timestamptz;
 alter table public.catchups add column if not exists description text;
+alter table public.catchups add column if not exists item_type text not null default 'event';
+alter table public.catchups add column if not exists event_format text not null default 'physical';
+alter table public.catchups add column if not exists online_url text;
+alter table public.catchups add column if not exists registration_deadline timestamptz;
+update public.catchups set item_type = case when lower(replace(coalesce(tag,''),' ',''))='campusnews' then 'news' else 'event' end;
+alter table public.catchups drop constraint if exists catchups_item_type_check;
+alter table public.catchups add constraint catchups_item_type_check check (item_type in ('event','news'));
+alter table public.catchups drop constraint if exists catchups_event_format_check;
+alter table public.catchups add constraint catchups_event_format_check check (event_format in ('physical','online','hybrid'));
+create index if not exists catchups_item_type_created_at_idx on public.catchups (item_type, created_at desc);
 create index if not exists catchups_event_starts_at_idx on public.catchups (event_starts_at);
 
 alter table public.catchups enable row level security;
@@ -458,23 +472,23 @@ declare
   current_ids uuid[];
   current_count integer;
   cap integer;
+  deadline timestamptz;
+  item_kind text;
 begin
   if actor is null then raise exception 'Sign in required'; end if;
-  select coalesce(attendee_ids, '{}'::uuid[]), coalesce(attendees, 0), max_attendees
-    into current_ids, current_count, cap
+  select coalesce(attendee_ids, '{}'::uuid[]), coalesce(attendees, 0), max_attendees, registration_deadline, item_type
+    into current_ids, current_count, cap, deadline, item_kind
     from public.catchups where id = p_catchup_id for update;
   if not found then return false; end if;
+  if item_kind = 'news' then raise exception 'Campus news does not require event registration.'; end if;
   if p_joining then
+    if deadline is not null and now() > deadline then raise exception 'Registration for this event has closed.'; end if;
     if actor = any(current_ids) then return true; end if;
-    if cap is not null and current_count >= cap then return false; end if;
-    update public.catchups
-      set attendee_ids = array_append(current_ids, actor), attendees = current_count + 1
-      where id = p_catchup_id;
+    if cap is not null and current_count >= cap then raise exception 'This event has reached its registration capacity.'; end if;
+    update public.catchups set attendee_ids = array_append(current_ids, actor), attendees = current_count + 1 where id = p_catchup_id;
   else
     if not (actor = any(current_ids)) then return true; end if;
-    update public.catchups
-      set attendee_ids = array_remove(current_ids, actor), attendees = greatest(0, current_count - 1)
-      where id = p_catchup_id;
+    update public.catchups set attendee_ids = array_remove(current_ids, actor), attendees = greatest(0, current_count - 1) where id = p_catchup_id;
   end if;
   return true;
 end;
