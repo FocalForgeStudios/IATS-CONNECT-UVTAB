@@ -240,6 +240,10 @@
         time: c.time ?? c.event_time ?? "",
         event_starts_at: c.event_starts_at ?? null,
         event_ends_at: c.event_ends_at ?? null,
+        item_type: c.item_type || (String(c.tag || "").toLowerCase().replace(/\s+/g, "") === "campusnews" ? "news" : "event"),
+        event_format: c.event_format || "physical",
+        online_url: c.online_url || "",
+        registration_deadline: c.registration_deadline || null,
         maxAttendees: c.maxAttendees ?? c.max_attendees ?? null,
         isJoined: Array.isArray(c.attendee_ids) && !!AppState.currentUser && c.attendee_ids.includes(AppState.currentUser.id)
       }));
@@ -1121,37 +1125,95 @@
       + (event.isJoined ? "Leave Event" : "Join Event") + "</button></div></article>";
   }
 
+  function isCampusNewsItem(item) {
+    return String(item?.item_type || "").toLowerCase() === "news" ||
+      String(item?.tag || "").toLowerCase().replace(/\s+/g, "") === "campusnews";
+  }
+
+  function renderCampusNewsCard(item) {
+    const description = String(item.description || "");
+    const excerpt = description.length > 240 ? description.slice(0, 240).trimEnd() + "…" : description;
+    return "<article class='glass-panel catchup-card campus-news-card' style='cursor:pointer;display:flex;flex-direction:column;gap:14px;' data-open-details='" + escapeEventText(item.id) + "'>"
+      + "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;'><span class='tag-pill tag-pill-highlight'>OFFICIAL CAMPUS NEWS</span><span style='font-size:.78rem;color:#64748B;'>" + escapeEventText(formatEventDateTime(item.created_at)) + "</span></div>"
+      + "<h3 style='font-size:1.16rem;font-weight:800;color:#1E293B;line-height:1.35;margin:0;'>" + escapeEventText(item.title || "Campus News") + "</h3>"
+      + "<p style='font-size:.9rem;color:#475569;line-height:1.6;margin:0;white-space:pre-wrap;'>" + escapeEventText(excerpt || "Open to read the full announcement.") + "</p>"
+      + "<div style='display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid rgba(148,163,184,.22);'><span style='font-size:.82rem;color:#64748B;'>Published by " + escapeEventText(item.host || "IATS CONNECT") + "</span><button type='button' class='btn-liquid btn-glass btn-sm btn-open-catchup-details' data-id='" + escapeEventText(item.id) + "'>Read full news →</button></div></article>";
+  }
+
+  function renderCatchupCard(event) {
+    const status = eventStatus(event), start = getEventStart(event), end = getEventEnd(event);
+    const startMs = start && Number.isFinite(Date.parse(start)) ? Date.parse(start) : "";
+    const endMs = end && Number.isFinite(Date.parse(end)) ? Date.parse(end) : "";
+    const label = status === "live" ? "LIVE NOW" : status === "past" ? "PAST" : "UPCOMING";
+    const format = String(event.event_format || "physical");
+    const formatLabel = format === "online" ? "Online" : format === "hybrid" ? "Physical + Online" : "Physical";
+    const count = Number(event.attendees || 0);
+    const attendees = event.max_attendees == null ? count + " registered" : count + "/" + event.max_attendees + " registered";
+    const deadline = event.registration_deadline ? Date.parse(event.registration_deadline) : NaN;
+    const registrationClosed = Number.isFinite(deadline) && Date.now() > deadline;
+    const onlineUrl = /^https?:\/\//i.test(String(event.online_url || "")) ? String(event.online_url) : "";
+    const description = String(event.description || "");
+    const excerpt = description.length > 200 ? description.slice(0, 200).trimEnd() + "…" : description;
+    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:14px;'>"
+      + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'><span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span><span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
+      + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end) + "</div>"
+      + "<h3 style='font-size:1.15rem;font-weight:800;color:#1E293B;line-height:1.35;margin:0 0 7px;'>" + escapeEventText(event.title) + "</h3>"
+      + (excerpt ? "<p style='font-size:.88rem;color:#475569;line-height:1.55;margin:0 0 10px;white-space:pre-wrap;'>" + escapeEventText(excerpt) + "</p>" : "")
+      + "<div style='display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px;'><span class='tag-pill tag-pill-blue'>" + escapeEventText(formatLabel) + "</span><span class='tag-pill'>" + escapeEventText(attendees) + "</span></div>"
+      + (format !== "online" && event.location ? "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location) + "</div>" : "")
+      + "<div style='font-size:.86rem;color:#64748B;margin-bottom:8px;'>" + ICONS.clock + " " + escapeEventText(formatEventDateTime(start)) + (end ? " – " + escapeEventText(new Date(end).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})) : "") + "</div>"
+      + (event.registration_deadline ? "<div style='font-size:.82rem;color:" + (registrationClosed ? "#B91C1C" : "#64748B") + ";margin-bottom:8px;'>" + (registrationClosed ? "Registration closed" : "Register by") + ": " + escapeEventText(formatEventDateTime(event.registration_deadline)) + "</div>" : "")
+      + "</div><div class='catchup-attendees' style='gap:10px;flex-wrap:wrap;'><div style='display:flex;align-items:center;gap:8px;min-width:0;'><img src='" + escapeEventText(resolveAssetUrl(event.hostAvatar || event.host_avatar || DEFAULT_AVATAR_PLACEHOLDER)) + "' onerror=\"this.onerror=null;this.src='" + DEFAULT_AVATAR_PLACEHOLDER + "';\" style='width:32px;height:32px;border-radius:50%;object-fit:cover;' alt='Host'><span style='font-size:.82rem;font-weight:500;'>Host: <b>" + escapeEventText(event.host || "IATS Scholar") + "</b></span></div>"
+      + "<div style='display:flex;gap:8px;flex-wrap:wrap;'><button type='button' class='btn-liquid btn-glass btn-sm btn-open-catchup-details' data-id='" + escapeEventText(event.id) + "'>Full details</button>"
+      + (onlineUrl && format !== "physical" ? "<a class='btn-liquid btn-glass btn-sm' href='" + escapeEventText(onlineUrl) + "' target='_blank' rel='noopener noreferrer'>Join online ↗</a>" : "")
+      + "<button type='button' class='btn-liquid " + (event.isJoined ? "btn-glass" : "btn-primary") + " btn-sm btn-catchup-toggle' data-id='" + escapeEventText(event.id) + "' " + (status === "past" || (registrationClosed && !event.isJoined) ? "disabled" : "") + ">" + (event.isJoined ? "Cancel registration" : "Register") + "</button></div></div></article>";
+  }
+
+  function openCatchupDetails(id) {
+    const item = AppState.catchups.find(entry => String(entry.id) === String(id)) || (AppState.adminEvents || []).find(entry => String(entry.id) === String(id));
+    if (!item) return;
+    let modal = document.getElementById("catchup-details-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "catchup-details-modal";
+      modal.className = "modal-backdrop";
+      modal.innerHTML = "<div class='modal-box' style='max-width:760px;max-height:86vh;overflow:auto;'><button type='button' class='modal-close-btn' id='btn-close-catchup-details' aria-label='Close'>✕</button><div id='catchup-details-content'></div></div>";
+      document.body.appendChild(modal);
+      modal.addEventListener("click", event => { if (event.target === modal) modal.classList.remove("open"); });
+      modal.querySelector("#btn-close-catchup-details").addEventListener("click", () => modal.classList.remove("open"));
+    }
+    const news = isCampusNewsItem(item), format = String(item.event_format || "physical");
+    const url = /^https?:\/\//i.test(String(item.online_url || "")) ? String(item.online_url) : "";
+    modal.querySelector("#catchup-details-content").innerHTML = "<span class='tag-pill " + (news ? "tag-pill-highlight" : "tag-pill-blue") + "'>" + (news ? "OFFICIAL CAMPUS NEWS" : escapeEventText(item.tag || "Academic Event")) + "</span>"
+      + "<h2 style='font-size:1.55rem;font-weight:850;color:#1E293B;line-height:1.3;margin:14px 40px 10px 0;'>" + escapeEventText(item.title || "") + "</h2>"
+      + "<div style='font-size:.86rem;color:#64748B;margin-bottom:18px;'>" + (news ? "Published " + escapeEventText(formatEventDateTime(item.created_at)) : "Hosted by " + escapeEventText(item.host || "IATS Scholar") + " · " + escapeEventText(formatEventDateTime(getEventStart(item)))) + "</div>"
+      + (news ? "" : "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;'><span class='tag-pill tag-pill-blue'>" + escapeEventText(format === "online" ? "Online" : format === "hybrid" ? "Physical + Online" : "Physical") + "</span><span class='tag-pill'>" + escapeEventText(Number(item.attendees || 0) + " registered") + "</span></div>")
+      + "<div style='font-size:.98rem;color:#334155;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;'>" + escapeEventText(item.description || "No additional details provided.") + "</div>"
+      + (news ? "" : "<div style='margin-top:18px;color:#475569;line-height:1.7;'>" + (format !== "online" && item.location ? "<div><b>Location:</b> " + escapeEventText(item.location) + "</div>" : "") + (item.registration_deadline ? "<div><b>Registration deadline:</b> " + escapeEventText(formatEventDateTime(item.registration_deadline)) + "</div>" : "") + (url && format !== "physical" ? "<div style='margin-top:12px;'><a href='" + escapeEventText(url) + "' target='_blank' rel='noopener noreferrer'>Open online meeting link ↗</a></div>" : "") + "</div>");
+    modal.classList.add("open");
+  }
+
   function renderCatchUpView() {
     const grid = document.getElementById("catchup-grid-container");
     if (!grid) return;
-    if (!AppState.catchups.length) {
-      grid.innerHTML = "<div class='glass-panel' style='grid-column:1/-1;text-align:center;padding:48px 24px;'>"
-        + "<h3 style='font-size:1.4rem;font-weight:800;color:#1E293B;margin-bottom:8px;'>No Academic Events Scheduled</h3>"
-        + "<p style='color:#64748B;max-width:440px;margin:0 auto 20px;'>Organize study sprints, departmental seminars, lecture discussions, or revision workshops for IATS scholars.</p>"
-        + "<button class='btn-liquid btn-primary' onclick=\"CampusApp.openHostCatchupModal()\">+ Host First Academic Event</button></div>";
-      return;
-    }
-    const groups = [
-      { key: "live", title: "Live Now", events: [] },
-      { key: "upcoming", title: "Upcoming Events", events: [] },
-      { key: "past", title: "Past Events", events: [] }
-    ];
-    AppState.catchups.forEach(event => groups.find(group => group.key === eventStatus(event)).events.push(event));
-    groups.forEach(group => group.events.sort((a, b) => {
-      const aStart = Date.parse(getEventStart(a) || "");
-      const bStart = Date.parse(getEventStart(b) || "");
-      if (!Number.isFinite(aStart) && !Number.isFinite(bStart)) return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
-      if (!Number.isFinite(aStart)) return 1;
-      if (!Number.isFinite(bStart)) return -1;
-      return group.key === "past" ? bStart - aStart : aStart - bStart;
+    const all = AppState.catchups || [];
+    const news = all.filter(isCampusNewsItem).sort((a,b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
+    const groups = [{key:"live",title:"Live Now",events:[]},{key:"upcoming",title:"Upcoming Events",events:[]},{key:"past",title:"Past Events",events:[]}];
+    all.filter(item => !isCampusNewsItem(item)).forEach(event => groups.find(group => group.key === eventStatus(event)).events.push(event));
+    groups.forEach(group => group.events.sort((a,b) => {
+      const as = Date.parse(getEventStart(a) || ""), bs = Date.parse(getEventStart(b) || "");
+      if (!Number.isFinite(as) && !Number.isFinite(bs)) return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
+      if (!Number.isFinite(as)) return 1; if (!Number.isFinite(bs)) return -1;
+      return group.key === "past" ? bs - as : as - bs;
     }));
-    grid.innerHTML = groups.filter(group => group.events.length).map(group =>
-      "<section style='grid-column:1/-1;margin-bottom:8px;'><h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;margin:8px 0 14px;'>" + group.title + " <span style='font-size:.8rem;color:#64748B;'>(" + group.events.length + ")</span></h3>"
-      + "<div class='catchup-grid'>" + group.events.map(renderCatchupCard).join("") + "</div></section>"
-    ).join("");
-    grid.querySelectorAll(".btn-catchup-toggle").forEach(btn => {
-      btn.addEventListener("click", () => toggleJoinCatchup(btn.dataset.id));
-    });
+    let markup = "";
+    if (news.length) markup += "<section style='grid-column:1/-1;margin-bottom:20px;'><div style='display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 14px;'><div><h3 style='font-size:1.25rem;font-weight:850;color:#1E293B;margin:0 0 4px;'>Official Campus News</h3><p style='color:#64748B;font-size:.88rem;margin:0;'>Important announcements from IATS CONNECT — shown first.</p></div><span class='tag-pill tag-pill-highlight'>" + news.length + " " + (news.length === 1 ? "announcement" : "announcements") + "</span></div><div class='catchup-grid campus-news-grid'>" + news.map(renderCampusNewsCard).join("") + "</div></section>";
+    markup += groups.filter(group => group.events.length).map(group => "<section style='grid-column:1/-1;margin-bottom:20px;'><h3 style='font-size:1.1rem;font-weight:850;color:#1E293B;margin:8px 0 14px;'>" + group.title + " <span style='font-size:.8rem;color:#64748B;'>(" + group.events.length + ")</span></h3><div class='catchup-grid'>" + group.events.map(renderCatchupCard).join("") + "</div></section>").join("");
+    if (!markup) markup = "<div class='glass-panel' style='grid-column:1/-1;text-align:center;padding:40px 24px;'><h3 style='font-size:1.3rem;font-weight:850;color:#1E293B;margin-bottom:8px;'>No Events or News Yet</h3><p style='color:#64748B;max-width:520px;margin:0 auto;'>Academic events will appear here, while official campus news will always be prioritised above them.</p></div>";
+    grid.innerHTML = markup;
+    grid.querySelectorAll(".btn-catchup-toggle").forEach(btn => btn.addEventListener("click", () => toggleJoinCatchup(btn.dataset.id)));
+    grid.querySelectorAll(".btn-open-catchup-details").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); openCatchupDetails(btn.dataset.id); }));
+    grid.querySelectorAll("[data-open-details]").forEach(card => card.addEventListener("click", () => openCatchupDetails(card.dataset.openDetails)));
   }
 
   function renderAdminDashboardView() {
@@ -1213,6 +1275,7 @@
     const now = Date.now();
     const events = (AppState.adminEvents || []).filter(event => filter === "all" || eventStatus(event, now) === filter);
     events.sort((a, b) => {
+      if (isCampusNewsItem(a) !== isCampusNewsItem(b)) return isCampusNewsItem(a) ? -1 : 1;
       if (sort === "latest") return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
       if (sort === "attendees") return (b.attendees || 0) - (a.attendees || 0);
       if (sort === "title") return String(a.title || "").localeCompare(String(b.title || ""));
@@ -1234,7 +1297,7 @@
       const startMs = start && Number.isFinite(Date.parse(start)) ? Date.parse(start) : "";
       const endMs = end && Number.isFinite(Date.parse(end)) ? Date.parse(end) : "";
       const label = status === "live" ? "LIVE NOW" : status === "past" ? "PAST" : "UPCOMING";
-      const cap = event.max_attendees == null ? "Unlimited capacity" : (event.attendees || 0) + "/" + event.max_attendees + " attending";
+      const cap = isCampusNewsItem(event) ? "News · no registration" : Number(event.attendees || 0) + (event.max_attendees == null ? " registered" : "/" + event.max_attendees + " registered");
       return "<div class='glass-panel' style='padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;'>"
         + "<div style='min-width:200px;flex:1;'><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;'><strong>" + escapeEventText(event.title) + "</strong><span class='tag-pill tag-pill-blue' data-event-status-label>" + label + "</span></div>"
         + "<div style='font-size:.85rem;color:#64748B;'>" + escapeEventText(event.tag || "Academic Event") + " · " + escapeEventText(event.location || "Location not set") + " · Host: " + escapeEventText(event.host || "IATS Scholar") + "</div>"
@@ -1294,31 +1357,23 @@
     if (adminStatusChanged) renderAdminEventsList();
   }
 
-  function toggleJoinCatchup(id) {
+  async function toggleJoinCatchup(id) {
     const catchup = AppState.catchups.find(c => String(c.id) === String(id));
-    if (!catchup) return;
-
-    if (catchup.isJoined) {
-      catchup.isJoined = false;
-      catchup.attendees = Math.max(0, (catchup.attendees || 1) - 1);
-      if (window.SupabaseService && typeof window.SupabaseService.toggleCatchupAttendance === "function") {
-        window.SupabaseService.toggleCatchupAttendance(id, AppState.currentUser ? AppState.currentUser.id : "guest", false);
-      }
-      showToast("Left Event", `You left "${catchup.title}".`);
-    } else {
-      if (catchup.maxAttendees != null && (catchup.attendees || 0) >= Number(catchup.maxAttendees)) {
-        alert("This academic event is currently at maximum capacity!");
-        return;
-      }
-      catchup.isJoined = true;
-      catchup.attendees = (catchup.attendees || 0) + 1;
-      if (window.SupabaseService && typeof window.SupabaseService.toggleCatchupAttendance === "function") {
-        window.SupabaseService.toggleCatchupAttendance(id, AppState.currentUser ? AppState.currentUser.id : "guest", true);
-      }
-      showToast("Spot Confirmed", `You are attending "${catchup.title}".`);
+    if (!catchup || isCampusNewsItem(catchup)) return;
+    if (!AppState.currentUser) { showToast("Sign In Required", "Please sign in before registering for an academic event."); openAuthModal(); return; }
+    const joining = !catchup.isJoined;
+    if (joining && catchup.registration_deadline && Date.now() > Date.parse(catchup.registration_deadline)) {
+      showToast("Registration Closed", "The host's registration deadline has passed."); return;
     }
-
-    renderActiveView();
+    try {
+      await window.SupabaseService.toggleCatchupAttendance(id, AppState.currentUser.id, joining);
+      catchup.isJoined = joining;
+      const fresh = await window.SupabaseService.fetchCatchupById(id);
+      if (fresh) Object.assign(catchup, fresh, { isJoined: joining });
+      AppState.adminEvents = AppState.adminEvents.map(item => String(item.id) === String(id) ? { ...item, attendees: catchup.attendees } : item);
+      showToast(joining ? "Registration Confirmed" : "Registration Cancelled", joining ? `You are registered for "${catchup.title}".` : `Your registration for "${catchup.title}" has been cancelled.`);
+      renderActiveView();
+    } catch (error) { showToast("Registration Not Updated", error.message || "Please try again."); }
   }
 
   function isNewsPublisher() {
