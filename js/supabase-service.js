@@ -301,7 +301,7 @@ export const SupabaseService = {
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
           const { data, error } = await supabase.from("catchups")
-            .select("id,title,host,host_avatar,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
+            .select("id,title,description,host,host_avatar,location,event_time,event_starts_at,event_ends_at,tag,attendees,max_attendees,created_at")
             .order("created_at", { ascending: false })
             .range(offset, offset + pageSize - 1);
           if (error) throw new Error(friendlyError(error));
@@ -337,7 +337,8 @@ export const SupabaseService = {
       const { data: { user } } = await supabase.auth.getUser();
       const payload = {
         title: sanitizeText(catchup.title, 120),
-        host: sanitizeText(catchup.host, 80),
+        description: sanitizeText(catchup.description, 2000),
+        host: sanitizeText(catchup.host, 80)
         host_avatar: sanitizeAvatar(catchup.hostAvatar),
         host_id: user ? user.id : null,
         location: sanitizeText(catchup.location, 100),
@@ -366,7 +367,8 @@ export const SupabaseService = {
     }
     const payload = {
       title: sanitizeText(catchup.title, 120),
-      location: sanitizeText(catchup.location, 100),
+      description: sanitizeText(catchup.description, 2000),
+      location: sanitizeText(catchup.location, 100)
       event_time: sanitizeText(catchup.time, 100),
       event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
       event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
