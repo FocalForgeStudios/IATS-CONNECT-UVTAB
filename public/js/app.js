@@ -72,10 +72,13 @@
       return true;
     }
     const result = window.IATSContentFilter.checkFields(fieldsObj);
-    if (!result.allowed) {
+    const allowed = typeof result.allowed === "boolean"
+      ? result.allowed
+      : typeof result.isClean === "boolean" ? result.isClean : true;
+    if (!allowed) {
       const reasonBox = document.getElementById("filter-warning-reason-text");
       if (reasonBox) {
-        reasonBox.innerHTML = `<b>Policy Rejection:</b> ${result.reason}`;
+        reasonBox.textContent = result.reason || "This entry was flagged by the academic content policy. Review the event details and try again.";
       }
       const warningModal = document.getElementById("content-filter-warning-modal");
       if (warningModal) {
@@ -191,7 +194,13 @@
     });
 
     unsubCatchups = window.SupabaseService.subscribeCatchups((catchups) => {
-      AppState.catchups = catchups || [];
+      AppState.catchups = (catchups || []).map(c => ({
+        ...c,
+        hostAvatar: c.hostAvatar ?? c.host_avatar ?? null,
+        time: c.time ?? c.event_time ?? "",
+        maxAttendees: c.maxAttendees ?? c.max_attendees ?? null,
+        isJoined: Array.isArray(c.attendee_ids) && !!AppState.currentUser && c.attendee_ids.includes(AppState.currentUser.id)
+      }));
       if (AppState.activeView === "catchup" || AppState.activeView === "dashboard") {
         renderActiveView();
       }
@@ -970,7 +979,7 @@
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
             <span class="tag-pill tag-pill-highlight">${c.tag || 'Academic Event'}</span>
             <span style="font-size: 0.8rem; font-weight: 700; color: #D8232A; display: flex; align-items: center; gap: 4px;">
-              ${ICONS.users} ${c.attendees || 1}/${c.maxAttendees || 8} Going
+              ${ICONS.users} ${c.maxAttendees == null ? `${c.attendees || 1} attending · Unlimited capacity` : `${c.attendees || 1}/${c.maxAttendees} Going`}
             </span>
           </div>
           <h3 style="font-size: 1.15rem; font-weight: 700; color: #1E293B; line-height: 1.35; margin-bottom: 6px;">${c.title}</h3>
@@ -1011,7 +1020,7 @@
       }
       showToast("Left Event", `You left "${catchup.title}".`);
     } else {
-      if ((catchup.attendees || 0) >= (catchup.maxAttendees || 8)) {
+      if (catchup.maxAttendees != null && (catchup.attendees || 0) >= Number(catchup.maxAttendees)) {
         alert("This academic event is currently at maximum capacity!");
         return;
       }
@@ -1042,7 +1051,13 @@
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
     const time = document.getElementById("new-catchup-time") ? document.getElementById("new-catchup-time").value.trim() : "";
     const tag = document.getElementById("new-catchup-tag") ? document.getElementById("new-catchup-tag").value : "Study Group";
-    const capacity = document.getElementById("new-catchup-capacity") ? (parseInt(document.getElementById("new-catchup-capacity").value) || 8) : 8;
+    const capacityInput = document.getElementById("new-catchup-capacity");
+    const capacityValue = capacityInput ? capacityInput.value.trim() : "";
+    const capacity = capacityValue ? Number.parseInt(capacityValue, 10) : null;
+    if (capacityValue && (!Number.isInteger(capacity) || capacity < 2)) {
+      alert("Enter a capacity of at least 2 scholars, or leave the field blank for unlimited attendance.");
+      return;
+    }
 
     if (!title || !location || !time) {
       alert("Please fill out all required fields for your IATS academic event.");
@@ -1059,8 +1074,14 @@
       return;
     }
 
-    const hostName = AppState.currentUser ? AppState.currentUser.name : "IATS Scholar";
-    const hostAvatar = AppState.currentUser ? AppState.currentUser.avatar : DEFAULT_AVATAR_PLACEHOLDER;
+    if (!AppState.currentUser) {
+      showToast("Sign In Required", "Please sign in with your IATS scholar account before publishing an event.");
+      openAuthModal();
+      return;
+    }
+
+    const hostName = AppState.currentUser.name;
+    const hostAvatar = AppState.currentUser.avatar || DEFAULT_AVATAR_PLACEHOLDER;
 
     const newCatchup = {
       title,
@@ -1074,12 +1095,27 @@
       isJoined: true
     };
 
-    if (window.SupabaseService && typeof window.SupabaseService.addCatchup === "function") {
+    try {
+      if (!window.SupabaseService || typeof window.SupabaseService.addCatchup !== "function") {
+        throw new Error("The event service is unavailable. Please refresh and try again.");
+      }
       const saved = await window.SupabaseService.addCatchup(newCatchup);
-      if (saved) newCatchup.id = saved.id;
+      if (!saved || !saved.id) {
+        throw new Error("The event could not be saved. Please check your connection and try again.");
+      }
+      Object.assign(newCatchup, {
+        id: saved.id,
+        hostAvatar: saved.host_avatar ?? newCatchup.hostAvatar,
+        time: saved.event_time ?? newCatchup.time,
+        maxAttendees: saved.max_attendees ?? newCatchup.maxAttendees,
+        attendees: saved.attendees ?? 1
+      });
+      AppState.catchups.unshift(newCatchup);
+    } catch (err) {
+      console.error("Academic event publish failed:", err);
+      showToast("Event Not Published", err.message || "Could not publish the event. Please try again.");
+      return;
     }
-
-    AppState.catchups.unshift(newCatchup);
 
     closeHostCatchupModal();
     const hostForm = document.getElementById("host-catchup-form");
