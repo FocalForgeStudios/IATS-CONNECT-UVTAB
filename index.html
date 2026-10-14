@@ -583,6 +583,7 @@
             <button type="button" class="btn-liquid btn-glass" id="btn-password-signup" style="width: 100%; margin-top: 8px;">
               <span>Create Account with Password</span>
             </button>
+            <button type="button" id="btn-password-recovery" style="display:block; margin:10px auto 0; background:none; border:0; color:#2563EB; font-size:.86rem; font-weight:600; cursor:pointer;">Forgot password? Send recovery email</button>
             <p style="font-size: .78rem; line-height: 1.45; color: #64748B; margin-top: 8px;">Password sign-in does not need email delivery. New accounts may still require email confirmation if that setting is enabled in Supabase.</p>
           </form>
 
@@ -600,6 +601,19 @@
               <span>Send 6-Digit Verification Token →</span>
             </button>
           </form>
+        </div>
+
+        <div id="auth-step-password-recovery" style="display:none;">
+          <div style="text-align:center; margin-bottom:20px;">
+            <h2 id="password-recovery-title" style="font-size:1.4rem; font-weight:800; color:#1E293B;">Set a new password</h2>
+            <p style="font-size:.9rem; color:#64748B; margin-top:8px;">Choose a new password for your IATS CONNECT account.</p>
+          </div>
+          <form id="form-password-recovery">
+            <div class="form-group"><label class="form-label" for="auth-new-password">New password</label><input type="password" id="auth-new-password" class="form-input" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters" /></div>
+            <div class="form-group"><label class="form-label" for="auth-confirm-password">Confirm new password</label><input type="password" id="auth-confirm-password" class="form-input" autocomplete="new-password" minlength="8" required placeholder="Enter it again" /></div>
+            <button type="submit" class="btn-liquid btn-primary" id="btn-save-new-password" style="width:100%;"><span>Save New Password</span></button>
+          </form>
+          <button type="button" id="btn-back-from-recovery" class="btn-liquid btn-glass" style="width:100%; margin-top:10px;">Back to sign in</button>
         </div>
 
         <!-- Step 2: OTP Verification Screen -->
@@ -688,6 +702,7 @@
               <option value="Academic Workshop">Department Workshop</option>
               <option value="Exam Revision">Exam Revision Session</option>
               <option value="Tech Seminar">Tech & Innovation Seminar</option>
+              <option value="Campus News" data-admin-only="true" hidden>Campus News (admin only)</option>
             </select>
           </div>
           <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
