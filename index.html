@@ -736,31 +736,45 @@
         <h2 id="host-catchup-modal-title" style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Host an Academic Event & Study Sprint</h2>
         <form id="host-catchup-form">
           <div class="form-group">
-            <label class="form-label" for="new-catchup-title">Event Title / Academic Activity</label>
+            <label class="form-label" for="new-catchup-title">Title</label>
             <input type="text" id="new-catchup-title" class="form-input" placeholder="e.g. BIT2101 Data Structures Problem Review" required />
           </div>
           <div class="form-group">
-            <label class="form-label" for="new-catchup-description">Announcement / Event Details</label>
+            <label class="form-label" for="new-catchup-description">Full Details / Description</label>
             <textarea id="new-catchup-description" class="form-input" rows="3" maxlength="2000" placeholder="Share the important details, instructions, or context for this event/news item."></textarea>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="new-catchup-location">Campus Spot / Lecture Room</label>
-            <input type="text" id="new-catchup-location" class="form-input" placeholder="e.g. IATS Innovation Lab Floor 2, Tech Lab B" required />
+          <div class="form-group" id="catchup-location-group">
+            <label class="form-label" for="new-catchup-location">Physical venue (if applicable)</label>
+            <input type="text" id="new-catchup-location" class="form-input" placeholder="e.g. IATS Innovation Lab Floor 2, Tech Lab B" />
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div id="catchup-dates-group" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">
             <div class="form-group">
               <label class="form-label" for="new-catchup-start">Event start date & time</label>
-              <input type="datetime-local" id="new-catchup-start" class="form-input" required />
+              <input type="datetime-local" id="new-catchup-start" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label" for="new-catchup-end">Event end date & time</label>
-              <input type="datetime-local" id="new-catchup-end" class="form-input" required />
+              <input type="datetime-local" id="new-catchup-end" class="form-input" />
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="new-catchup-capacity">Max Scholars (optional)</label>
-            <input type="number" id="new-catchup-capacity" class="form-input" min="2" step="1" placeholder="Unlimited — leave blank" aria-describedby="catchup-capacity-help" />
-            <small id="catchup-capacity-help" style="display:block;margin-top:5px;color:#64748B;">Leave blank to allow unlimited scholars. Enter a number only if you want to set a limit.</small>
+          <div class="form-group" id="catchup-format-group">
+            <label class="form-label" for="new-catchup-format">How will the event take place?</label>
+            <select id="new-catchup-format" class="form-input"><option value="physical">Physical</option><option value="online">Online</option><option value="hybrid">Both physical and online</option></select>
+          </div>
+          <div class="form-group" id="catchup-online-url-group" style="display:none;">
+            <label class="form-label" for="new-catchup-online-url">Online meeting link</label>
+            <input type="url" id="new-catchup-online-url" class="form-input" placeholder="https://meet.google.com/... or Zoom, Skype, etc." />
+            <small style="display:block;margin-top:5px;color:#64748B;">Paste the meeting link participants should use.</small>
+          </div>
+          <div class="form-group" id="catchup-registration-deadline-group">
+            <label class="form-label" for="new-catchup-registration-deadline">Registration deadline</label>
+            <input type="datetime-local" id="new-catchup-registration-deadline" class="form-input" />
+            <small style="display:block;margin-top:5px;color:#64748B;">After this time, new registrations will be blocked.</small>
+          </div>
+          <div class="form-group" id="catchup-capacity-group">
+            <label class="form-label" for="new-catchup-capacity">Maximum registrations (optional)</label>
+            <input type="number" id="new-catchup-capacity" class="form-input" min="1" step="1" placeholder="Unlimited — leave blank" aria-describedby="catchup-capacity-help" />
+            <small id="catchup-capacity-help" style="display:block;margin-top:5px;color:#64748B;">Leave blank for unlimited registration capacity.</small>
           </div>
           <div class="form-group">
             <label class="form-label" for="new-catchup-tag">Event Category</label>
@@ -1093,9 +1107,9 @@
     <script type="module" src="./js/supabase-config.js"></script>
 
     <!-- Supabase Auth + Postgres + Realtime Engine (Modular ES Script) -->
-    <script type="module" src="./js/supabase-service.js?v=20261014-nav-profile1"></script>
+    <script type="module" src="./js/supabase-service.js?v=20261014-event-news-workflow1"></script>
 
     <!-- Core Logic Engine Script (Vanilla JS with relative path) -->
-    <script src="./js/app.js?v=20261014-admin-guest-signout1"></script>
+    <script src="./js/app.js?v=20261014-event-news-workflow1"></script>
   </body>
 </html>
