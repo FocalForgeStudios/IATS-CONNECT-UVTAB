@@ -1993,7 +1993,7 @@
         if (!sharedId) { showToast("Choose a Student", "Select a student profile to share."); return; }
         const shared = AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(sharedId));
         try {
-          await window.SupabaseService.sendMessage(activeConv.id, `[[IATS_PROFILE_SHARE:${sharedId}]]`);
+          await window.SupabaseService.sendProfileShare(activeConv.id, sharedId);
           const panel = document.getElementById("chat-share-profile-panel");
           if (panel) panel.hidden = true;
           showToast("Profile Shared", `Shared ${shared?.name || "the student"}'s profile with ${activeConv.name || "your chat"}.`);
@@ -2013,10 +2013,9 @@
         const canEdit = mine && !msg.deleted_at && Date.now() - new Date(msg.created_at).getTime() <= 120000;
         const canDelete = mine && !msg.deleted_at;
         const quoteMarkup = quoted ? `<div class="message-reply-quote"><strong>${quoted.sender_id === myId ? "You" : escapeEventText(quoted.sender_name || activeConv.name || "Scholar")}</strong><div>${quoted.deleted_at ? "Message deleted" : escapeEventText(quoted.text || "")}</div></div>` : "";
-        const profileShare = !msg.deleted_at ? String(msg.text || "").match(/^\[\[IATS_PROFILE_SHARE:([0-9a-f-]+)\]\]$/i) : null;
-        const sharedProfile = profileShare ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(profileShare[1])) : null;
+        const sharedProfileId = !msg.deleted_at ? msg.shared_profile_id : null;        const sharedProfile = sharedProfileId ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(sharedProfileId)) : null;
         const body = msg.deleted_at ? '<em>This message was deleted</em>' : profileShare ? "" : escapeEventText(msg.text || "");
-        const profileShareMarkup = profileShare ? `<div class="shared-profile-card"><div class="shared-profile-icon">👤</div><div class="shared-profile-copy"><strong>${escapeEventText(sharedProfile?.name || "Shared IATS student")}</strong><span>${escapeEventText(sharedProfile?.major || "Student profile")}</span></div><button type="button" class="btn-liquid btn-primary btn-sm" data-open-shared-profile="${profileShare[1]}" data-profile-name="${escapeEventText(sharedProfile?.name || "IATS Scholar")}">Message</button></div>` : "";
+        const profileShareMarkup = sharedProfileId ? `<div class="shared-profile-card"><div class="shared-profile-icon">👤</div><div class="shared-profile-copy"><strong>${escapeEventText(sharedProfile?.name || "Shared IATS student")}</strong><span>${escapeEventText(sharedProfile?.major || "Student profile")}</span></div><button type="button" class="btn-liquid btn-primary btn-sm" data-open-shared-profile="${sharedProfileId}" data-profile-name="${escapeEventText(sharedProfile?.name || "IATS Scholar")}">Message</button></div>` : "";
         const attachmentMarkup = msg.attachment_path && !msg.deleted_at ? `<div class="chat-attachment-card" data-attachment-path="${escapeEventText(msg.attachment_path)}" data-attachment-name="${escapeEventText(msg.attachment_name || "Attachment")}" data-attachment-mime="${escapeEventText(msg.attachment_mime || "")}"><span>📎 ${escapeEventText(msg.attachment_name || "Attachment")}</span><small>Preparing secure link…</small></div>` : "";
         return `<div class="message-bubble ${mine ? "msg-outgoing" : "msg-incoming"}" data-message-id="${msg.id}">
           ${quoteMarkup}
