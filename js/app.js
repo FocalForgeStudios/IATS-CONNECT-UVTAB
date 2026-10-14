@@ -441,6 +441,48 @@
     }
   }
 
+  async function completePasswordAuth(user, message) {
+    if (!user) throw new Error("Authentication did not return a user session.");
+    await hydrateSessionFromAuthUser(user);
+    showAuthStep("success");
+    const panel = document.getElementById("auth-step-success");
+    if (panel) panel.classList.add("success-pop-in");
+    setTimeout(() => {
+      closeAuthModal();
+      showToast("Signed In", message + ", " + (AppState.currentUser ? AppState.currentUser.name : "Scholar") + "!");
+      navigateTo("dashboard");
+    }, 700);
+  }
+
+  async function handlePasswordSignIn(e) {
+    e.preventDefault();
+    const email = document.getElementById("auth-password-email")?.value.trim() || "";
+    const password = document.getElementById("auth-password-input")?.value || "";
+    if (!validateEmail(email) || !password) { alert("Enter a valid email address and your password."); return; }
+    if (!window.SupabaseService || !window.SupabaseService.isReady()) { showToast("Setup Needed", "Supabase is not configured."); return; }
+    const btn = document.getElementById("btn-password-signin");
+    setButtonLoading(btn, "Signing in…");
+    try {
+      const data = await window.SupabaseService.signInWithPassword(email, password);
+      await completePasswordAuth(data.user, "Welcome back");
+    } catch (err) { alert(err.message || "Sign-in failed. Check your email and password."); }
+    finally { clearButtonLoading(btn); }
+  }
+
+  async function handlePasswordSignUp() {
+    const email = document.getElementById("auth-password-email")?.value.trim() || "";
+    const password = document.getElementById("auth-password-input")?.value || "";
+    if (!validateEmail(email) || password.length < 8) { alert("Enter a valid email and a password of at least 8 characters."); return; }
+    const btn = document.getElementById("btn-password-signup");
+    setButtonLoading(btn, "Creating account…");
+    try {
+      const data = await window.SupabaseService.signUpWithPassword(email, password);
+      if (data.session && data.user) await completePasswordAuth(data.user, "Account created");
+      else alert("Account request received. Supabase requires email confirmation for new accounts. Check your inbox, or disable email confirmations in Supabase for a presentation demo.");
+    } catch (err) { alert(err.message || "Could not create the account."); }
+    finally { clearButtonLoading(btn); }
+  }
+
   // Requests a REAL 6-digit code emailed by Supabase Auth. No code is ever
   // generated, stored, or shown in the browser.
   async function handleEmailOTPRequest(e) {
@@ -1678,6 +1720,10 @@
 
     const emailForm = document.getElementById("form-email-auth");
     if (emailForm) emailForm.addEventListener("submit", handleEmailOTPRequest);
+    const passwordForm = document.getElementById("form-password-auth");
+    if (passwordForm) passwordForm.addEventListener("submit", handlePasswordSignIn);
+    const passwordSignupBtn = document.getElementById("btn-password-signup");
+    if (passwordSignupBtn) passwordSignupBtn.addEventListener("click", handlePasswordSignUp);
 
     const verifyOtpBtn = document.getElementById("btn-verify-otp");
     if (verifyOtpBtn) verifyOtpBtn.addEventListener("click", verifyOtpCode);
