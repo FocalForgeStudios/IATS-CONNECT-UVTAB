@@ -116,7 +116,8 @@ end; $$;
 revoke all on function public.admin_promote_cohort(text) from public;
 grant execute on function public.admin_promote_cohort(text) to authenticated;
 
-create unique index if not exists match_profiles_owner_id_unique on public.match_profiles(owner_id) where owner_id is not null;
+drop index if exists public.match_profiles_owner_id_unique;
+create unique index match_profiles_owner_id_unique on public.match_profiles(owner_id);
 
 -- =========================================================================
 -- 3. CATCHUPS  (academic events / news)
