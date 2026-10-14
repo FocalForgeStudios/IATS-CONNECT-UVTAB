@@ -595,6 +595,7 @@ export const SupabaseService = {
 
     const channel = supabase.channel("public:conversations:" + user.id)
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, load)
       .subscribe();
     return () => supabase.removeChannel(channel);
   },
