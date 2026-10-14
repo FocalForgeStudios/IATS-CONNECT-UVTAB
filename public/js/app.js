@@ -1776,11 +1776,9 @@
   async function handleCreateChat(e) {
     e.preventDefault();
     const recipient = document.getElementById("new-chat-recipient").value.trim();
-    const faculty = document.getElementById("new-chat-faculty").value.trim();
-    const firstMsg = document.getElementById("new-chat-first-msg").value.trim();
-
-    if (!recipient || !firstMsg) {
-      alert("Please fill in the recipient name and initial message.");
+    const faculty = "";
+    const firstMsg = "";
+    if (!recipient) { alert("Please enter the username of the person you want to chat with.");
       return;
     }
     if (!AppState.currentUser) {
@@ -1792,7 +1790,7 @@
     if (!validateAcademicContent({
       recipient,
       faculty,
-      message: firstMsg
+      message: ""
     }, "Initiate Academic Chat")) {
       return;
     }
@@ -1803,7 +1801,7 @@
       const conv = await window.SupabaseService.createConversation({
         recipientName: recipient,
         major: faculty || "IATS Scholar",
-        firstMessage: firstMsg,
+        firstMessage: "",
         avatar: DEFAULT_AVATAR_PLACEHOLDER
       });
       if (conv) {
@@ -1848,7 +1846,7 @@
         <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 24px; flex-wrap: wrap;">
           <img id="current-profile-avatar" src="${resolveAssetUrl(user.avatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #D8232A; box-shadow: 0 4px 16px rgba(216,35,42,0.15);" alt="${user.name}">
           <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
-            <label for="profile-photo-upload" class="btn-liquid btn-glass btn-sm" style="cursor:pointer;">Upload your photo</label>
+            <label for="profile-photo-upload" class="btn-liquid btn-glass btn-sm" style="cursor:pointer;">Upload your photo</label><button type="button" class="btn-liquid btn-glass btn-sm" id="btn-remove-profile-photo">Remove photo</button>
             <input type="file" id="profile-photo-upload" accept="image/png,image/jpeg,image/webp" style="display:none;">
             <span style="font-size:.78rem;color:#64748B;">Use your own photo (JPG, PNG or WebP; max 5 MB).</span>
           </div>
@@ -1910,6 +1908,7 @@
         if (button) button.disabled = false;
       }
     });
+    document.getElementById("btn-remove-profile-photo")?.addEventListener("click", async () => { try { await window.SupabaseService.removeAvatar(); AppState.currentUser.avatar = null; renderNavigation(); renderProfileView(); showToast("Photo removed", "Your profile now uses the default avatar."); } catch (err) { alert(err.message || "Could not remove photo."); } });
     const photoInput = document.getElementById("profile-photo-upload");
     if (photoInput) photoInput.addEventListener("change", async () => {
       const file = photoInput.files && photoInput.files[0];
