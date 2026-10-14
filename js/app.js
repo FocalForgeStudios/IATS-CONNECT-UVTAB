@@ -1418,9 +1418,16 @@
     if (startInput) startInput.value = event ? toLocalDateTimeInput(getEventStart(event)) : "";
     if (endInput) endInput.value = event ? toLocalDateTimeInput(getEventEnd(event)) : "";
     if (capacityInput) capacityInput.value = event && event.max_attendees != null ? event.max_attendees : "";
-    if (tagSelect) tagSelect.value = forceNews ? "Campus News" : (event ? (event.tag || "Study Group") : "Study Group");
-    if (modalTitle) modalTitle.textContent = forceNews ? "Publish Official Campus News" : event ? "Edit Event / Campus News" : "Create an Academic Event";
-    if (submitLabel) submitLabel.textContent = forceNews ? "Publish Campus News →" : event ? "Save Changes →" : "Publish Academic Event →";
+    if (tagSelect) tagSelect.value = forceNews || (event && isCampusNewsItem(event)) ? "Campus News" : (event ? (event.tag || "Study Group") : "Study Group");
+    const formatInput = document.getElementById("new-catchup-format");
+    const onlineInput = document.getElementById("new-catchup-online-url");
+    const deadlineInput = document.getElementById("new-catchup-registration-deadline");
+    if (formatInput) formatInput.value = event?.event_format || "physical";
+    if (onlineInput) onlineInput.value = event?.online_url || "";
+    if (deadlineInput) deadlineInput.value = event?.registration_deadline ? toLocalDateTimeInput(event.registration_deadline) : "";
+    if (modalTitle) modalTitle.textContent = forceNews || (event && isCampusNewsItem(event)) ? "Publish Official Campus News" : event ? "Edit Academic Event" : "Create an Academic Event";
+    if (submitLabel) submitLabel.textContent = forceNews || (event && isCampusNewsItem(event)) ? "Publish Campus News →" : event ? "Save Changes →" : "Publish Academic Event →";
+    syncCatchupFormType();
     const hostModal = document.getElementById("host-catchup-modal");
     if (hostModal) hostModal.classList.add("open");
   }
@@ -1428,6 +1435,25 @@
   function closeHostCatchupModal() {
     const hostModal = document.getElementById("host-catchup-modal");
     if (hostModal) hostModal.classList.remove("open");
+  }
+
+  function syncCatchupFormType() {
+    const isNews = document.getElementById("new-catchup-tag")?.value === "Campus News";
+    const format = document.getElementById("new-catchup-format")?.value || "physical";
+    ["catchup-location-group", "catchup-dates-group", "catchup-capacity-group", "catchup-format-group", "catchup-registration-deadline-group"].forEach(id => {
+      const field = document.getElementById(id);
+      if (field) field.style.display = isNews ? "none" : "";
+    });
+    const location = document.getElementById("new-catchup-location");
+    const start = document.getElementById("new-catchup-start");
+    const end = document.getElementById("new-catchup-end");
+    const url = document.getElementById("new-catchup-online-url");
+    const urlGroup = document.getElementById("catchup-online-url-group");
+    if (location) location.required = !isNews && format !== "online";
+    if (start) start.required = !isNews;
+    if (end) end.required = !isNews;
+    if (url) url.required = !isNews && format !== "physical";
+    if (urlGroup) urlGroup.style.display = isNews || format === "physical" ? "none" : "";
   }
 
   async function handleCreateCatchup(e) {
@@ -1443,6 +1469,10 @@
       ? startsAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
     const tag = document.getElementById("new-catchup-tag") ? document.getElementById("new-catchup-tag").value : "Study Group";
     const isCampusNews = String(tag).toLowerCase().replace(/\s+/g, "") === "campusnews";
+    const format = document.getElementById("new-catchup-format")?.value || "physical";
+    const onlineUrl = document.getElementById("new-catchup-online-url")?.value.trim() || "";
+    const deadlineValue = document.getElementById("new-catchup-registration-deadline")?.value || "";
+    const registrationDeadline = deadlineValue ? new Date(deadlineValue) : null;
     if (isCampusNews && !isNewsPublisher()) {
       alert("Only focalforges@gmail.com can publish Campus News. Scholars can still publish academic events."); return;
     }
@@ -1458,13 +1488,21 @@
       return;
     }
 
-    if (!title || !location || !time || !endsAt || !Number.isFinite(endsAt.getTime()) || !startsAt || !Number.isFinite(startsAt.getTime())) {
-      alert("Please enter the event title, location, start date/time, and end date/time.");
-      return;
-    }
-    if (endsAt <= startsAt) {
-      alert("The event end date and time must be after the start date and time.");
-      return;
+    if (!title) { alert("Please enter a title."); return; }
+    if (!isCampusNews) {
+      if ((format !== "online" && !location) || !startsAt || !Number.isFinite(startsAt.getTime()) || !endsAt || !Number.isFinite(endsAt.getTime())) {
+        alert("Please enter the physical venue when applicable, plus the event start and end date/time.");
+        return;
+      }
+      if (endsAt <= startsAt) { alert("The event end date and time must be after the start date and time."); return; }
+      if (format !== "physical" && !/^https?:\/\//i.test(onlineUrl)) {
+        alert("Please provide a valid online meeting URL beginning with https:// or http://.");
+        return;
+      }
+      if (registrationDeadline && (!Number.isFinite(registrationDeadline.getTime()) || registrationDeadline > startsAt)) {
+        alert("The registration deadline must be a valid date/time before the event starts.");
+        return;
+      }
     }
     if (AppState.editingEventId && !isNewsPublisher()) {
       showToast("Administrator Only", "Only the platform developer can edit published events.");
@@ -1500,16 +1538,20 @@
       description,
       host: hostName,
       hostAvatar,
-      location,
-      time,
-      startsAt: startsAt.toISOString(),
-      endsAt: endsAt.toISOString(),
-      event_starts_at: startsAt.toISOString(),
-      event_ends_at: endsAt.toISOString(),
+      location: isCampusNews ? "" : location,
+      time: startsAt ? time : "",
+      startsAt: !isCampusNews && startsAt ? startsAt.toISOString() : null,
+      endsAt: !isCampusNews && endsAt ? endsAt.toISOString() : null,
+      event_starts_at: !isCampusNews && startsAt ? startsAt.toISOString() : null,
+      event_ends_at: !isCampusNews && endsAt ? endsAt.toISOString() : null,
       tag,
-      attendees: 1,
-      maxAttendees: capacity,
-      isJoined: true
+      item_type: isCampusNews ? "news" : "event",
+      event_format: isCampusNews ? "physical" : format,
+      online_url: isCampusNews || format === "physical" ? null : onlineUrl,
+      registration_deadline: !isCampusNews && registrationDeadline ? registrationDeadline.toISOString() : null,
+      attendees: 0,
+      maxAttendees: isCampusNews ? null : capacity,
+      isJoined: false
     };
 
     try {
@@ -1530,7 +1572,11 @@
         event_starts_at: saved.event_starts_at ?? newCatchup.event_starts_at,
         event_ends_at: saved.event_ends_at ?? newCatchup.event_ends_at,
         maxAttendees: saved.max_attendees ?? newCatchup.maxAttendees,
-        attendees: saved.attendees ?? newCatchup.attendees
+        attendees: saved.attendees ?? newCatchup.attendees,
+        item_type: saved.item_type ?? newCatchup.item_type,
+        event_format: saved.event_format ?? newCatchup.event_format,
+        online_url: saved.online_url ?? newCatchup.online_url,
+        registration_deadline: saved.registration_deadline ?? newCatchup.registration_deadline
       });
       if (AppState.editingEventId) {
         const editingId = String(AppState.editingEventId);
@@ -2274,6 +2320,10 @@
 
     const catchupForm = document.getElementById("host-catchup-form");
     if (catchupForm) catchupForm.addEventListener("submit", handleCreateCatchup);
+    const catchupTag = document.getElementById("new-catchup-tag");
+    if (catchupTag) catchupTag.addEventListener("change", syncCatchupFormType);
+    const catchupFormat = document.getElementById("new-catchup-format");
+    if (catchupFormat) catchupFormat.addEventListener("change", syncCatchupFormType);
 
     const closeCatchupBtn = document.getElementById("btn-close-catchup-modal");
     if (closeCatchupBtn) closeCatchupBtn.addEventListener("click", closeHostCatchupModal);
