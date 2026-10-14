@@ -91,6 +91,7 @@ create policy "match_profiles_delete_own" on public.match_profiles
 create table if not exists public.catchups (
   id             uuid primary key default gen_random_uuid(),
   title          text not null,
+  description    text,
   host           text,
   host_avatar    text,
   host_id        uuid references auth.users(id) on delete set null,
