@@ -336,7 +336,7 @@
     renderNavigation();
   }
 
-  async function clearSession() {
+  async function clearSession(returnView = "profile") {
     // Always reset the visible UI, even if Supabase reports a network/sign-out error.
     // The service clears the local session as well as requesting remote sign-out.
     let signOutError = null;
@@ -359,8 +359,8 @@
       const authModal = document.getElementById("auth-modal-backdrop");
       if (authModal) authModal.classList.remove("open");
       renderNavigation();
-      // Keep the user on Profile after sign-out so sign-in is available in-place.
-      navigateTo("profile");
+      // Admins can explicitly return to the public guest landing page after sign-out.
+      navigateTo(returnView === "landing" ? "landing" : "profile");
       window.scrollTo({ top: 0, behavior: "auto" });
     }
     if (signOutError) {
@@ -2117,6 +2117,10 @@
   // Event Bindings
   // ==========================================
   function bindEvents() {
+    // Admin-only sign-out returns directly to the public guest landing page.
+    const adminSignOutBtn = document.getElementById("btn-admin-signout-home");
+    if (adminSignOutBtn) adminSignOutBtn.addEventListener("click", () => clearSession("landing"));
+
     // Bottom dock navigation items & general nav buttons
     document.querySelectorAll(".dock-nav-btn, .nav-item-btn").forEach(btn => {
       btn.addEventListener("click", () => {
