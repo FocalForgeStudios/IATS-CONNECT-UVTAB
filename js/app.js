@@ -213,8 +213,8 @@
 
     // React instantly to real sign-in / sign-out / token refresh events.
     window.SupabaseService.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session && session.user) {
-        hydrateSessionFromAuthUser(session.user);
+      if ((event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") && session && session.user) {
+        hydrateSessionFromAuthUser(session.user).catch(error => console.warn("[IATS CONNECT] Session restore/profile sync failed:", error));
       } else if (event === "PASSWORD_RECOVERY") {
         const modal = document.getElementById("auth-modal-backdrop");
         if (modal) modal.classList.add("open");
@@ -272,6 +272,31 @@
   // Once a real user is authenticated, load/create their profile row and
   // start their real-time direct-message thread listener.
   async function hydrateSessionFromAuthUser(authUser) {
+    // Paint the authenticated state immediately from the persisted Supabase session.
+    // Profile/network requests enrich this user afterward and must not make refresh
+    // look like a sign-out while the database is responding slowly.
+    const earlyProvider = (authUser.app_metadata && authUser.app_metadata.provider) || "email";
+    const earlyDeveloper = String(authUser.email || "").trim().toLowerCase() === "focalforges@gmail.com";
+    if (!AppState.currentUser || AppState.currentUser.id !== authUser.id) {
+      AppState.currentUser = {
+        id: authUser.id,
+        name: (authUser.user_metadata && (authUser.user_metadata.full_name || authUser.user_metadata.name)) ||
+              (authUser.email ? authUser.email.split("@")[0] : "IATS Scholar"),
+        email: authUser.email,
+        major: earlyDeveloper ? "Developer" : "Undeclared",
+        year: earlyDeveloper ? "Platform Administrator" : "Class of 2026",
+        bio: "",
+        courses: [],
+        interests: [],
+        skills: [],
+        avatar: authUser.user_metadata && authUser.user_metadata.avatar_url,
+        location: earlyDeveloper ? "IATS CONNECT Platform" : "IATS Main Campus",
+        authProvider: earlyProvider === "google" ? "Google Account (Verified)" : "Personal Email (Verified)",
+        isVerified: true,
+        isDeveloper: earlyDeveloper
+      };
+      renderNavigation();
+    }
     let profile = await window.SupabaseService.fetchProfile(authUser.id);
     if (!profile) {
       profile = await window.SupabaseService.saveUser({
