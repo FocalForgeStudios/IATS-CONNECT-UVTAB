@@ -108,22 +108,16 @@
     hideBootLoaderWhenReady();
   }
 
-  // Shows the boot loader for a minimum of ~2 seconds so the app always
-  // presents a clear, deliberate loading state instead of a flash of
-  // unstyled content — purely a UX/perception change, no UI redesign.
+  // Dismiss the boot skeleton once the app has mounted. Do not wait for
+  // every image/font/network request: those can be slow on mobile connections.
   function hideBootLoaderWhenReady() {
-    const MIN_VISIBLE_MS = 2000;
-    const startedAt = Date.now();
-    const finish = () => {
-      const elapsed = Date.now() - startedAt;
-      const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
-      setTimeout(() => {
-        const loader = document.getElementById("app-boot-loader");
-        if (loader) loader.classList.add("is-hidden");
-      }, remaining);
-    };
-    if (document.readyState === "complete") finish();
-    else window.addEventListener("load", finish, { once: true });
+    window.setTimeout(() => {
+      const loader = document.getElementById("app-boot-loader");
+      if (loader) {
+        loader.classList.add("is-hidden");
+        window.setTimeout(() => loader.remove(), 350);
+      }
+    }, 320);
   }
 
   // Adds a subtle progressive blur to anything scrolling up past the
