@@ -30,6 +30,7 @@ create table if not exists public.profiles (
   interests     text[] default '{}',
   avatar_url    text,                 -- always optional, never required at signup
   location      text default 'IATS Main Campus',
+  last_seen_at  timestamptz,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -256,10 +257,21 @@ create table if not exists public.messages (
   conversation_id   uuid not null references public.conversations(id) on delete cascade,
   sender_id         uuid not null references auth.users(id) on delete cascade,
   text              text not null,
-  created_at        timestamptz not null default now()
+  created_at        timestamptz not null default now(),
+  edited_at         timestamptz,
+  deleted_at        timestamptz,
+  reply_to          uuid references public.messages(id) on delete set null,
+  read_at           timestamptz
 );
 
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+alter table public.messages add column if not exists edited_at timestamptz;
+alter table public.messages add column if not exists deleted_at timestamptz;
+alter table public.messages add column if not exists reply_to uuid references public.messages(id) on delete set null;
+alter table public.messages add column if not exists read_at timestamptz;
+
 create index if not exists messages_conversation_id_idx on public.messages(conversation_id, created_at);
+create index if not exists profiles_last_seen_at_idx on public.profiles(last_seen_at);
 
 alter table public.messages enable row level security;
 
@@ -283,6 +295,32 @@ create policy "messages_insert_participant" on public.messages
         and (c.created_by = auth.uid() or c.participant_id = auth.uid())
     )
   );
+
+drop policy if exists "messages_update_own" on public.messages;
+create policy "messages_update_own" on public.messages
+  for update using (auth.uid() = sender_id and exists (
+    select 1 from public.conversations c where c.id = conversation_id
+      and (c.created_by = auth.uid() or c.participant_id = auth.uid())
+  )) with check (auth.uid() = sender_id and exists (
+    select 1 from public.conversations c where c.id = conversation_id
+      and (c.created_by = auth.uid() or c.participant_id = auth.uid())
+  ));
+
+create or replace function public.guard_message_update()
+returns trigger language plpgsql security definer set search_path = public as $
+begin
+  if new.sender_id <> old.sender_id or new.conversation_id <> old.conversation_id or new.created_at <> old.created_at then
+    raise exception 'Message ownership and creation details cannot be changed.';
+  end if;
+  if old.deleted_at is not null then raise exception 'This message has already been deleted.'; end if;
+  if new.deleted_at is null and new.text is distinct from old.text and old.created_at < now() - interval '2 minutes' then
+    raise exception 'Messages can only be edited within two minutes.';
+  end if;
+  if new.deleted_at is not null then new.text := ''; end if;
+  return new;
+end; $;
+drop trigger if exists trg_guard_message_update on public.messages;
+create trigger trg_guard_message_update before update on public.messages for each row execute function public.guard_message_update();
 
 -- Keep the conversations list preview + ordering fresh automatically,
 -- in one atomic step, whenever a message lands.
