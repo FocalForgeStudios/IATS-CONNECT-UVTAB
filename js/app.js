@@ -180,6 +180,7 @@
   let unsubHubPosts = null;
   let unsubConversations = null;
   let unsubActiveMessages = null;
+  let unsubPresence = null;
   let eventTicker = null;
 
   function initSupabaseSync() {
@@ -217,6 +218,8 @@
         if (modal) modal.classList.add("open");
         showAuthStep("password-recovery");
       } else if (event === "SIGNED_OUT") {
+        if (unsubPresence) { unsubPresence(); unsubPresence = null; }
+        AppState.onlineUserIds = [];
         AppState.currentUser = null;
         AppState.conversations = [];
         AppState.activeMessages = [];
@@ -308,6 +311,7 @@
     syncNewsPublishingOption();
     renderNavigation();
     startConversationsSync();
+    if (unsubPresence) { unsubPresence(); unsubPresence = null; }
     if (window.SupabaseService.subscribePresence) window.SupabaseService.subscribePresence(async ids => {
       AppState.onlineUserIds = ids || [];
       try {
@@ -316,7 +320,7 @@
         AppState.conversations = AppState.conversations.map(c => ({ ...c, peer_last_seen_at: lastSeen[c.peer_id] || c.peer_last_seen_at || null }));
       } catch (err) { console.warn("Last-seen refresh failed", err); }
       if (AppState.activeView === "chats") renderChatsView();
-    }).catch(err => console.warn("Presence sync failed", err));
+    }).then(unsub => { unsubPresence = unsub; }).catch(err => console.warn("Presence sync failed", err));
     if (isNewsPublisher() && AppState.activeView === "landing") navigateTo("admin");
   }
 
@@ -371,6 +375,9 @@
       AppState.activeMessagesChannel = null;
       if (unsubConversations) { unsubConversations(); unsubConversations = null; }
       if (unsubActiveMessages) { unsubActiveMessages(); unsubActiveMessages = null; }
+      if (unsubPresence) { unsubPresence(); unsubPresence = null; }
+      AppState.onlineUserIds = [];
+      AppState.replyingToMessageId = null;
       const authModal = document.getElementById("auth-modal-backdrop");
       if (authModal) authModal.classList.remove("open");
       renderNavigation();
@@ -1869,6 +1876,7 @@
         const mine = msg.sender_id === myId;
         const quoted = msg.reply_to ? messageById.get(msg.reply_to) : null;
         const canEdit = mine && !msg.deleted_at && Date.now() - new Date(msg.created_at).getTime() <= 120000;
+        const canDelete = mine && !msg.deleted_at;
         const quoteMarkup = quoted ? `<div class="message-reply-quote"><strong>${quoted.sender_id === myId ? "You" : escapeEventText(quoted.sender_name || activeConv.name || "Scholar")}</strong><div>${quoted.deleted_at ? "Message deleted" : escapeEventText(quoted.text || "")}</div></div>` : "";
         const body = msg.deleted_at ? '<em>This message was deleted</em>' : escapeEventText(msg.text || "");
         return `<div class="message-bubble ${mine ? "msg-outgoing" : "msg-incoming"}" data-message-id="${msg.id}">
@@ -1877,7 +1885,8 @@
           <div class="message-body">${body}</div>
           <div class="message-meta"><span>${formatMessageTime(msg.created_at)}${msg.edited_at && !msg.deleted_at ? " · edited" : ""}</span><span class="message-actions">
             <button type="button" class="message-action-btn" data-message-action="reply" data-message-id="${msg.id}" title="Reply">Reply</button>
-            ${canEdit ? `<button type="button" class="message-action-btn" data-message-action="edit" data-message-id="${msg.id}" title="Edit message">Edit</button><button type="button" class="message-action-btn" data-message-action="delete" data-message-id="${msg.id}" title="Delete message">Delete</button>` : ""}
+            ${canEdit ? `<button type="button" class="message-action-btn" data-message-action="edit" data-message-id="${msg.id}" title="Edit message">Edit</button>` : ""}
+            ${canDelete ? `<button type="button" class="message-action-btn" data-message-action="delete" data-message-id="${msg.id}" title="Delete message">Delete</button>` : ""}
           </span></div>
         </div>`;
       }).join("") || `<div style="text-align:center; color:#94A3B8; font-size:0.85rem; padding: 30px 0;">No messages yet — say hello 👋</div>`;
