@@ -70,6 +70,8 @@
     activeMessages: [],
     selectedChatRecipientId: null,
     replyingToMessageId: null,
+    unreadNewsIds: [],
+    unreadChatCounts: {},
     adminStats: null,
     adminEvents: [],
     adminFilter: "all",
@@ -253,6 +255,7 @@
         maxAttendees: c.maxAttendees ?? c.max_attendees ?? null,
         isJoined: Array.isArray(c.attendee_ids) && !!AppState.currentUser && c.attendee_ids.includes(AppState.currentUser.id)
       }));
+      refreshUnreadNews();
       if (AppState.activeView === "catchup" || AppState.activeView === "dashboard" || AppState.activeView === "admin") {
         renderActiveView();
       }
@@ -328,6 +331,8 @@
     if (unsubConversations) unsubConversations();
     window.SupabaseService.subscribeConversations((convs) => {
       AppState.conversations = convs || [];
+      AppState.conversations.forEach(c => { if (typeof c.unread_count === "number") AppState.unreadChatCounts[c.id] = (AppState.activeView === "chats" && String(AppState.activeChatId) === String(c.id)) ? 0 : c.unread_count; });
+      updateNotificationBadges();
       if (!AppState.activeChatId && convs && convs.length > 0) {
         AppState.activeChatId = convs[0].id;
       }
@@ -342,6 +347,9 @@
     AppState.activeMessages = [];
     unsubActiveMessages = window.SupabaseService.subscribeMessages(conversationId, (messages) => {
       AppState.activeMessages = messages || [];
+      const unread = AppState.activeMessages.filter(message => message.sender_id !== (AppState.currentUser && AppState.currentUser.id) && !message.read_at && !message.deleted_at).length;
+      AppState.unreadChatCounts[conversationId] = AppState.activeView === "chats" && String(AppState.activeChatId) === String(conversationId) ? 0 : unread;
+      updateNotificationBadges();
       if (AppState.activeView === "chats" && String(AppState.activeChatId) === String(conversationId)) {
         renderActiveView();
       }
@@ -369,6 +377,8 @@
       try { await window.SupabaseService?.clearLocalSession?.(); } catch (_) {}
     } finally {
       AppState.currentUser = null;
+      AppState.unreadNewsIds = [];
+      AppState.unreadChatCounts = {};
       AppState.conversations = [];
       AppState.activeMessages = [];
       AppState.activeChatId = null;
@@ -423,6 +433,9 @@
     }
 
     renderActiveView();
+    if (viewId === "catchup") refreshUnreadNews();
+    if (viewId === "chats" && AppState.activeChatId) markActiveConversationRead(AppState.activeChatId);
+    updateNotificationBadges();
   }
 
   function renderActiveView() {
@@ -452,6 +465,39 @@
         // Landing view
         break;
     }
+  }
+
+  function updateNotificationBadges() {
+    const newsCount = (AppState.unreadNewsIds || []).length;
+    const chatCount = Object.values(AppState.unreadChatCounts || {}).reduce((sum, count) => sum + Number(count || 0), 0);
+    document.querySelectorAll('.dock-nav-btn[data-view="catchup"] .dock-label').forEach(label => {
+      let badge = label.querySelector(".nav-notification-badge");
+      if (newsCount > 0) { if (!badge) { badge = document.createElement("span"); badge.className = "nav-notification-badge"; label.appendChild(badge); } badge.textContent = newsCount > 99 ? "99+" : String(newsCount); badge.setAttribute("aria-label", newsCount + " unread news items"); }
+      else if (badge) badge.remove();
+    });
+    document.querySelectorAll('.dock-nav-btn[data-view="chats"] .dock-label').forEach(label => {
+      let badge = label.querySelector(".nav-notification-badge");
+      if (chatCount > 0) { if (!badge) { badge = document.createElement("span"); badge.className = "nav-notification-badge"; label.appendChild(badge); } badge.textContent = chatCount > 99 ? "99+" : String(chatCount); badge.setAttribute("aria-label", chatCount + " unread messages"); }
+      else if (badge) badge.remove();
+    });
+  }
+
+  async function refreshUnreadNews() {
+    if (!AppState.currentUser || !window.SupabaseService?.getUnreadNewsIds) return;
+    try { AppState.unreadNewsIds = await window.SupabaseService.getUnreadNewsIds((AppState.catchups || []).filter(isCampusNewsItem).map(item => item.id)); updateNotificationBadges(); if (AppState.activeView === "catchup") renderCatchUpView(); }
+    catch (err) { console.warn("Unread news refresh failed", err); }
+  }
+
+  async function markNewsRead(newsId) {
+    if (!AppState.currentUser || !newsId || !window.SupabaseService?.markNewsRead) return;
+    try { await window.SupabaseService.markNewsRead(newsId); AppState.unreadNewsIds = AppState.unreadNewsIds.filter(id => String(id) !== String(newsId)); updateNotificationBadges(); if (AppState.activeView === "catchup") renderCatchUpView(); }
+    catch (err) { console.warn("Could not mark news as read", err); }
+  }
+
+  async function markActiveConversationRead(conversationId) {
+    if (!AppState.currentUser || !conversationId || !window.SupabaseService?.markConversationRead) return;
+    try { await window.SupabaseService.markConversationRead(conversationId); AppState.unreadChatCounts[conversationId] = 0; updateNotificationBadges(); }
+    catch (err) { console.warn("Could not mark chat as read", err); }
   }
 
   function renderNavigation() {
@@ -1151,8 +1197,9 @@
   function renderCampusNewsCard(item) {
     const description = String(item.description || "");
     const excerpt = description.length > 240 ? description.slice(0, 240).trimEnd() + "…" : description;
-    return "<article class='glass-panel catchup-card campus-news-card' style='cursor:pointer;display:flex;flex-direction:column;gap:14px;' data-open-details='" + escapeEventText(item.id) + "'>"
-      + "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;'><span class='tag-pill tag-pill-highlight'>OFFICIAL CAMPUS NEWS</span><span style='font-size:.78rem;color:#64748B;'>" + escapeEventText(formatEventDateTime(item.created_at)) + "</span></div>"
+    const unread = (AppState.unreadNewsIds || []).some(id => String(id) === String(item.id));
+    return "<article class='glass-panel catchup-card campus-news-card " + (unread ? "campus-news-unread" : "") + "' style='cursor:pointer;display:flex;flex-direction:column;gap:14px;' data-open-details='" + escapeEventText(item.id) + "'>"
+      + "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;'><span class='tag-pill tag-pill-highlight'>OFFICIAL CAMPUS NEWS</span><span style='font-size:.78rem;color:#64748B;'>" + (unread ? "<span class='news-unread-pill'>NEW</span> " : "") + escapeEventText(formatEventDateTime(item.created_at)) + "</span></div>"
       + "<h3 style='font-size:1.16rem;font-weight:800;color:#1E293B;line-height:1.35;margin:0;'>" + escapeEventText(item.title || "Campus News") + "</h3>"
       + "<p style='font-size:.9rem;color:#475569;line-height:1.6;margin:0;white-space:pre-wrap;'>" + escapeEventText(excerpt || "Open to read the full announcement.") + "</p>"
       + "<div style='display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid rgba(148,163,184,.22);'><span style='font-size:.82rem;color:#64748B;'>Published by " + escapeEventText(item.host || "IATS CONNECT") + "</span><button type='button' class='btn-liquid btn-glass btn-sm btn-open-catchup-details' data-id='" + escapeEventText(item.id) + "'>Read full news →</button></div></article>";
@@ -1201,6 +1248,7 @@
       modal.querySelector("#btn-close-catchup-details").addEventListener("click", () => modal.classList.remove("open"));
     }
     const news = isCampusNewsItem(item), format = String(item.event_format || "physical");
+    if (news) markNewsRead(item.id);
     const url = /^https?:\/\//i.test(String(item.online_url || "")) ? String(item.online_url) : "";
     modal.querySelector("#catchup-details-content").innerHTML = "<span class='tag-pill " + (news ? "tag-pill-highlight" : "tag-pill-blue") + "'>" + (news ? "OFFICIAL CAMPUS NEWS" : escapeEventText(item.tag || "Academic Event")) + "</span>"
       + "<h2 style='font-size:1.55rem;font-weight:850;color:#1E293B;line-height:1.3;margin:14px 40px 10px 0;'>" + escapeEventText(item.title || "") + "</h2>"
@@ -1220,6 +1268,7 @@
       return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
     });
     const news = official.filter(isCampusNewsItem);
+    const unreadNews = new Set((AppState.unreadNewsIds || []).map(String));
     const officialEvents = official.filter(item => !isCampusNewsItem(item));
     const groups = [{key:"live",title:"Live Now",events:[]},{key:"upcoming",title:"Upcoming Events",events:[]},{key:"past",title:"Past Events",events:[]}];
     all.filter(item => !Boolean(item.is_official) && !isCampusNewsItem(item)).forEach(event => groups.find(group => group.key === eventStatus(event)).events.push(event));
@@ -1816,6 +1865,7 @@
     }
 
     const activeConv = AppState.conversations.find(c => String(c.id) === String(AppState.activeChatId)) || AppState.conversations[0];
+    if (activeConv && AppState.activeView === "chats") markActiveConversationRead(activeConv.id);
     const peerOnline = !!(activeConv && AppState.onlineUserIds.includes(activeConv.peer_id));
     if (activeConv) AppState.activeChatId = activeConv.id;
     const peerLastSeen = activeConv && activeConv.peer_last_seen_at ? new Date(activeConv.peer_last_seen_at) : null;
@@ -1836,6 +1886,7 @@
           <div style="font-size:.68rem;color:${AppState.onlineUserIds.includes(c.peer_id) ? "#059669" : "#64748B"};margin-top:3px;">
             ${AppState.onlineUserIds.includes(c.peer_id) ? "● Online" : c.peer_last_seen_at ? "Last seen " + formatLastSeen(new Date(c.peer_last_seen_at)) : "○ Offline"}
           </div>
+          ${Number(AppState.unreadChatCounts[c.id] || 0) > 0 ? `<span class="chat-unread-badge">${Number(AppState.unreadChatCounts[c.id]) > 99 ? "99+" : Number(AppState.unreadChatCounts[c.id])}</span>` : ""}
         </div>
       </div>
     `).join("");
