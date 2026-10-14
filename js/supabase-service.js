@@ -338,7 +338,7 @@ export const SupabaseService = {
       const payload = {
         title: sanitizeText(catchup.title, 120),
         description: sanitizeText(catchup.description, 2000),
-        host: sanitizeText(catchup.host, 80)
+        host: sanitizeText(catchup.host, 80),
         host_avatar: sanitizeAvatar(catchup.hostAvatar),
         host_id: user ? user.id : null,
         location: sanitizeText(catchup.location, 100),
@@ -368,7 +368,7 @@ export const SupabaseService = {
     const payload = {
       title: sanitizeText(catchup.title, 120),
       description: sanitizeText(catchup.description, 2000),
-      location: sanitizeText(catchup.location, 100)
+      location: sanitizeText(catchup.location, 100),
       event_time: sanitizeText(catchup.time, 100),
       event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
       event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
