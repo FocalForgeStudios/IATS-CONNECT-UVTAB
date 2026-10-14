@@ -184,7 +184,14 @@ export const SupabaseService = {
 
   async signOut() {
     if (!supabase) return;
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) throw error;
+  },
+
+  async clearLocalSession() {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) throw error;
   },
 
   // ===========================================================
