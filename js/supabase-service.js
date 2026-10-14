@@ -180,6 +180,19 @@ export const SupabaseService = {
     return data;
   },
 
+  /** Upload a member-selected profile image to their own Storage folder. */
+  async uploadAvatar(file, userId) {
+    if (!supabase) throw new Error("Supabase is not configured yet.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user || user.id !== userId) throw new Error("Sign in again before changing your photo.");
+    if (!file || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Choose a JPG, PNG, or WebP image.");
+    if (file.size > 5 * 1024 * 1024) throw new Error("Your photo must be 5 MB or smaller.");
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const path = user.id + "/" + crypto.randomUUID() + "." + ext;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { cacheControl: "3600", contentType: file.type, upsert: false });
+    if (error) throw new Error(friendlyError(error));
+    return supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+  },
   /** Creates the profile row on first login / updates it later. Avatar is always optional. */
   async saveUser(user) {
     if (!supabase || !user || !user.id) return null;
