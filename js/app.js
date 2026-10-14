@@ -1836,6 +1836,7 @@
   // Account profile view (developer account is not classified as a student)
   // ==========================================
   function renderProfileView() {
+    const isDeveloperAccount = isNewsPublisher();
     const user = AppState.currentUser || {
       name: "IATS Scholar",
       university: "Institute of Advanced Technical Studies",
@@ -1862,20 +1863,21 @@
           <div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <h2 style="font-size: 1.6rem; font-weight: 800; color: #1E293B;">${user.name}</h2>
-              <span class="tag-pill tag-pill-highlight" style="font-size: 0.8rem;">IATS Verified</span>
+              <span class="tag-pill tag-pill-highlight" style="font-size: 0.8rem;">${isDeveloperAccount ? "Developer · Administrator" : "IATS Verified"}</span>
             </div>
-            <div style="font-size: 0.95rem; color: #475569; font-weight: 600; margin-top: 4px;">${user.major} • ${user.university}</div>
+            <div style="font-size: 0.95rem; color: #475569; font-weight: 600; margin-top: 4px;">${isDeveloperAccount ? "Developer · IATS CONNECT Platform" : user.major + " • " + user.university}</div>
+            ${isDeveloperAccount ? "<div style='font-size:.82rem;color:#64748B;margin-top:4px;'>Overall events moderator · Official campus news publisher</div>" : ""}
             <div style="font-size: 0.82rem; color: #64748B; margin-top: 2px;">Auth: <b>${user.authProvider}</b></div>
           </div>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <div style="font-size: 0.88rem; font-weight: 700; color: #D8232A; text-transform: uppercase; margin-bottom: 6px;">Biography & Academic Focus</div>
+          <div style="font-size: 0.88rem; font-weight: 700; color: #D8232A; text-transform: uppercase; margin-bottom: 6px;">${isDeveloperAccount ? "Developer Profile" : "Biography & Academic Focus"}</div>
           <p style="font-size: 0.95rem; color: #334155; line-height: 1.6;">${user.bio}</p>
         </div>
 
         <div style="margin-bottom: 24px;">
-          <div style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-bottom: 8px;">Academic Focus Areas & Skills</div>
+          <div style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-bottom: 8px;">${isDeveloperAccount ? "Engineering & Platform Responsibilities" : "Academic Focus Areas & Skills"}</div>
           <div class="tag-list">
             ${(user.skills || []).map(s => `<span class="tag-pill tag-pill-highlight">${s}</span>`).join("")}
           </div>
@@ -1885,9 +1887,7 @@
         <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 20px; margin-top: 20px;">
           <div style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-bottom: 12px;">Institutional Platform Services</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openCreateProfileModal()">
-              <span>+ Register Scholar Candidate</span>
-            </button>
+            ${isDeveloperAccount ? "" : '<button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openCreateProfileModal()"><span>+ Register Scholar Candidate</span></button>'}
             <button class="btn-liquid btn-glass btn-sm" onclick="CampusApp.openLogicInspector()">
               <span>View System Architecture</span>
             </button>
