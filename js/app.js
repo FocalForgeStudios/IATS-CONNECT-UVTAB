@@ -241,6 +241,7 @@
         event_starts_at: c.event_starts_at ?? null,
         event_ends_at: c.event_ends_at ?? null,
         item_type: c.item_type || (String(c.tag || "").toLowerCase().replace(/\s+/g, "") === "campusnews" ? "news" : "event"),
+        is_official: Boolean(c.is_official),
         event_format: c.event_format || "physical",
         online_url: c.online_url || "",
         registration_deadline: c.registration_deadline || null,
@@ -1197,9 +1198,14 @@
     const grid = document.getElementById("catchup-grid-container");
     if (!grid) return;
     const all = AppState.catchups || [];
-    const news = all.filter(isCampusNewsItem).sort((a,b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
+    const official = all.filter(item => Boolean(item.is_official) || isCampusNewsItem(item)).sort((a,b) => {
+      if (isCampusNewsItem(a) !== isCampusNewsItem(b)) return isCampusNewsItem(a) ? -1 : 1;
+      return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
+    });
+    const news = official.filter(isCampusNewsItem);
+    const officialEvents = official.filter(item => !isCampusNewsItem(item));
     const groups = [{key:"live",title:"Live Now",events:[]},{key:"upcoming",title:"Upcoming Events",events:[]},{key:"past",title:"Past Events",events:[]}];
-    all.filter(item => !isCampusNewsItem(item)).forEach(event => groups.find(group => group.key === eventStatus(event)).events.push(event));
+    all.filter(item => !Boolean(item.is_official) && !isCampusNewsItem(item)).forEach(event => groups.find(group => group.key === eventStatus(event)).events.push(event));
     groups.forEach(group => group.events.sort((a,b) => {
       const as = Date.parse(getEventStart(a) || ""), bs = Date.parse(getEventStart(b) || "");
       if (!Number.isFinite(as) && !Number.isFinite(bs)) return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
@@ -1208,6 +1214,7 @@
     }));
     let markup = "";
     if (news.length) markup += "<section style='grid-column:1/-1;margin-bottom:20px;'><div style='display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 14px;'><div><h3 style='font-size:1.25rem;font-weight:850;color:#1E293B;margin:0 0 4px;'>Official Campus News</h3><p style='color:#64748B;font-size:.88rem;margin:0;'>Important announcements from IATS CONNECT — shown first.</p></div><span class='tag-pill tag-pill-highlight'>" + news.length + " " + (news.length === 1 ? "announcement" : "announcements") + "</span></div><div class='catchup-grid campus-news-grid'>" + news.map(renderCampusNewsCard).join("") + "</div></section>";
+    if (officialEvents.length) markup += "<section style='grid-column:1/-1;margin-bottom:20px;'><h3 style='font-size:1.15rem;font-weight:850;color:#1E293B;margin:8px 0 14px;'>Official IATS Events <span style='font-size:.8rem;color:#64748B;'>(" + officialEvents.length + ")</span></h3><div class='catchup-grid'>" + officialEvents.map(renderCatchupCard).join("") + "</div></section>";
     markup += groups.filter(group => group.events.length).map(group => "<section style='grid-column:1/-1;margin-bottom:20px;'><h3 style='font-size:1.1rem;font-weight:850;color:#1E293B;margin:8px 0 14px;'>" + group.title + " <span style='font-size:.8rem;color:#64748B;'>(" + group.events.length + ")</span></h3><div class='catchup-grid'>" + group.events.map(renderCatchupCard).join("") + "</div></section>").join("");
     if (!markup) markup = "<div class='glass-panel' style='grid-column:1/-1;text-align:center;padding:40px 24px;'><h3 style='font-size:1.3rem;font-weight:850;color:#1E293B;margin-bottom:8px;'>No Events or News Yet</h3><p style='color:#64748B;max-width:520px;margin:0 auto;'>Academic events will appear here, while official campus news will always be prioritised above them.</p></div>";
     grid.innerHTML = markup;
@@ -1275,6 +1282,7 @@
     const now = Date.now();
     const events = (AppState.adminEvents || []).filter(event => filter === "all" || eventStatus(event, now) === filter);
     events.sort((a, b) => {
+      if ((Boolean(a.is_official) || isCampusNewsItem(a)) !== (Boolean(b.is_official) || isCampusNewsItem(b))) return (Boolean(a.is_official) || isCampusNewsItem(a)) ? -1 : 1;
       if (isCampusNewsItem(a) !== isCampusNewsItem(b)) return isCampusNewsItem(a) ? -1 : 1;
       if (sort === "latest") return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
       if (sort === "attendees") return (b.attendees || 0) - (a.attendees || 0);
@@ -1546,6 +1554,7 @@
       event_ends_at: !isCampusNews && endsAt ? endsAt.toISOString() : null,
       tag,
       item_type: isCampusNews ? "news" : "event",
+      is_official: isCampusNews || Boolean(editingEvent && editingEvent.is_official) || (!editingEvent && isNewsPublisher()),
       event_format: isCampusNews ? "physical" : format,
       online_url: isCampusNews || format === "physical" ? null : onlineUrl,
       registration_deadline: !isCampusNews && registrationDeadline ? registrationDeadline.toISOString() : null,
