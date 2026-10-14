@@ -1142,15 +1142,21 @@
       AppState.adminEvents = data.events || [];
       if (AppState.activeView !== "admin") return;
       container.innerHTML = "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;'>"
-        + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>REGISTERED SCHOLAR PROFILES</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.studentCount + "</div></div>"
+        + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>COMMUNITY PROFILES</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.studentCount + "</div></div>"
         + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>TOTAL EVENTS & NEWS</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.eventCount + "</div></div></div>"
         + "<div class='glass-panel' style='padding:20px;'><div style='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;'>"
-        + "<h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;'>Event Management</h3><div style='display:flex;gap:10px;flex-wrap:wrap;'>"
+        + "<div style='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;'><h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;'>Event & News Management</h3><div style='display:flex;gap:8px;flex-wrap:wrap;'>"
+        + "<button type='button' id='btn-admin-create-event' class='btn-liquid btn-primary btn-sm'>+ Create Event</button><button type='button' id='btn-admin-create-news' class='btn-liquid btn-glass btn-sm'>+ Publish Campus News</button></div></div>"
+        + "<div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;'>"
         + "<label style='font-size:.85rem;color:#475569;'>Status <select id='admin-event-filter' class='form-input' style='display:inline-block;width:auto;margin-left:6px;'>"
         + "<option value='all'>All</option><option value='upcoming'>Upcoming</option><option value='live'>Live</option><option value='past'>Past</option></select></label>"
         + "<label style='font-size:.85rem;color:#475569;'>Sort <select id='admin-event-sort' class='form-input' style='display:inline-block;width:auto;margin-left:6px;'>"
         + "<option value='soonest'>Start time: soonest</option><option value='latest'>Recently posted</option><option value='attendees'>Most attendees</option><option value='title'>Title A–Z</option></select></label></div></div>"
         + "<div id='admin-events-list'></div></div>";
+      const createEventBtn = document.getElementById("btn-admin-create-event");
+      if (createEventBtn) createEventBtn.addEventListener("click", () => openHostCatchupModal(null, false));
+      const createNewsBtn = document.getElementById("btn-admin-create-news");
+      if (createNewsBtn) createNewsBtn.addEventListener("click", () => openHostCatchupModal(null, true));
       const filter = document.getElementById("admin-event-filter");
       const sort = document.getElementById("admin-event-sort");
       if (filter) { filter.value = AppState.adminFilter; filter.addEventListener("change", () => { AppState.adminFilter = filter.value; renderAdminEventsList(); }); }
@@ -1195,8 +1201,33 @@
         + "<div style='min-width:200px;flex:1;'><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;'><strong>" + escapeEventText(event.title) + "</strong><span class='tag-pill tag-pill-blue' data-event-status-label>" + label + "</span></div>"
         + "<div style='font-size:.85rem;color:#64748B;'>" + escapeEventText(event.tag || "Academic Event") + " · " + escapeEventText(event.location || "Location not set") + " · Host: " + escapeEventText(event.host || "IATS Scholar") + "</div>"
         + "<div style='font-size:.82rem;color:#64748B;margin-top:5px;'>" + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.event_time || "Date/time not set") : formatEventDateTime(start)) + " · " + escapeEventText(cap) + "</div></div>"
-        + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end, now) + "</div></div>";
+        + "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'><div style='font-size:.82rem;font-weight:700;color:#D8232A;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end, now) + "</div>"
+        + "<button type='button' class='btn-liquid btn-glass btn-sm btn-admin-edit-event' data-id='" + escapeEventText(event.id) + "'>Edit</button>"
+        + "<button type='button' class='btn-liquid btn-glass btn-sm btn-admin-delete-event' data-id='" + escapeEventText(event.id) + "' style='color:#B91C1C;'>Delete</button></div></div>";
     }).join("");
+    list.querySelectorAll(".btn-admin-edit-event").forEach(btn => btn.addEventListener("click", () => openHostCatchupModal(btn.dataset.id, false)));
+    list.querySelectorAll(".btn-admin-delete-event").forEach(btn => btn.addEventListener("click", () => deleteAdminEvent(btn.dataset.id)));
+  }
+
+  async function deleteAdminEvent(id) {
+    if (!isNewsPublisher()) {
+      showToast("Administrator Only", "Only the platform developer can moderate events.");
+      return;
+    }
+    const event = (AppState.adminEvents || []).find(item => String(item.id) === String(id));
+    if (!event || !confirm("Delete " + (event.title || "this event") + " permanently?")) return;
+    try {
+      await window.SupabaseService.deleteCatchup(id);
+      AppState.adminEvents = AppState.adminEvents.filter(item => String(item.id) !== String(id));
+      AppState.catchups = AppState.catchups.filter(item => String(item.id) !== String(id));
+      const overview = await window.SupabaseService.fetchAdminOverview();
+      AppState.adminStats = { studentCount: overview.studentCount || 0, eventCount: overview.eventCount || 0 };
+      AppState.adminEvents = overview.events || [];
+      showToast("Item Deleted", "The event/news item was removed.");
+      renderAdminDashboardView();
+    } catch (err) {
+      showToast("Delete Failed", err.message || "Could not delete this item.");
+    }
   }
 
   function tickEventCountdowns() {
