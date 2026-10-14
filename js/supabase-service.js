@@ -572,7 +572,10 @@ export const SupabaseService = {
         .or(`created_by.eq.${user.id},participant_id.eq.${user.id}`)
         .order("updated_at", { ascending: false });
       if (error) return;
-      const convs = data || [];
+      const allConversations = data || [];
+      const { data: hiddenRows } = await supabase.from("conversation_hides").select("conversation_id").eq("user_id", user.id);
+      const hiddenIds = new Set((hiddenRows || []).map(row => row.conversation_id));
+      const convs = allConversations.filter(c => !hiddenIds.has(c.id));
       const unreadCounts = await Promise.all(convs.map(async c => {
         const { count, error: countError } = await supabase.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", c.id).neq("sender_id", user.id).is("read_at", null).is("deleted_at", null);
         return [c.id, countError ? 0 : (count || 0)];
@@ -706,8 +709,65 @@ export const SupabaseService = {
     });
     if (error) throw new Error(friendlyError(error));
     if (!conv) throw new Error("Could not open the conversation. Please try again.");
+    // Opening a previously hidden chat brings it back only in this user's inbox.
+    await supabase.from("conversation_hides").delete().eq("user_id", user.id).eq("conversation_id", conv.id);
     if (firstMessage && !existing) await this.sendMessage(conv.id, firstMessage);
     return { ...conv, peer_id: recipient.id, name: recipient.name || recipientName, avatar_url: recipient.avatar_url || conv.avatar_url };
+  },
+
+  async hideConversation(conversationId) {
+    if (!supabase || !conversationId) throw new Error("Choose a chat first.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("Please sign in again.");
+    const { error } = await supabase.from("conversation_hides").upsert(
+      { user_id: user.id, conversation_id: conversationId },
+      { onConflict: "user_id,conversation_id" }
+    );
+    if (error) throw new Error(friendlyError(error));
+    return true;
+  },
+
+  async uploadChatAttachment(conversationId, file) {
+    if (!supabase || !conversationId || !file) throw new Error("Choose a file to share.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("Please sign in again.");
+    if (file.size > 50 * 1024 * 1024) throw new Error("Attachments must be 50 MB or smaller.");
+    const allowed = new Set([
+      "image/jpeg","image/png","image/webp","image/gif",
+      "video/mp4","video/webm","video/quicktime",
+      "application/pdf","text/plain","application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    ]);
+    if (!allowed.has(file.type)) throw new Error("Use an image, video, PDF, Word, Excel, PowerPoint, or text document.");
+    const safeName = String(file.name || "attachment").replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
+    const path = conversationId + "/" + user.id + "/" + crypto.randomUUID() + "-" + safeName;
+    const { error: uploadError } = await supabase.storage.from("chat-attachments").upload(path, file, {
+      cacheControl: "3600", contentType: file.type, upsert: false
+    });
+    if (uploadError) throw new Error(friendlyError(uploadError));
+    const { error: messageError } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      text: "Shared an attachment: " + safeName,
+      attachment_path: path,
+      attachment_name: safeName,
+      attachment_mime: file.type,
+      attachment_size: file.size
+    });
+    if (messageError) {
+      await supabase.storage.from("chat-attachments").remove([path]);
+      throw new Error(friendlyError(messageError));
+    }
+    return true;
+  },
+
+  async getChatAttachmentUrl(path) {
+    if (!supabase || !path) return null;
+    const { data, error } = await supabase.storage.from("chat-attachments").createSignedUrl(path, 3600);
+    if (error) { console.warn("Attachment link could not be created:", friendlyError(error)); return null; }
+    return data?.signedUrl || null;
   },
 
   async editMessage(messageId, text) {
