@@ -185,6 +185,10 @@
     window.SupabaseService.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session && session.user) {
         hydrateSessionFromAuthUser(session.user);
+      } else if (event === "PASSWORD_RECOVERY") {
+        const modal = document.getElementById("auth-modal-backdrop");
+        if (modal) modal.classList.add("open");
+        showAuthStep("password-recovery");
       } else if (event === "SIGNED_OUT") {
         AppState.currentUser = null;
         renderNavigation();
@@ -249,6 +253,7 @@
       authProvider: provider === "google" ? "Google Account (Verified)" : "Personal Email (Verified)",
       isVerified: true
     };
+    syncNewsPublishingOption();
     renderNavigation();
     startConversationsSync();
   }
@@ -423,10 +428,11 @@
     const stepMain = document.getElementById("auth-step-main");
     const stepOtp = document.getElementById("auth-step-otp");
     const stepSuccess = document.getElementById("auth-step-success");
-    
+    const stepRecovery = document.getElementById("auth-step-password-recovery");
     if (stepMain) stepMain.style.display = (step === "main") ? "block" : "none";
     if (stepOtp) stepOtp.style.display = (step === "otp") ? "block" : "none";
     if (stepSuccess) stepSuccess.style.display = (step === "success") ? "block" : "none";
+    if (stepRecovery) stepRecovery.style.display = (step === "password-recovery") ? "block" : "none";
   }
 
   // Real Google OAuth via Supabase Auth — no sample/fake account is ever
@@ -472,6 +478,38 @@
       const data = await window.SupabaseService.signInWithPassword(email, password);
       await completePasswordAuth(data.user, "Welcome back");
     } catch (err) { alert(err.message || "Sign-in failed. Check your email and password."); }
+    finally { clearButtonLoading(btn); }
+  }
+
+  async function handlePasswordRecoveryRequest() {
+    const email = document.getElementById("auth-password-email")?.value.trim() || "";
+    if (!validateEmail(email)) { alert("Enter focalforges@gmail.com (or the account email) in the email field first."); return; }
+    if (!window.SupabaseService || !window.SupabaseService.isReady()) { showToast("Setup Needed", "Supabase is not configured."); return; }
+    const btn = document.getElementById("btn-password-recovery");
+    if (btn) btn.disabled = true;
+    try {
+      await window.SupabaseService.requestPasswordRecovery(email);
+      alert("If an account exists for that email, a recovery link has been sent. Open it on the deployed IATS CONNECT website, not localhost.");
+    } catch (err) { alert(err.message || "Could not send the recovery email."); }
+    finally { if (btn) btn.disabled = false; }
+  }
+
+  async function handlePasswordRecoverySubmit(e) {
+    e.preventDefault();
+    const password = document.getElementById("auth-new-password")?.value || "";
+    const confirm = document.getElementById("auth-confirm-password")?.value || "";
+    if (password.length < 8) { alert("Use a password of at least 8 characters."); return; }
+    if (password !== confirm) { alert("The passwords do not match."); return; }
+    const btn = document.getElementById("btn-save-new-password");
+    setButtonLoading(btn, "Saving password…");
+    try {
+      const user = await window.SupabaseService.updatePassword(password);
+      document.getElementById("form-password-recovery")?.reset();
+      const url = new URL(window.location.href);
+      url.searchParams.delete("password-recovery"); url.hash = "";
+      window.history.replaceState({}, document.title, url.pathname + url.search);
+      await completePasswordAuth(user, "Password updated");
+    } catch (err) { alert(err.message || "Could not update password. Request a fresh recovery link and try again."); }
     finally { clearButtonLoading(btn); }
   }
 
@@ -1041,7 +1079,20 @@
     renderActiveView();
   }
 
+  function isNewsPublisher() {
+    return String(AppState.currentUser?.email || "").trim().toLowerCase() === "focalforges@gmail.com";
+  }
+  function syncNewsPublishingOption() {
+    const option = document.querySelector('#new-catchup-tag option[data-admin-only="true"]');
+    if (!option) return;
+    option.hidden = !isNewsPublisher(); option.disabled = !isNewsPublisher();
+    if (!isNewsPublisher() && option.selected) {
+      const select = document.getElementById("new-catchup-tag");
+      if (select) select.value = "Study Group";
+    }
+  }
   function openHostCatchupModal() {
+    syncNewsPublishingOption();
     const hostModal = document.getElementById("host-catchup-modal");
     if (hostModal) hostModal.classList.add("open");
   }
@@ -1057,6 +1108,9 @@
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
     const time = document.getElementById("new-catchup-time") ? document.getElementById("new-catchup-time").value.trim() : "";
     const tag = document.getElementById("new-catchup-tag") ? document.getElementById("new-catchup-tag").value : "Study Group";
+    if (String(tag).trim().toLowerCase() === "campus news" && !isNewsPublisher()) {
+      alert("Only focalforges@gmail.com can publish Campus News. Scholars can still publish academic events."); return;
+    }
     const capacityInput = document.getElementById("new-catchup-capacity");
     const capacityValue = capacityInput ? capacityInput.value.trim() : "";
     const capacity = capacityValue ? Number.parseInt(capacityValue, 10) : null;
@@ -1779,6 +1833,9 @@
     if (passwordForm) passwordForm.addEventListener("submit", handlePasswordSignIn);
     const passwordSignupBtn = document.getElementById("btn-password-signup");
     if (passwordSignupBtn) passwordSignupBtn.addEventListener("click", handlePasswordSignUp);
+    document.getElementById("btn-password-recovery")?.addEventListener("click", handlePasswordRecoveryRequest);
+    document.getElementById("form-password-recovery")?.addEventListener("submit", handlePasswordRecoverySubmit);
+    document.getElementById("btn-back-from-recovery")?.addEventListener("click", () => showAuthStep("main"));
 
     const verifyOtpBtn = document.getElementById("btn-verify-otp");
     if (verifyOtpBtn) verifyOtpBtn.addEventListener("click", verifyOtpCode);
