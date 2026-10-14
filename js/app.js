@@ -1512,8 +1512,8 @@
         alert("Please provide a valid online meeting URL beginning with https:// or http://.");
         return;
       }
-      if (!registrationDeadline || !Number.isFinite(registrationDeadline.getTime()) || registrationDeadline > startsAt) {
-        alert("Please set a valid registration deadline before the event starts.");
+      if (!registrationDeadline || !Number.isFinite(registrationDeadline.getTime()) || registrationDeadline.getTime() <= Date.now() || registrationDeadline > startsAt) {
+        alert("Please set a future registration deadline before the event starts.");
         return;
       }
     }
