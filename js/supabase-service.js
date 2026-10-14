@@ -201,6 +201,11 @@ export const SupabaseService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return () => {};
     const channel = supabase.channel("iats-global-presence", { config: { presence: { key: user.id } } });
+    let heartbeat = null;
+    const touchLastSeen = async () => {
+      try { await supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id); }
+      catch (error) { console.warn("Last-seen update failed:", error); }
+    };
     const publish = () => {
       const state = channel.presenceState();
       onUpdate(Object.keys(state));
@@ -211,14 +216,25 @@ export const SupabaseService = {
       .subscribe(async status => {
         if (status === "SUBSCRIBED") {
           await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+          await touchLastSeen();
+          heartbeat = setInterval(touchLastSeen, 30000);
           publish();
         }
       });
-    return () => supabase.removeChannel(channel);
+    const onVisible = () => { if (document.visibilityState === "visible") touchLastSeen(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { if (heartbeat) clearInterval(heartbeat); document.removeEventListener("visibilitychange", onVisible); touchLastSeen(); supabase.removeChannel(channel); };
   },
 
   // 2. Profiles (created on first sign-in, no photo required)
   // ===========================================================
+  async refreshPeerLastSeen(userIds) {
+    if (!supabase || !Array.isArray(userIds) || !userIds.length) return {};
+    const { data, error } = await supabase.from("profiles").select("id,last_seen_at").in("id", userIds);
+    if (error) throw new Error(friendlyError(error));
+    return Object.fromEntries((data || []).map(p => [p.id, p.last_seen_at || null]));
+  },
+
   async fetchProfile(userId) {
     if (!supabase || !userId) return null;
     const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
@@ -560,14 +576,14 @@ export const SupabaseService = {
       const peerIds = [...new Set(convs.map(c => c.created_by === user.id ? c.participant_id : c.created_by).filter(Boolean))];
       let peers = [];
       if (peerIds.length) {
-        const result = await supabase.from("profiles").select("id,name,avatar_url").in("id", peerIds);
+        const result = await supabase.from("profiles").select("id,name,avatar_url,last_seen_at,major").in("id", peerIds);
         if (!result.error) peers = result.data || [];
       }
       const byId = new Map(peers.map(p => [p.id, p]));
       onUpdate(convs.map(c => {
         const peerId = c.created_by === user.id ? c.participant_id : c.created_by;
         const peer = byId.get(peerId);
-        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url };
+        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url, peer_last_seen_at: peer?.last_seen_at || null };
       }));
     };
     load();
@@ -601,7 +617,7 @@ export const SupabaseService = {
 
     const channel = supabase.channel("public:messages:" + conversationId)
       .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "messages",
+        event: "*", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`
       }, load)
       .subscribe();
@@ -615,19 +631,38 @@ export const SupabaseService = {
    * as your own private thread (handy for personal notes/drafts) until
    * a matching account exists.
    */
-  async createConversation({ recipientName, major, firstMessage, avatar }) {
+  async searchChatRecipients(query) {
+    if (!supabase) throw new Error("Chat service is unavailable.");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("You need to sign in first.");
+    const term = String(query || "").trim().replace(/[,%()]/g, " ");
+    if (term.length < 2) return [];
+    const { data, error } = await supabase.from("profiles").select("id,name,major,avatar_url")
+      .neq("id", user.id).ilike("name", `%${term}%`).order("name", { ascending: true }).limit(8);
+    if (error) throw new Error(friendlyError(error));
+    return data || [];
+  },
+
+  async createConversation({ recipientId, recipientName, major, firstMessage, avatar }) {
     if (!supabase) return null;
     if (!throttled("conversations:add", 1500)) return null;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("You need to sign in first.");
     if (!recipientName) throw new Error("Enter the name of the scholar you want to message.");
 
-    const { data: matches, error: lookupError } = await supabase.from("profiles")
-      .select("id,name,avatar_url").ilike("name", recipientName.trim()).neq("id", user.id).limit(2);
-    if (lookupError) throw new Error(friendlyError(lookupError));
-    if (!matches || matches.length === 0) throw new Error("No other scholar was found with that name. Check the name and try again.");
-    if (matches.length > 1) throw new Error("More than one scholar has that name. Use a unique display name to start the chat.");
-    const recipient = matches[0];
+    let recipient = null;
+    if (recipientId) {
+      const { data, error: recipientError } = await supabase.from("profiles").select("id,name,avatar_url").eq("id", recipientId).neq("id", user.id).maybeSingle();
+      if (recipientError) throw new Error(friendlyError(recipientError));
+      recipient = data;
+    } else {
+      const { data: matches, error: lookupError } = await supabase.from("profiles").select("id,name,avatar_url").ilike("name", recipientName.trim()).neq("id", user.id).limit(2);
+      if (lookupError) throw new Error(friendlyError(lookupError));
+      if (!matches || matches.length === 0) throw new Error(`User "${recipientName}" does not exist or has no matching IATS account.`);
+      if (matches.length > 1) throw new Error("More than one scholar has that name. Choose the correct person from the suggestions.");
+      recipient = matches[0];
+    }
+    if (!recipient) throw new Error("That user does not exist or is unavailable.");
 
     const { data: existing } = await supabase.from("conversations").select("id")
       .or(`and(created_by.eq.${user.id},participant_id.eq.${recipient.id}),and(created_by.eq.${recipient.id},participant_id.eq.${user.id})`)
@@ -656,7 +691,7 @@ export const SupabaseService = {
     const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id); if (error) throw new Error(friendlyError(error)); return true;
   },
   /** Sends a message instantly over Realtime — DB trigger rate-limits abuse. */
-  async sendMessage(conversationId, text) {
+  async sendMessage(conversationId, text, replyTo = null) {
     if (!supabase || !conversationId || !text) return false;
     if (!throttled("messages:send:" + conversationId, 400)) return false;
     try {
@@ -665,7 +700,8 @@ export const SupabaseService = {
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        text: sanitizeText(text, 500)
+        text: sanitizeText(text, 500),
+        reply_to: replyTo || null
       });
       if (error) throw error;
       // conversations.updated_at / last_message are refreshed automatically by
