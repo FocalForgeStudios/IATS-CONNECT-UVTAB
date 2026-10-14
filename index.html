@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="./favicon.svg" />
     
     <!-- Liquid Glassmorphism Core Stylesheet with Academic Theme Colors (Relative path for GitHub Pages compatibility) -->
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=20261014-sessionfix1" />
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=20261014-chatupgrade1" />
   </head>
   <body>
     <!-- Accessible skeleton loader: gives the page structure while scripts initialize -->
@@ -575,7 +575,13 @@
             </div>
 
             <div id="chat-reply-preview" class="chat-reply-preview" hidden></div>
+            <div id="chat-emoji-picker" class="chat-emoji-picker" hidden aria-label="Emoji picker">
+              <button type="button" data-chat-emoji="😀" aria-label="Insert 😀">😀</button><button type="button" data-chat-emoji="😃" aria-label="Insert 😃">😃</button><button type="button" data-chat-emoji="😄" aria-label="Insert 😄">😄</button><button type="button" data-chat-emoji="😁" aria-label="Insert 😁">😁</button><button type="button" data-chat-emoji="😊" aria-label="Insert 😊">😊</button><button type="button" data-chat-emoji="🥰" aria-label="Insert 🥰">🥰</button><button type="button" data-chat-emoji="😂" aria-label="Insert 😂">😂</button><button type="button" data-chat-emoji="🤣" aria-label="Insert 🤣">🤣</button><button type="button" data-chat-emoji="😉" aria-label="Insert 😉">😉</button><button type="button" data-chat-emoji="😍" aria-label="Insert 😍">😍</button><button type="button" data-chat-emoji="🤔" aria-label="Insert 🤔">🤔</button><button type="button" data-chat-emoji="🙌" aria-label="Insert 🙌">🙌</button><button type="button" data-chat-emoji="👏" aria-label="Insert 👏">👏</button><button type="button" data-chat-emoji="👍" aria-label="Insert 👍">👍</button><button type="button" data-chat-emoji="🙏" aria-label="Insert 🙏">🙏</button><button type="button" data-chat-emoji="❤️" aria-label="Insert ❤️">❤️</button><button type="button" data-chat-emoji="💯" aria-label="Insert 💯">💯</button><button type="button" data-chat-emoji="🔥" aria-label="Insert 🔥">🔥</button><button type="button" data-chat-emoji="🎉" aria-label="Insert 🎉">🎉</button><button type="button" data-chat-emoji="📚" aria-label="Insert 📚">📚</button><button type="button" data-chat-emoji="📝" aria-label="Insert 📝">📝</button><button type="button" data-chat-emoji="📖" aria-label="Insert 📖">📖</button><button type="button" data-chat-emoji="💡" aria-label="Insert 💡">💡</button><button type="button" data-chat-emoji="🧠" aria-label="Insert 🧠">🧠</button><button type="button" data-chat-emoji="🎓" aria-label="Insert 🎓">🎓</button><button type="button" data-chat-emoji="✅" aria-label="Insert ✅">✅</button><button type="button" data-chat-emoji="❓" aria-label="Insert ❓">❓</button><button type="button" data-chat-emoji="✨" aria-label="Insert ✨">✨</button>
+            </div>
             <form class="chat-input-row" id="chat-send-form">
+              <input type="file" id="chat-attachment-input" hidden accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,application/pdf,text/plain,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+              <button type="button" class="chat-composer-tool" id="btn-chat-attach" title="Attach a document, image or video" aria-label="Attach a file">📎</button>
+              <button type="button" class="chat-composer-tool" id="btn-chat-emoji" title="Choose emoji" aria-label="Choose emoji">😊</button>
               <input type="text" class="chat-input-field" id="chat-input-message" placeholder="Type a message or share lecture notes..." autocomplete="off" />
               <button type="submit" class="btn-liquid btn-primary btn-sm" id="btn-send-chat-message">
                 <span>Send</span>
@@ -1111,9 +1117,9 @@
     <script type="module" src="./js/supabase-config.js"></script>
 
     <!-- Supabase Auth + Postgres + Realtime Engine (Modular ES Script) -->
-    <script type="module" src="./js/supabase-service.js?v=20261014-sessionfix1"></script>
+    <script type="module" src="./js/supabase-service.js?v=20261014-chatupgrade1"></script>
 
     <!-- Core Logic Engine Script (Vanilla JS with relative path) -->
-    <script src="./js/app.js?v=20261014-sessionfix1"></script>
+    <script src="./js/app.js?v=20261014-chatupgrade1"></script>
   </body>
 </html>
