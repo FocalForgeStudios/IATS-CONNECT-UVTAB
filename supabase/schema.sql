@@ -143,6 +143,7 @@ create table if not exists public.catchups (
 alter table public.catchups add column if not exists event_starts_at timestamptz;
 alter table public.catchups add column if not exists event_ends_at timestamptz;
 alter table public.catchups add column if not exists description text;
+alter table public.catchups alter column attendees set default 0;
 alter table public.catchups add column if not exists item_type text not null default 'event';
 alter table public.catchups add column if not exists is_official boolean not null default false;
 alter table public.catchups add column if not exists event_format text not null default 'physical';
