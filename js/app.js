@@ -1833,6 +1833,9 @@
           <div style="font-size: 0.8rem; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             ${c.last_message ? c.last_message : 'No messages yet'}
           </div>
+          <div style="font-size:.68rem;color:${AppState.onlineUserIds.includes(c.peer_id) ? "#059669" : "#64748B"};margin-top:3px;">
+            ${AppState.onlineUserIds.includes(c.peer_id) ? "● Online" : c.peer_last_seen_at ? "Last seen " + formatLastSeen(new Date(c.peer_last_seen_at)) : "○ Offline"}
+          </div>
         </div>
       </div>
     `).join("");
