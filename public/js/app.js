@@ -61,7 +61,11 @@
     catchups: [],
     hubPosts: [],
     conversations: [],
-    activeMessages: []
+    activeMessages: [],
+    adminStats: null,
+    adminEvents: [],
+    adminFilter: "all",
+    adminSort: "soonest"
   };
 
   // ==========================================
@@ -100,6 +104,7 @@
     updateUnreadBadge();
     initHeaderScrollBlur();
     initSupabaseSync();
+    if (!eventTicker) eventTicker = window.setInterval(tickEventCountdowns, 1000);
     hideBootLoaderWhenReady();
   }
 
@@ -154,6 +159,7 @@
   let unsubHubPosts = null;
   let unsubConversations = null;
   let unsubActiveMessages = null;
+  let eventTicker = null;
 
   function initSupabaseSync() {
     if (!window.SupabaseService || typeof window.SupabaseService.isReady !== "function") {
@@ -208,10 +214,12 @@
         ...c,
         hostAvatar: c.hostAvatar ?? c.host_avatar ?? null,
         time: c.time ?? c.event_time ?? "",
+        event_starts_at: c.event_starts_at ?? null,
+        event_ends_at: c.event_ends_at ?? null,
         maxAttendees: c.maxAttendees ?? c.max_attendees ?? null,
         isJoined: Array.isArray(c.attendee_ids) && !!AppState.currentUser && c.attendee_ids.includes(AppState.currentUser.id)
       }));
-      if (AppState.activeView === "catchup" || AppState.activeView === "dashboard") {
+      if (AppState.activeView === "catchup" || AppState.activeView === "dashboard" || AppState.activeView === "admin") {
         renderActiveView();
       }
     });
@@ -308,6 +316,10 @@
   // Navigation & View Routing
   // ==========================================
   function navigateTo(viewId) {
+    if (viewId === "admin" && !isNewsPublisher()) {
+      showToast("Administrator Only", "The administration dashboard is restricted to focalforges@gmail.com.");
+      viewId = "dashboard";
+    }
     AppState.activeView = viewId;
     
     // Update bottom dock nav buttons and any nav-item-btn elements
@@ -344,6 +356,9 @@
       case "catchup":
         renderCatchUpView();
         break;
+      case "admin":
+        renderAdminDashboardView();
+        break;
       case "hubs":
         renderHubsView();
         break;
@@ -370,12 +385,15 @@
           <span style="font-weight: 700; font-size: 0.88rem; color: #1E293B;">${AppState.currentUser.name}</span>
           <span class="tag-pill tag-pill-highlight" style="font-size: 0.72rem; padding: 2px 8px;">IATS Verified</span>
         </div>
+        ${isNewsPublisher() ? '<button class="btn-liquid btn-glass btn-sm" id="btn-header-admin" type="button"><span>Admin Dashboard</span></button>' : ''}
         <button class="btn-liquid btn-glass btn-sm" id="btn-header-logout" title="Sign Out">
           <span>Sign Out</span>
         </button>
       `;
       const profBtn = document.getElementById("btn-header-profile");
       if (profBtn) profBtn.addEventListener("click", () => navigateTo("profile"));
+      const adminBtn = document.getElementById("btn-header-admin");
+      if (adminBtn) adminBtn.addEventListener("click", () => navigateTo("admin"));
       const logoutBtn = document.getElementById("btn-header-logout");
       if (logoutBtn) logoutBtn.addEventListener("click", clearSession);
     } else {
@@ -993,63 +1011,207 @@
   // ==========================================
   // Academic Events & News (CatchUp) Logic
   // ==========================================
+  function eventStatusFromTimes(startValue, endValue, now = Date.now()) {
+    const start = startValue ? Date.parse(startValue) : NaN;
+    const end = endValue ? Date.parse(endValue) : NaN;
+    if (!Number.isFinite(start)) return "upcoming";
+    if (now < start) return "upcoming";
+    if (Number.isFinite(end) && now >= end) return "past";
+    return "live";
+  }
+
+  function getEventStart(event) { return event.event_starts_at || event.eventStartsAt || null; }
+  function getEventEnd(event) { return event.event_ends_at || event.eventEndsAt || null; }
+  function eventStatus(event, now = Date.now()) { return eventStatusFromTimes(getEventStart(event), getEventEnd(event), now); }
+
+  function escapeEventText(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[ch]);
+  }
+
+  function formatEventDateTime(value) {
+    if (!value) return "Date/time not set";
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Date/time not set";
+  }
+
+  function formatEventDuration(ms) {
+    const totalMinutes = Math.max(0, Math.floor(ms / 60000));
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    if (days) return days + "d " + hours + "h";
+    if (hours) return hours + "h " + minutes + "m";
+    if (minutes) return minutes + "m";
+    return "less than a minute";
+  }
+
+  function formatEventCountdown(startValue, endValue, now = Date.now()) {
+    const start = startValue ? Date.parse(startValue) : NaN;
+    const end = endValue ? Date.parse(endValue) : NaN;
+    if (!Number.isFinite(start)) return "Date/time not set";
+    if (now < start) return "Starts in " + formatEventDuration(start - now);
+    if (Number.isFinite(end) && now >= end) return "Ended";
+    return Number.isFinite(end) ? "LIVE NOW · ends in " + formatEventDuration(end - now) : "LIVE NOW";
+  }
+
+  function renderCatchupCard(event) {
+    const status = eventStatus(event);
+    const start = getEventStart(event);
+    const end = getEventEnd(event);
+    const startMs = start && Number.isFinite(Date.parse(start)) ? Date.parse(start) : "";
+    const endMs = end && Number.isFinite(Date.parse(end)) ? Date.parse(end) : "";
+    const label = status === "live" ? "LIVE NOW" : status === "past" ? "PAST" : "UPCOMING";
+    const avatar = resolveAssetUrl(event.hostAvatar || event.host_avatar || DEFAULT_AVATAR_PLACEHOLDER);
+    const attendees = event.maxAttendees == null && event.max_attendees == null
+      ? (event.attendees || 1) + " attending · Unlimited capacity"
+      : (event.attendees || 1) + "/" + (event.maxAttendees ?? event.max_attendees) + " going";
+    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:16px;'>"
+      + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'>"
+      + "<span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span>"
+      + "<span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
+      + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>"
+      + formatEventCountdown(start, end) + "</div>"
+      + "<h3 style='font-size:1.15rem;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;'>" + escapeEventText(event.title) + "</h3>"
+      + "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location || "Location not set") + "</div>"
+      + "<div style='font-size:.86rem;color:#64748B;margin-bottom:8px;'>" + ICONS.clock + " " + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.time || event.event_time || "Date/time not set") : formatEventDateTime(start))
+      + (end ? " – " + escapeEventText(new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })) : "") + "</div>"
+      + "<div style='font-size:.8rem;color:#64748B;'>" + escapeEventText(attendees) + "</div></div>"
+      + "<div class='catchup-attendees'><div style='display:flex;align-items:center;gap:8px;'>"
+      + "<img src='" + avatar + "' onerror=\"this.onerror=null;this.src='" + DEFAULT_AVATAR_PLACEHOLDER + "';\" style='width:32px;height:32px;border-radius:50%;object-fit:cover;' alt='Host'>"
+      + "<span style='font-size:.82rem;font-weight:500;'>Host: <b>" + escapeEventText(event.host || "IATS Scholar") + "</b></span></div>"
+      + "<button class='btn-liquid " + (event.isJoined ? "btn-glass" : "btn-primary") + " btn-sm btn-catchup-toggle' data-id='" + escapeEventText(event.id) + "' " + (status === "past" ? "disabled" : "") + ">"
+      + (event.isJoined ? "Leave Event" : "Join Event") + "</button></div></article>";
+  }
+
   function renderCatchUpView() {
     const grid = document.getElementById("catchup-grid-container");
     if (!grid) return;
-
-    if (AppState.catchups.length === 0) {
-      grid.innerHTML = `
-        <div class="glass-panel" style="grid-column: 1 / -1; text-align: center; padding: 48px 24px;">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: #EFF6FF; color: #3A86C8; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            ${ICONS.coffee}
-          </div>
-          <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 8px;">No Academic Events Scheduled</h3>
-          <p style="color: #64748B; max-width: 440px; margin: 0 auto 20px auto;">
-            Organize study sprints, departmental seminars, lecture discussions, or revision workshops for IATS scholars.
-          </p>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-liquid btn-primary" onclick="CampusApp.openHostCatchupModal()">
-              <span>+ Host First Academic Event</span>
-            </button>
-          </div>
-        </div>
-      `;
+    if (!AppState.catchups.length) {
+      grid.innerHTML = "<div class='glass-panel' style='grid-column:1/-1;text-align:center;padding:48px 24px;'>"
+        + "<h3 style='font-size:1.4rem;font-weight:800;color:#1E293B;margin-bottom:8px;'>No Academic Events Scheduled</h3>"
+        + "<p style='color:#64748B;max-width:440px;margin:0 auto 20px;'>Organize study sprints, departmental seminars, lecture discussions, or revision workshops for IATS scholars.</p>"
+        + "<button class='btn-liquid btn-primary' onclick=\"CampusApp.openHostCatchupModal()\">+ Host First Academic Event</button></div>";
       return;
     }
-
-    grid.innerHTML = AppState.catchups.map(c => `
-      <div class="glass-panel catchup-card">
-        <div>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span class="tag-pill tag-pill-highlight">${c.tag || 'Academic Event'}</span>
-            <span style="font-size: 0.8rem; font-weight: 700; color: #D8232A; display: flex; align-items: center; gap: 4px;">
-              ${ICONS.users} ${c.maxAttendees == null ? `${c.attendees || 1} attending · Unlimited capacity` : `${c.attendees || 1}/${c.maxAttendees} Going`}
-            </span>
-          </div>
-          <h3 style="font-size: 1.15rem; font-weight: 700; color: #1E293B; line-height: 1.35; margin-bottom: 6px;">${c.title}</h3>
-          <div class="catchup-meta" style="display: flex; align-items: center; gap: 4px; color: #64748B; font-size: 0.86rem; margin-bottom: 6px;">
-            ${ICONS.pin} <span>${c.location}</span>
-          </div>
-          <div style="font-size: 0.86rem; color: #64748B; margin-bottom: 16px; display: flex; align-items: center; gap: 4px;">
-            ${ICONS.clock} <b>${c.time}</b>
-          </div>
-        </div>
-
-        <div class="catchup-attendees">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="${resolveAssetUrl(c.hostAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" alt="${c.host}">
-            <span style="font-size: 0.82rem; font-weight: 500;">Host: <b>${c.host}</b></span>
-          </div>
-          <button class="btn-liquid ${c.isJoined ? 'btn-glass' : 'btn-primary'} btn-sm btn-catchup-toggle" data-id="${c.id}">
-            ${c.isJoined ? "Leave Event" : "Join Event"}
-          </button>
-        </div>
-      </div>
-    `).join("");
-
+    const groups = [
+      { key: "live", title: "Live Now", events: [] },
+      { key: "upcoming", title: "Upcoming Events", events: [] },
+      { key: "past", title: "Past Events", events: [] }
+    ];
+    AppState.catchups.forEach(event => groups.find(group => group.key === eventStatus(event)).events.push(event));
+    groups.forEach(group => group.events.sort((a, b) => {
+      const aStart = Date.parse(getEventStart(a) || "");
+      const bStart = Date.parse(getEventStart(b) || "");
+      if (!Number.isFinite(aStart) && !Number.isFinite(bStart)) return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
+      if (!Number.isFinite(aStart)) return 1;
+      if (!Number.isFinite(bStart)) return -1;
+      return group.key === "past" ? bStart - aStart : aStart - bStart;
+    }));
+    grid.innerHTML = groups.filter(group => group.events.length).map(group =>
+      "<section style='grid-column:1/-1;margin-bottom:8px;'><h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;margin:8px 0 14px;'>" + group.title + " <span style='font-size:.8rem;color:#64748B;'>(" + group.events.length + ")</span></h3>"
+      + "<div class='catchup-grid'>" + group.events.map(renderCatchupCard).join("") + "</div></section>"
+    ).join("");
     grid.querySelectorAll(".btn-catchup-toggle").forEach(btn => {
       btn.addEventListener("click", () => toggleJoinCatchup(btn.dataset.id));
     });
+  }
+
+  function renderAdminDashboardView() {
+    if (!isNewsPublisher()) {
+      navigateTo("dashboard");
+      return;
+    }
+    const container = document.getElementById("admin-dashboard-content");
+    if (!container) return;
+    container.innerHTML = "<div class='glass-panel' style='padding:24px;text-align:center;'>Loading administration overview…</div>";
+    if (!window.SupabaseService || typeof window.SupabaseService.fetchAdminOverview !== "function") {
+      container.innerHTML = "<div class='glass-panel' style='padding:24px;'>Administration service unavailable. Refresh and try again.</div>";
+      return;
+    }
+    window.SupabaseService.fetchAdminOverview().then(data => {
+      AppState.adminStats = { studentCount: data.studentCount || 0, eventCount: data.eventCount || 0 };
+      AppState.adminEvents = data.events || [];
+      if (AppState.activeView !== "admin") return;
+      container.innerHTML = "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;'>"
+        + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>REGISTERED SCHOLAR PROFILES</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.studentCount + "</div></div>"
+        + "<div class='glass-panel' style='padding:22px;'><div style='color:#64748B;font-size:.85rem;font-weight:700;'>TOTAL EVENTS & NEWS</div><div style='font-size:2rem;font-weight:800;color:#1E293B;margin-top:8px;'>" + AppState.adminStats.eventCount + "</div></div></div>"
+        + "<div class='glass-panel' style='padding:20px;'><div style='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;'>"
+        + "<h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;'>Event Management</h3><div style='display:flex;gap:10px;flex-wrap:wrap;'>"
+        + "<label style='font-size:.85rem;color:#475569;'>Status <select id='admin-event-filter' class='form-input' style='display:inline-block;width:auto;margin-left:6px;'>"
+        + "<option value='all'>All</option><option value='upcoming'>Upcoming</option><option value='live'>Live</option><option value='past'>Past</option></select></label>"
+        + "<label style='font-size:.85rem;color:#475569;'>Sort <select id='admin-event-sort' class='form-input' style='display:inline-block;width:auto;margin-left:6px;'>"
+        + "<option value='soonest'>Start time: soonest</option><option value='latest'>Recently posted</option><option value='attendees'>Most attendees</option><option value='title'>Title A–Z</option></select></label></div></div>"
+        + "<div id='admin-events-list'></div></div>";
+      const filter = document.getElementById("admin-event-filter");
+      const sort = document.getElementById("admin-event-sort");
+      if (filter) { filter.value = AppState.adminFilter; filter.addEventListener("change", () => { AppState.adminFilter = filter.value; renderAdminEventsList(); }); }
+      if (sort) { sort.value = AppState.adminSort; sort.addEventListener("change", () => { AppState.adminSort = sort.value; renderAdminEventsList(); }); }
+      renderAdminEventsList();
+    }).catch(err => {
+      if (AppState.activeView === "admin") container.innerHTML = "<div class='glass-panel' style='padding:24px;color:#991B1B;'>Could not load administration data: " + escapeEventText(err.message || "Please try again.") + "</div>";
+    });
+  }
+
+  function renderAdminEventsList() {
+    const list = document.getElementById("admin-events-list");
+    if (!list) return;
+    const filter = AppState.adminFilter || "all";
+    const sort = AppState.adminSort || "soonest";
+    const now = Date.now();
+    const events = (AppState.adminEvents || []).filter(event => filter === "all" || eventStatus(event, now) === filter);
+    events.sort((a, b) => {
+      if (sort === "latest") return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0);
+      if (sort === "attendees") return (b.attendees || 0) - (a.attendees || 0);
+      if (sort === "title") return String(a.title || "").localeCompare(String(b.title || ""));
+      const aStart = Date.parse(getEventStart(a) || "");
+      const bStart = Date.parse(getEventStart(b) || "");
+      if (!Number.isFinite(aStart) && !Number.isFinite(bStart)) return 0;
+      if (!Number.isFinite(aStart)) return 1;
+      if (!Number.isFinite(bStart)) return -1;
+      return aStart - bStart;
+    });
+    if (!events.length) {
+      list.innerHTML = "<div style='padding:28px;text-align:center;color:#64748B;'>No events match this filter.</div>";
+      return;
+    }
+    list.innerHTML = events.map(event => {
+      const status = eventStatus(event, now);
+      const start = getEventStart(event);
+      const end = getEventEnd(event);
+      const startMs = start && Number.isFinite(Date.parse(start)) ? Date.parse(start) : "";
+      const endMs = end && Number.isFinite(Date.parse(end)) ? Date.parse(end) : "";
+      const label = status === "live" ? "LIVE NOW" : status === "past" ? "PAST" : "UPCOMING";
+      const cap = event.max_attendees == null ? "Unlimited capacity" : (event.attendees || 0) + "/" + event.max_attendees + " attending";
+      return "<div class='glass-panel' style='padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;'>"
+        + "<div style='min-width:200px;flex:1;'><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;'><strong>" + escapeEventText(event.title) + "</strong><span class='tag-pill tag-pill-blue' data-event-status-label>" + label + "</span></div>"
+        + "<div style='font-size:.85rem;color:#64748B;'>" + escapeEventText(event.tag || "Academic Event") + " · " + escapeEventText(event.location || "Location not set") + " · Host: " + escapeEventText(event.host || "IATS Scholar") + "</div>"
+        + "<div style='font-size:.82rem;color:#64748B;margin-top:5px;'>" + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.event_time || "Date/time not set") : formatEventDateTime(start)) + " · " + escapeEventText(cap) + "</div></div>"
+        + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>" + formatEventCountdown(start, end, now) + "</div></div>";
+    }).join("");
+  }
+
+  function tickEventCountdowns() {
+    const now = Date.now();
+    let publicStatusChanged = false;
+    let adminStatusChanged = false;
+    document.querySelectorAll("[data-event-countdown]").forEach(el => {
+      const start = el.getAttribute("data-start-iso") || "";
+      const end = el.getAttribute("data-end-iso") || "";
+      const oldStatus = el.getAttribute("data-event-status") || "upcoming";
+      const newStatus = eventStatusFromTimes(start, end, now);
+      el.textContent = formatEventCountdown(start, end, now);
+      if (oldStatus !== newStatus) {
+        el.setAttribute("data-event-status", newStatus);
+        const label = el.parentElement && el.parentElement.querySelector("[data-event-status-label]");
+        if (label) label.textContent = newStatus === "live" ? "LIVE NOW" : newStatus === "past" ? "PAST" : "UPCOMING";
+        if (AppState.activeView === "catchup") publicStatusChanged = true;
+        if (AppState.activeView === "admin") adminStatusChanged = true;
+      }
+    });
+    if (publicStatusChanged) renderCatchUpView();
+    if (adminStatusChanged) renderAdminEventsList();
   }
 
   function toggleJoinCatchup(id) {
@@ -1106,7 +1268,12 @@
     e.preventDefault();
     const title = document.getElementById("new-catchup-title") ? document.getElementById("new-catchup-title").value.trim() : "";
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
-    const time = document.getElementById("new-catchup-time") ? document.getElementById("new-catchup-time").value.trim() : "";
+    const startValue = document.getElementById("new-catchup-start")?.value || "";
+    const endValue = document.getElementById("new-catchup-end")?.value || "";
+    const startsAt = startValue ? new Date(startValue) : null;
+    const endsAt = endValue ? new Date(endValue) : null;
+    const time = startsAt && Number.isFinite(startsAt.getTime())
+      ? startsAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
     const tag = document.getElementById("new-catchup-tag") ? document.getElementById("new-catchup-tag").value : "Study Group";
     if (String(tag).trim().toLowerCase() === "campus news" && !isNewsPublisher()) {
       alert("Only focalforges@gmail.com can publish Campus News. Scholars can still publish academic events."); return;
@@ -1119,8 +1286,12 @@
       return;
     }
 
-    if (!title || !location || !time) {
-      alert("Please fill out all required fields for your IATS academic event.");
+    if (!title || !location || !time || !endsAt || !Number.isFinite(endsAt.getTime()) || !startsAt || !Number.isFinite(startsAt.getTime())) {
+      alert("Please enter the event title, location, start date/time, and end date/time.");
+      return;
+    }
+    if (endsAt <= startsAt) {
+      alert("The event end date and time must be after the start date and time.");
       return;
     }
 
@@ -1149,6 +1320,10 @@
       hostAvatar,
       location,
       time,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+      event_starts_at: startsAt.toISOString(),
+      event_ends_at: endsAt.toISOString(),
       tag,
       attendees: 1,
       maxAttendees: capacity,
@@ -1167,6 +1342,8 @@
         id: saved.id,
         hostAvatar: saved.host_avatar ?? newCatchup.hostAvatar,
         time: saved.event_time ?? newCatchup.time,
+        event_starts_at: saved.event_starts_at ?? newCatchup.event_starts_at,
+        event_ends_at: saved.event_ends_at ?? newCatchup.event_ends_at,
         maxAttendees: saved.max_attendees ?? newCatchup.maxAttendees,
         attendees: saved.attendees ?? 1
       });
