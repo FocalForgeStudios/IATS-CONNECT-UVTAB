@@ -64,8 +64,18 @@ create table if not exists public.match_profiles (
   interests     text[] default '{}',
   avatar_url    text,
   location      text default 'IATS Main Campus',
+  course_code   text,
+  cohort        text,
+  is_former_student boolean not null default false,
+  graduated_at  timestamptz,
   created_at    timestamptz not null default now()
 );
+
+alter table public.match_profiles
+  add column if not exists course_code text,
+  add column if not exists cohort text,
+  add column if not exists is_former_student boolean not null default false,
+  add column if not exists graduated_at timestamptz;
 
 alter table public.match_profiles enable row level security;
 
@@ -84,6 +94,8 @@ create policy "match_profiles_update_own" on public.match_profiles
 drop policy if exists "match_profiles_delete_own" on public.match_profiles;
 create policy "match_profiles_delete_own" on public.match_profiles
   for delete using (auth.uid() = owner_id);
+
+create unique index if not exists match_profiles_owner_id_unique on public.match_profiles(owner_id) where owner_id is not null;
 
 -- =========================================================================
 -- 3. CATCHUPS  (academic events / news)
