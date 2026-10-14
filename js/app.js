@@ -68,6 +68,8 @@
     conversations: [],
     onlineUserIds: [],
     activeMessages: [],
+    selectedChatRecipientId: null,
+    replyingToMessageId: null,
     adminStats: null,
     adminEvents: [],
     adminFilter: "all",
@@ -306,7 +308,15 @@
     syncNewsPublishingOption();
     renderNavigation();
     startConversationsSync();
-    if (window.SupabaseService.subscribePresence) window.SupabaseService.subscribePresence(ids => { AppState.onlineUserIds = ids || []; if (AppState.activeView === "chats") renderChatsView(); }).catch(err => console.warn("Presence sync failed", err));
+    if (window.SupabaseService.subscribePresence) window.SupabaseService.subscribePresence(async ids => {
+      AppState.onlineUserIds = ids || [];
+      try {
+        const peerIds = [...new Set((AppState.conversations || []).map(c => c.peer_id).filter(Boolean))];
+        const lastSeen = await window.SupabaseService.refreshPeerLastSeen(peerIds);
+        AppState.conversations = AppState.conversations.map(c => ({ ...c, peer_last_seen_at: lastSeen[c.peer_id] || c.peer_last_seen_at || null }));
+      } catch (err) { console.warn("Last-seen refresh failed", err); }
+      if (AppState.activeView === "chats") renderChatsView();
+    }).catch(err => console.warn("Presence sync failed", err));
     if (isNewsPublisher() && AppState.activeView === "landing") navigateTo("admin");
   }
 
@@ -1801,6 +1811,8 @@
     const activeConv = AppState.conversations.find(c => String(c.id) === String(AppState.activeChatId)) || AppState.conversations[0];
     const peerOnline = !!(activeConv && AppState.onlineUserIds.includes(activeConv.peer_id));
     if (activeConv) AppState.activeChatId = activeConv.id;
+    const peerLastSeen = activeConv && activeConv.peer_last_seen_at ? new Date(activeConv.peer_last_seen_at) : null;
+    const peerPresenceLabel = peerOnline ? "Online" : peerLastSeen && !Number.isNaN(peerLastSeen.getTime()) ? "Last seen " + formatLastSeen(peerLastSeen) : "Offline";
 
     // Render Left Sidebar Threads
     threadsList.innerHTML = AppState.conversations.map(c => `
@@ -1840,7 +1852,7 @@
             <div style="font-weight: 700; font-size: 1rem; color: #1E293B;">${activeConv.name}</div>
             <div style="font-size: 0.8rem; color: #059669; display: flex; align-items: center; gap: 5px;">
               <span style="width: 7px; height: 7px; border-radius: 50%; background: ${peerOnline ? "#059669" : "#94A3B8"}; display: inline-block;"></span>
-              ${peerOnline ? "Online" : "Offline"}
+              ${peerPresenceLabel}
             </div>
           </div>
         </div>
@@ -1852,12 +1864,25 @@
     // Supabase Realtime and re-render this exact block automatically.
     if (activeConv) {
       const myId = AppState.currentUser ? AppState.currentUser.id : null;
-      messagesWindow.innerHTML = (AppState.activeMessages || []).map(msg => `
-        <div class="message-bubble ${msg.sender_id === myId ? 'msg-outgoing' : 'msg-incoming'}">
-          <div style="font-size:.7rem;font-weight:700;opacity:.8;margin-bottom:4px;">${msg.sender_id === myId ? "You" : escapeEventText(msg.sender_name || activeConv.name || "IATS Scholar")}</div><div>${escapeEventText(msg.text)}</div>
-          <div style="font-size: 0.72rem; opacity: 0.75; text-align: right; margin-top: 4px;">${formatMessageTime(msg.created_at)}</div>
-        </div>
-      `).join("") || `<div style="text-align:center; color:#94A3B8; font-size:0.85rem; padding: 30px 0;">No messages yet — say hello 👋</div>`;
+      const messageById = new Map((AppState.activeMessages || []).map(m => [m.id, m]));
+      messagesWindow.innerHTML = (AppState.activeMessages || []).map(msg => {
+        const mine = msg.sender_id === myId;
+        const quoted = msg.reply_to ? messageById.get(msg.reply_to) : null;
+        const canEdit = mine && !msg.deleted_at && Date.now() - new Date(msg.created_at).getTime() <= 120000;
+        const quoteMarkup = quoted ? `<div class="message-reply-quote"><strong>${quoted.sender_id === myId ? "You" : escapeEventText(quoted.sender_name || activeConv.name || "Scholar")}</strong><div>${quoted.deleted_at ? "Message deleted" : escapeEventText(quoted.text || "")}</div></div>` : "";
+        const body = msg.deleted_at ? '<em>This message was deleted</em>' : escapeEventText(msg.text || "");
+        return `<div class="message-bubble ${mine ? "msg-outgoing" : "msg-incoming"}" data-message-id="${msg.id}">
+          ${quoteMarkup}
+          <div class="message-sender-label">${mine ? "You" : escapeEventText(msg.sender_name || activeConv.name || "IATS Scholar")}</div>
+          <div class="message-body">${body}</div>
+          <div class="message-meta"><span>${formatMessageTime(msg.created_at)}${msg.edited_at && !msg.deleted_at ? " · edited" : ""}</span><span class="message-actions">
+            <button type="button" class="message-action-btn" data-message-action="reply" data-message-id="${msg.id}" title="Reply">Reply</button>
+            ${canEdit ? `<button type="button" class="message-action-btn" data-message-action="edit" data-message-id="${msg.id}" title="Edit message">Edit</button><button type="button" class="message-action-btn" data-message-action="delete" data-message-id="${msg.id}" title="Delete message">Delete</button>` : ""}
+          </span></div>
+        </div>`;
+      }).join("") || `<div style="text-align:center; color:#94A3B8; font-size:0.85rem; padding: 30px 0;">No messages yet — say hello 👋</div>`;
+      messagesWindow.querySelectorAll("[data-message-action]").forEach(button => button.addEventListener("click", () => handleMessageAction(button.dataset.messageAction, button.dataset.messageId)));
+      renderReplyPreview();
 
       messagesWindow.scrollTop = messagesWindow.scrollHeight;
     }
@@ -1865,10 +1890,49 @@
 
   function formatMessageTime(isoString) {
     if (!isoString) return "Just now";
-    try {
-      return new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } catch (e) {
-      return "Just now";
+    try { return new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+    catch (e) { return "Just now"; }
+  }
+
+  function formatLastSeen(date) {
+    const ms = Date.now() - date.getTime();
+    if (ms < 60000) return "just now";
+    if (ms < 3600000) return Math.max(1, Math.floor(ms / 60000)) + " min ago";
+    if (ms < 86400000) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function renderReplyPreview() {
+    const box = document.getElementById("chat-reply-preview");
+    if (!box) return;
+    const message = (AppState.activeMessages || []).find(m => m.id === AppState.replyingToMessageId);
+    if (!message) { box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    box.innerHTML = `<div><strong>Replying to ${message.sender_id === (AppState.currentUser && AppState.currentUser.id) ? "yourself" : escapeEventText(message.sender_name || "scholar")}</strong><div>${message.deleted_at ? "Message deleted" : escapeEventText(message.text || "")}</div></div><button type="button" id="btn-cancel-chat-reply" aria-label="Cancel reply">✕</button>`;
+    document.getElementById("btn-cancel-chat-reply")?.addEventListener("click", () => { AppState.replyingToMessageId = null; renderReplyPreview(); });
+  }
+
+  async function handleMessageAction(action, messageId) {
+    const message = (AppState.activeMessages || []).find(m => m.id === messageId);
+    if (!message) return;
+    if (action === "reply") {
+      AppState.replyingToMessageId = messageId;
+      renderReplyPreview();
+      document.getElementById("chat-input-message")?.focus();
+      return;
+    }
+    if (message.sender_id !== (AppState.currentUser && AppState.currentUser.id)) return;
+    if (action === "edit") {
+      if (message.deleted_at || Date.now() - new Date(message.created_at).getTime() > 120000) { showToast("Cannot Edit", "Messages can only be edited within two minutes."); return; }
+      const updated = window.prompt("Edit your message:", message.text || "");
+      if (updated === null || !updated.trim() || updated.trim() === message.text) return;
+      if (!validateAcademicContent({ message: updated.trim() }, "Edit Chat Message")) return;
+      try { await window.SupabaseService.editMessage(messageId, updated.trim()); showToast("Message Updated", "Your edit has been saved."); }
+      catch (err) { alert(err.message || "Could not edit the message."); }
+    } else if (action === "delete") {
+      if (!window.confirm("Delete this message? The other person will see that it was deleted.")) return;
+      try { await window.SupabaseService.deleteMessage(messageId); showToast("Message Deleted", "The message was deleted."); }
+      catch (err) { alert(err.message || "Could not delete the message."); }
     }
   }
 
@@ -1902,7 +1966,9 @@
       // Real-time delivery: the message row is inserted once, Supabase
       // Realtime instantly pushes it back to every subscriber (including
       // this tab) — no polling, no simulated reply, no artificial delay.
-      await window.SupabaseService.sendMessage(activeConv.id, text);
+      await window.SupabaseService.sendMessage(activeConv.id, text, AppState.replyingToMessageId);
+      AppState.replyingToMessageId = null;
+      renderReplyPreview();
     } catch (err) {
       alert(err.message || "Your message couldn't be sent. Please try again.");
       input.value = text;
@@ -1927,7 +1993,9 @@
 
   async function handleCreateChat(e) {
     e.preventDefault();
-    const recipient = document.getElementById("new-chat-recipient").value.trim();
+    const recipientInput = document.getElementById("new-chat-recipient");
+    const recipient = recipientInput ? recipientInput.value.trim() : "";
+    const recipientId = AppState.selectedChatRecipientId;
     const faculty = "";
     const firstMsg = "";
     if (!recipient) { alert("Please enter the username of the person you want to chat with.");
@@ -1951,6 +2019,7 @@
     setButtonLoading(submitBtn, "Starting chat…");
     try {
       const conv = await window.SupabaseService.createConversation({
+        recipientId,
         recipientName: recipient,
         major: faculty || "IATS Scholar",
         firstMessage: "",
@@ -1964,6 +2033,11 @@
       closeNewChatModal();
       const form = document.getElementById("new-chat-form");
       if (form) form.reset();
+      AppState.selectedChatRecipientId = null;
+      const suggestions = document.getElementById("new-chat-suggestions");
+      if (suggestions) { suggestions.hidden = true; suggestions.innerHTML = ""; }
+      const searchStatus = document.getElementById("new-chat-search-status");
+      if (searchStatus) searchStatus.textContent = "";
 
       showToast("Chat Started", `Academic conversation with ${recipient} created.`);
       navigateTo("chats");
@@ -1971,6 +2045,36 @@
       alert(err.message || "Couldn't start that chat. Please try again.");
     } finally {
       clearButtonLoading(submitBtn);
+    }
+  }
+
+  let recipientSearchSequence = 0;
+  async function handleRecipientSearch() {
+    const input = document.getElementById("new-chat-recipient");
+    const list = document.getElementById("new-chat-suggestions");
+    const status = document.getElementById("new-chat-search-status");
+    if (!input || !list || !status) return;
+    const query = input.value.trim();
+    AppState.selectedChatRecipientId = null;
+    const seq = ++recipientSearchSequence;
+    if (query.length < 2) { list.hidden = true; list.innerHTML = ""; status.textContent = query ? "Type at least 2 characters to search." : ""; return; }
+    status.textContent = "Searching scholars…";
+    try {
+      const users = await window.SupabaseService.searchChatRecipients(query);
+      if (seq !== recipientSearchSequence) return;
+      if (!users.length) { list.hidden = true; list.innerHTML = ""; status.textContent = `User “${query}” does not exist or has no matching IATS account.`; return; }
+      list.hidden = false;
+      status.textContent = "Choose the person you want to message.";
+      list.innerHTML = users.map(user => `<button type="button" class="chat-recipient-option" data-user-id="${user.id}" data-user-name="${escapeEventText(user.name)}"><span class="chat-recipient-avatar">${escapeEventText((user.name || "I").trim().slice(0,1).toUpperCase())}</span><span><strong>${escapeEventText(user.name)}</strong><small>${escapeEventText(user.major || "IATS Scholar")}</small></span></button>`).join("");
+      list.querySelectorAll(".chat-recipient-option").forEach(option => option.addEventListener("click", () => {
+        AppState.selectedChatRecipientId = option.dataset.userId;
+        input.value = option.dataset.userName;
+        list.hidden = true;
+        list.innerHTML = "";
+        status.textContent = `Selected ${option.dataset.userName}. Ready to start chatting.`;
+      }));
+    } catch (err) {
+      if (seq === recipientSearchSequence) status.textContent = "Could not search users right now. Please try again.";
     }
   }
 
@@ -2365,6 +2469,8 @@
 
     const chatModalForm = document.getElementById("new-chat-form");
     if (chatModalForm) chatModalForm.addEventListener("submit", handleCreateChat);
+    const recipientSearchInput = document.getElementById("new-chat-recipient");
+    if (recipientSearchInput) recipientSearchInput.addEventListener("input", handleRecipientSearch);
 
     const closeChatBtn = document.getElementById("btn-close-chat-modal");
     if (closeChatBtn) closeChatBtn.addEventListener("click", closeNewChatModal);
