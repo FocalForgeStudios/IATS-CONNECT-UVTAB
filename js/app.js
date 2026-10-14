@@ -944,7 +944,7 @@
   }
 
   function startChatWithStudent(student) {
-    let conv = AppState.conversations.find(c => c.name === student.name);
+    let conv = AppState.conversations.find(c => c.peer_id && student.id && c.peer_id === student.id);
     if (!conv) {
       conv = {
         id: String(Date.now()),
@@ -1699,7 +1699,7 @@
       const myId = AppState.currentUser ? AppState.currentUser.id : null;
       messagesWindow.innerHTML = (AppState.activeMessages || []).map(msg => `
         <div class="message-bubble ${msg.sender_id === myId ? 'msg-outgoing' : 'msg-incoming'}">
-          <div>${msg.text}</div>
+          <div style="font-size:.7rem;font-weight:700;opacity:.8;margin-bottom:4px;">${msg.sender_id === myId ? "You" : escapeEventText(msg.sender_name || activeConv.name || "IATS Scholar")}</div><div>${escapeEventText(msg.text)}</div>
           <div style="font-size: 0.72rem; opacity: 0.75; text-align: right; margin-top: 4px;">${formatMessageTime(msg.created_at)}</div>
         </div>
       `).join("") || `<div style="text-align:center; color:#94A3B8; font-size:0.85rem; padding: 30px 0;">No messages yet — say hello 👋</div>`;
