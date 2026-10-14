@@ -45,6 +45,10 @@
   // Neutral placeholder shown until a member uploads their own profile photo.
   const DEFAULT_AVATAR_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2250%22 fill=%22%23E2E8F0%22/%3E%3Ccircle cx=%2250%22 cy=%2237%22 r=%2218%22 fill=%22%2394A3B8%22/%3E%3Cpath d=%22M15 92c2-22 16-34 35-34s33 12 35 34%22 fill=%22%2394A3B8%22/%3E%3C/svg%3E";
 
+  const IATS_COURSES = [{"code":"CTH","name":"Certificate in Tourism and Hospitality Management"},{"code":"NIT","name":"National Certificate in Information and Communication Technology"},{"code":"CLI","name":"National Certificate in Library and Information Science"},{"code":"CSW","name":"National Certificate in Social Work and Social Administration"},{"code":"CCF","name":"Certificate in Clearing and Forwarding"},{"code":"CTV","name":"Certificate in CCTV Installation and Surveillance Systems"},{"code":"CJM","name":"Certificate in Journalism and Media Studies"},{"code":"NCS","name":"National Certificate in Secretarial and Office Management"},{"code":"NHR","name":"National Certificate in Human Resource Management"},{"code":"CEC","name":"Certificate in Early Childhood Education"},{"code":"CPA","name":"Certificate in Public Administration and Management"},{"code":"NCB","name":"National Certificate in Cosmetology and Beauty Therapy"},{"code":"CPM","name":"Certificate in Procurement and Logistics Management"},{"code":"NCR","name":"National Certificate in Computer Repair and Maintenance"},{"code":"CSF","name":"Professional Certificate in Software Engineering"},{"code":"NAF","name":"National Certificate in Accounting and Finance"},{"code":"CBA","name":"National Certificate in Business Administration"},{"code":"NCM","name":"Certificate in Digital Marketing"},{"code":"CHI","name":"Certificate in Hotel Management and Institutional Catering"},{"code":"CRM","name":"Certificate in Records and Information Management"},{"code":"CGC","name":"National Certificate in Guidance and Counselling"},{"code":"NCA","name":"National Certificate in Agriculture"},{"code":"HEG","name":"Higher Education Certificate (HEC) General"},{"code":"HEB","name":"Higher Education Certificate in Biological Sciences"},{"code":"HEP","name":"Higher Education Certificate Physical Sciences"},{"code":"HET","name":"Higher Education Certificate General"},{"code":"HEE","name":"Higher Education Certificate Evening"}];
+  const IATS_COHORTS = ["1.1", "1.2", "2.1", "2.2"];
+  const getActiveBuddyProfiles = () => { const u = AppState.currentUser; const course = String(u?.major || "").toLowerCase(); return AppState.matchProfiles.filter(p => !p.is_former_student && p.owner_id !== u?.id && (!course || String(p.major || "").toLowerCase() === course)); };
+
   // Global Dynamic State Store (Strictly Cloud Firestore Driven, No LocalStorage Mock Data)
   const AppState = {
     currentUser: null,
@@ -262,6 +266,9 @@
         (!profile || profile.major !== "Developer" || profile.year !== "Platform Administrator")) {
       const savedDeveloperProfile = await window.SupabaseService.saveUser(AppState.currentUser);
       if (savedDeveloperProfile) AppState.currentUser.avatar = savedDeveloperProfile.avatar_url || AppState.currentUser.avatar;
+    }
+    if (!developerAccount && profile && IATS_COURSES.some(c=>c.name===profile.major) && IATS_COHORTS.includes(profile.year)) {
+      try { const buddy=await window.SupabaseService.upsertMatchProfile({...AppState.currentUser,owner_id:authUser.id,course_code:IATS_COURSES.find(c=>c.name===profile.major).code,cohort:profile.year,is_former_student:false}); if(buddy) AppState.matchProfiles=[buddy,...AppState.matchProfiles.filter(p=>p.owner_id!==authUser.id)]; } catch(err) { console.warn("Study Buddy profile sync failed",err); }
     }
     syncNewsPublishingOption();
     renderNavigation();
@@ -764,7 +771,7 @@
     if (radarText) {
       const count = AppState.matchProfiles.length;
       if (count === 0) {
-        radarText.innerHTML = "No study partner profiles in the directory yet. Tap <b>+ Add Scholar Profile</b> to register your syllabus and find a study buddy.";
+        radarText.innerHTML = "Set up your course and cohort once to find classmates in your course community.";
       } else {
         radarText.innerHTML = `You have <b>${count} candidate study partner${count > 1 ? 's' : ''}</b> ready in the IATS directory.`;
       }
@@ -778,7 +785,8 @@
     const container = document.getElementById("match-card-container");
     if (!container) return;
 
-    if (AppState.matchProfiles.length === 0) {
+    const buddyProfiles = getActiveBuddyProfiles();
+    if (buddyProfiles.length === 0) {
       container.innerHTML = `
         <div class="glass-panel" style="text-align: center; padding: 48px 24px; max-width: 580px; margin: 0 auto;">
           <div style="width: 60px; height: 60px; border-radius: 50%; background: #EFF6FF; color: #3A86C8; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
@@ -786,7 +794,7 @@
           </div>
           <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 8px;">No Study Buddies in Directory Yet</h3>
           <p style="color: #64748B; max-width: 440px; margin: 0 auto 24px auto;">
-            The real-time Firestore study partner directory is ready. Add your scholar profile or register classmates with syllabus codes to find compatible study buddies.
+            Study Buddy automatically finds scholars on the same course. Complete your course and cohort once to get started.
           </p>
           <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
             <button class="btn-liquid btn-primary" onclick="CampusApp.openCreateProfileModal()">
@@ -798,7 +806,7 @@
       return;
     }
 
-    if (AppState.currentMatchIndex >= AppState.matchProfiles.length) {
+    if (AppState.currentMatchIndex >= buddyProfiles.length) {
       container.innerHTML = `
         <div class="glass-panel" style="text-align: center; padding: 48px 24px; max-width: 580px; margin: 0 auto;">
           <div style="width: 60px; height: 60px; border-radius: 50%; background: #D1FAE5; color: #059669; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
@@ -826,7 +834,7 @@
       return;
     }
 
-    const student = AppState.matchProfiles[AppState.currentMatchIndex];
+    const student = buddyProfiles[AppState.currentMatchIndex];
     container.innerHTML = `
       <div class="glass-panel match-card-main">
         <div class="match-photo-holder">
@@ -952,7 +960,11 @@
 
   // Create Profile Modal
   function openCreateProfileModal() {
+    const user = AppState.currentUser;
+    if (!user || isNewsPublisher()) { showToast("Sign In Required", "Sign in with your scholar account first."); return; }
+    if (user.major && IATS_COURSES.some(c => c.name === user.major) && IATS_COHORTS.includes(user.year)) { showToast("Profile Already Saved", "Your scholar profile is already saved. Use Edit Scholar Profile to change it."); navigateTo("profile"); return; }
     const modal = document.getElementById("create-profile-modal");
+    const name = document.getElementById("new-student-name"); if (name) name.value = user.name || "";
     if (modal) modal.classList.add("open");
   }
 
@@ -962,64 +974,25 @@
   }
 
   async function handleCreateProfile(e) {
-    e.preventDefault();
+    e.preventDefault(); const user = AppState.currentUser;
+    if (!user || !window.SupabaseService) { showToast("Sign In Required", "Please sign in first."); return; }
     const name = document.getElementById("new-student-name").value.trim();
-    const major = document.getElementById("new-student-major").value.trim();
-    const year = document.getElementById("new-student-year").value.trim();
-    const coursesStr = document.getElementById("new-student-courses").value.trim();
-    const location = document.getElementById("new-student-location").value.trim();
+    const courseName = document.getElementById("new-student-courses").value.trim();
+    const cohort = document.getElementById("new-student-year").value;
+    const location = document.getElementById("new-student-location").value.trim() || "IATS Main Campus";
     const bio = document.getElementById("new-student-bio").value.trim();
-    const interestsStr = document.getElementById("new-student-interests").value.trim();
-
-    if (!name || !major || !bio) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    // STRICT ACADEMIC CONTENT FILTER VERIFICATION
-    if (!validateAcademicContent({
-      name,
-      major,
-      year,
-      courses: coursesStr,
-      location,
-      bio,
-      interests: interestsStr
-    }, "Scholar Profile Registration")) {
-      return;
-    }
-
-    const courses = coursesStr.split(",").map(c => c.trim()).filter(Boolean);
-    const interests = interestsStr.split(",").map(i => i.trim()).filter(Boolean);
-
-    const newStudent = {
-      name,
-      major,
-      year: year || "IATS Scholar",
-      university: "IATS",
-      compatScore: Math.floor(84 + Math.random() * 14),
-      bio,
-      courses: courses.length ? courses : ["CS 201", "IT Core"],
-      interests: interests.length ? interests : ["Research", "Algorithms"],
-      avatar: DEFAULT_AVATAR_PLACEHOLDER,
-      location: location || "IATS Main Campus"
-    };
-
-    if (window.SupabaseService && typeof window.SupabaseService.addMatchProfile === "function") {
-      const saved = await window.SupabaseService.addMatchProfile(newStudent);
-      if (saved) {
-        newStudent.id = saved.id;
-      }
-    }
-
-    AppState.matchProfiles.push(newStudent);
-
-    closeCreateProfileModal();
-    const form = document.getElementById("create-profile-form");
-    if (form) form.reset();
-
-    showToast("Profile Added", `${name} added to the real-time study buddy directory.`);
-    renderMatchView();
+    const interests = document.getElementById("new-student-interests").value.split(",").map(x=>x.trim()).filter(Boolean).slice(0,6);
+    const course = IATS_COURSES.find(c=>c.name===courseName);
+    if (!name || !course || !IATS_COHORTS.includes(cohort)) { alert("Choose an official course from the suggestions and select cohort 1.1, 1.2, 2.1 or 2.2."); return; }
+    if (!validateAcademicContent({name,major:course.name,year:cohort,courses:course.name,location,bio,interests:interests.join(",")}, "Scholar Profile")) return;
+    const updated = {...user,name,major:course.name,year:cohort,courses:[course.name],location,bio,interests,skills:interests};
+    const saved = await window.SupabaseService.saveUser(updated);
+    if (!saved) { showToast("Profile Not Saved","Could not save the profile. Please try again."); return; }
+    AppState.currentUser = {...updated,avatar:saved.avatar_url || updated.avatar};
+    try { const buddy = await window.SupabaseService.upsertMatchProfile({...updated,owner_id:user.id,course_code:course.code,cohort,is_former_student:false}); if (buddy) AppState.matchProfiles=[buddy,...AppState.matchProfiles.filter(p=>p.owner_id!==user.id)]; }
+    catch(err) { console.error("Study Buddy sync failed",err); showToast("Profile Saved","Account profile saved; Study Buddy sync could not complete yet."); }
+    closeCreateProfileModal(); const form=document.getElementById("create-profile-form"); if(form) form.reset();
+    renderNavigation(); renderProfileView(); renderMatchView(); showToast("Scholar Profile Saved","Your profile is now saved to your account and reused across the platform.");
   }
 
   // ==========================================
@@ -1160,7 +1133,8 @@
         + "<option value='all'>All</option><option value='upcoming'>Upcoming</option><option value='live'>Live</option><option value='past'>Past</option></select></label>"
         + "<label style='font-size:.85rem;color:#475569;'>Sort <select id='admin-event-sort' class='form-input' style='display:inline-block;width:auto;margin-left:6px;'>"
         + "<option value='soonest'>Start time: soonest</option><option value='latest'>Recently posted</option><option value='attendees'>Most attendees</option><option value='title'>Title A–Z</option></select></label></div></div>"
-        + "<div id='admin-events-list'></div></div>";
+        + "<div id='admin-events-list'></div></div>"
+        + "<div class='glass-panel' style='padding:20px;margin-top:18px;'><h3 style='font-size:1.1rem;font-weight:800;color:#1E293B;margin-bottom:8px;'>Cohort Promotion</h3><p style='font-size:.88rem;color:#64748B;margin-bottom:14px;'>Promote an entire cohort at once. Cohort 2.2 graduates into former-student status.</p><div style='display:flex;gap:10px;flex-wrap:wrap;align-items:end;'><label style='font-size:.85rem;'>Current cohort<select id='admin-promote-cohort' class='form-input'><option>1.1</option><option>1.2</option><option>2.1</option><option>2.2</option></select></label><button type='button' id='btn-admin-promote-cohort' class='btn-liquid btn-primary btn-sm'>Promote cohort</button></div></div>";
       const createEventBtn = document.getElementById("btn-admin-create-event");
       if (createEventBtn) createEventBtn.addEventListener("click", () => openHostCatchupModal(null, false));
       const createNewsBtn = document.getElementById("btn-admin-create-news");
@@ -1170,6 +1144,14 @@
       if (filter) { filter.value = AppState.adminFilter; filter.addEventListener("change", () => { AppState.adminFilter = filter.value; renderAdminEventsList(); }); }
       if (sort) { sort.value = AppState.adminSort; sort.addEventListener("change", () => { AppState.adminSort = sort.value; renderAdminEventsList(); }); }
       renderAdminEventsList();
+      const promoteBtn = document.getElementById("btn-admin-promote-cohort");
+      if (promoteBtn) promoteBtn.addEventListener("click", async () => {
+        const from = document.getElementById("admin-promote-cohort").value;
+        const next = {"1.1":"1.2","1.2":"2.1","2.1":"2.2","2.2":"Former Student"}[from];
+        if (!confirm("Promote all cohort " + from + " scholars to " + next + "?")) return;
+        try { const result=await window.SupabaseService.promoteCohort(from); showToast("Cohort Promoted", (result?.affected ?? 0) + " profiles updated."); renderAdminDashboardView(); }
+        catch(err) { showToast("Promotion Failed",err.message || "Could not promote cohort."); }
+      });
     }).catch(err => {
       if (AppState.activeView === "admin") container.innerHTML = "<div class='glass-panel' style='padding:24px;color:#991B1B;'>Could not load administration data: " + escapeEventText(err.message || "Please try again.") + "</div>";
     });
