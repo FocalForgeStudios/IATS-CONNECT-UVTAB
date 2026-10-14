@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="./favicon.svg" />
     
     <!-- Liquid Glassmorphism Core Stylesheet with Academic Theme Colors (Relative path for GitHub Pages compatibility) -->
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=20261014-notifications1" />
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=20261014-sessionfix1" />
   </head>
   <body>
     <!-- Accessible skeleton loader: gives the page structure while scripts initialize -->
@@ -60,13 +60,15 @@
     <!-- Independent boot-loader watchdog: the page must remain usable even if app.js fails to load. -->
     <script>
       (function () {
+        // Reveal the usable shell quickly on slow connections; this is a fallback,
+        // not an application error. The app removes the loader sooner when mounted.
         window.setTimeout(function () {
           var loader = document.getElementById("app-boot-loader");
           if (!loader) return;
-          console.error("[IATS CONNECT] Boot loader timed out; revealing the page shell.");
+          console.warn("[IATS CONNECT] Startup is taking longer than expected; showing the page shell while services finish loading.");
           loader.classList.add("is-hidden");
-          window.setTimeout(function () { if (loader.parentNode) loader.remove(); }, 350);
-        }, 5000);
+          window.setTimeout(function () { if (loader.parentNode) loader.remove(); }, 180);
+        }, 1400);
       })();
     </script>
 
@@ -1109,9 +1111,9 @@
     <script type="module" src="./js/supabase-config.js"></script>
 
     <!-- Supabase Auth + Postgres + Realtime Engine (Modular ES Script) -->
-    <script type="module" src="./js/supabase-service.js?v=20261014-notifications1"></script>
+    <script type="module" src="./js/supabase-service.js?v=20261014-sessionfix1"></script>
 
     <!-- Core Logic Engine Script (Vanilla JS with relative path) -->
-    <script src="./js/app.js?v=20261014-notifications1"></script>
+    <script src="./js/app.js?v=20261014-sessionfix1"></script>
   </body>
 </html>
