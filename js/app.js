@@ -1969,8 +1969,35 @@
               ${peerPresenceLabel}
             </div>
           </div>
+          <button type="button" class="btn-liquid btn-secondary btn-sm" id="btn-toggle-share-profile" style="margin-left:auto;">Share profile</button>
+        </div>
+        <div id="chat-share-profile-panel" class="chat-share-profile-panel" hidden>
+          <label for="chat-share-profile-select">Choose a student to recommend to ${escapeEventText(activeConv.name || "this scholar")}</label>
+          <div class="chat-share-profile-controls">
+            <select id="chat-share-profile-select" class="form-input">
+              <option value="">Select a student…</option>
+              ${AppState.matchProfiles.filter(p => String(p.owner_id || p.id) !== String(AppState.currentUser?.id) && String(p.owner_id || p.id) !== String(activeConv.peer_id)).map(p => `<option value="${escapeEventText(p.owner_id || p.id)}">${escapeEventText(p.name || "IATS Scholar")} — ${escapeEventText(p.major || "Student")}</option>`).join("")}
+            </select>
+            <button type="button" class="btn-liquid btn-primary btn-sm" id="btn-send-shared-profile">Send</button>
+          </div>
         </div>
       `;
+      document.getElementById("btn-toggle-share-profile")?.addEventListener("click", () => {
+        const panel = document.getElementById("chat-share-profile-panel");
+        if (panel) panel.hidden = !panel.hidden;
+      });
+      document.getElementById("btn-send-shared-profile")?.addEventListener("click", async () => {
+        const select = document.getElementById("chat-share-profile-select");
+        const sharedId = select?.value;
+        if (!sharedId) { showToast("Choose a Student", "Select a student profile to share."); return; }
+        const shared = AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(sharedId));
+        try {
+          await window.SupabaseService.sendMessage(activeConv.id, `[[IATS_PROFILE_SHARE:${sharedId}]]`);
+          const panel = document.getElementById("chat-share-profile-panel");
+          if (panel) panel.hidden = true;
+          showToast("Profile Shared", `Shared ${shared?.name || "the student"}'s profile with ${activeConv.name || "your chat"}.`);
+        } catch (error) { showToast("Could Not Share Profile", error.message || "Please try again."); }
+      });
     }
 
     // Render Messages — sourced from the live, real-time `messages` table
@@ -1985,11 +2012,15 @@
         const canEdit = mine && !msg.deleted_at && Date.now() - new Date(msg.created_at).getTime() <= 120000;
         const canDelete = mine && !msg.deleted_at;
         const quoteMarkup = quoted ? `<div class="message-reply-quote"><strong>${quoted.sender_id === myId ? "You" : escapeEventText(quoted.sender_name || activeConv.name || "Scholar")}</strong><div>${quoted.deleted_at ? "Message deleted" : escapeEventText(quoted.text || "")}</div></div>` : "";
-        const body = msg.deleted_at ? '<em>This message was deleted</em>' : escapeEventText(msg.text || "");
+        const profileShare = !msg.deleted_at ? String(msg.text || "").match(/^\\[\\[IATS_PROFILE_SHARE:([0-9a-f-]+)\\]\\]$/i) : null;
+        const sharedProfile = profileShare ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(profileShare[1])) : null;
+        const body = msg.deleted_at ? '<em>This message was deleted</em>' : profileShare ? "" : escapeEventText(msg.text || "");
+        const profileShareMarkup = profileShare ? `<div class="shared-profile-card"><div class="shared-profile-icon">👤</div><div class="shared-profile-copy"><strong>${escapeEventText(sharedProfile?.name || "Shared IATS student")}</strong><span>${escapeEventText(sharedProfile?.major || "Student profile")}</span></div><button type="button" class="btn-liquid btn-primary btn-sm" data-open-shared-profile="${profileShare[1]}" data-profile-name="${escapeEventText(sharedProfile?.name || "IATS Scholar")}">Message</button></div>` : "";
+        const attachmentMarkup = msg.attachment_path && !msg.deleted_at ? `<div class="chat-attachment-card" data-attachment-path="${escapeEventText(msg.attachment_path)}" data-attachment-name="${escapeEventText(msg.attachment_name || "Attachment")}" data-attachment-mime="${escapeEventText(msg.attachment_mime || "")}"><span>📎 ${escapeEventText(msg.attachment_name || "Attachment")}</span><small>Preparing secure link…</small></div>` : "";
         return `<div class="message-bubble ${mine ? "msg-outgoing" : "msg-incoming"}" data-message-id="${msg.id}">
           ${quoteMarkup}
           <div class="message-sender-label">${mine ? "You" : escapeEventText(msg.sender_name || activeConv.name || "IATS Scholar")}</div>
-          <div class="message-body">${body}</div>
+          <div class="message-body">${body}${profileShareMarkup}${attachmentMarkup}</div>
           <div class="message-meta"><span>${formatMessageTime(msg.created_at)}${msg.edited_at && !msg.deleted_at ? " · edited" : ""}</span><span class="message-actions">
             <button type="button" class="message-action-btn" data-message-action="reply" data-message-id="${msg.id}" title="Reply">Reply</button>
             ${canEdit ? `<button type="button" class="message-action-btn" data-message-action="edit" data-message-id="${msg.id}" title="Edit message">Edit</button>` : ""}
@@ -1998,6 +2029,20 @@
         </div>`;
       }).join("") || `<div style="text-align:center; color:#94A3B8; font-size:0.85rem; padding: 30px 0;">No messages yet — say hello 👋</div>`;
       messagesWindow.querySelectorAll("[data-message-action]").forEach(button => button.addEventListener("click", () => handleMessageAction(button.dataset.messageAction, button.dataset.messageId)));
+      messagesWindow.querySelectorAll("[data-open-shared-profile]").forEach(button => button.addEventListener("click", () => {
+        const profileId = button.dataset.openSharedProfile;
+        const profile = AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(profileId));
+        startChatWithStudent(profile || { id: profileId, name: button.dataset.profileName || "IATS Scholar" });
+      }));
+      messagesWindow.querySelectorAll("[data-attachment-path]").forEach(async card => {
+        const url = await window.SupabaseService.getChatAttachmentUrl(card.dataset.attachmentPath);
+        if (!url || !card.isConnected) { if (card.isConnected) card.innerHTML = "<span>Attachment unavailable</span>"; return; }
+        const mime = card.dataset.attachmentMime || "";
+        const name = escapeEventText(card.dataset.attachmentName || "Attachment");
+        if (mime.startsWith("image/")) card.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" alt="${name}" loading="lazy" class="chat-attachment-image"><span>${name}</span></a>`;
+        else if (mime.startsWith("video/")) card.innerHTML = `<video controls preload="metadata" class="chat-attachment-video" src="${url}"></video><a href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+        else card.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" download="${name}">📎 ${name} <span>Open / download</span></a>`;
+      });
       renderReplyPreview();
 
       messagesWindow.scrollTop = messagesWindow.scrollHeight;
@@ -2591,9 +2636,37 @@
     const closeChatBtn = document.getElementById("btn-close-chat-modal");
     if (closeChatBtn) closeChatBtn.addEventListener("click", closeNewChatModal);
 
-    // Chat Message Form
+    // Chat composer: text, emoji picker and secure file attachments.
     const chatForm = document.getElementById("chat-send-form");
     if (chatForm) chatForm.addEventListener("submit", handleSendMessage);
+    document.getElementById("btn-chat-emoji")?.addEventListener("click", () => {
+      const picker = document.getElementById("chat-emoji-picker");
+      if (picker) picker.hidden = !picker.hidden;
+    });
+    document.querySelectorAll("[data-chat-emoji]").forEach(button => button.addEventListener("click", () => {
+      const input = document.getElementById("chat-input-message");
+      if (input) {
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        input.value = input.value.slice(0, start) + button.dataset.chatEmoji + input.value.slice(end);
+        input.focus();
+        input.setSelectionRange(start + button.dataset.chatEmoji.length, start + button.dataset.chatEmoji.length);
+      }
+    }));
+    document.getElementById("chat-attachment-input")?.addEventListener("change", async event => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+      const conversation = AppState.conversations.find(c => String(c.id) === String(AppState.activeChatId));
+      if (!conversation) { showToast("Choose a Chat", "Open a conversation before attaching a file."); return; }
+      const attachButton = document.getElementById("btn-chat-attach");
+      if (attachButton) setButtonLoading(attachButton, "Uploading…");
+      try {
+        await window.SupabaseService.uploadChatAttachment(conversation.id, file);
+        showToast("Attachment Sent", file.name + " was shared securely.");
+      } catch (error) { showToast("Upload Failed", error.message || "Please try a smaller file."); }
+      finally { if (attachButton) clearButtonLoading(attachButton); }
+    });
 
     // Logic Inspector Close
     const closeLogicBtn = document.getElementById("btn-close-logic-modal");
