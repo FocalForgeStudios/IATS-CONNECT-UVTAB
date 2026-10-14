@@ -773,25 +773,20 @@
     <div class="modal-backdrop" id="create-profile-modal">
       <div class="modal-box" style="max-width: 540px;">
         <button class="modal-close-btn" id="btn-close-create-profile" aria-label="Close">✕</button>
-        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Add Scholar Profile to Study Partner Directory</h2>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Set Up Your Scholar Profile</h2>
         <form id="create-profile-form">
           <div class="form-group">
             <label class="form-label" for="new-student-name">Full Scholar Name</label>
             <input type="text" id="new-student-name" class="form-input" placeholder="e.g. Sarah Namata" required />
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label class="form-label" for="new-student-major">Department / Major</label>
-              <input type="text" id="new-student-major" class="form-input" placeholder="e.g. Computing • BIT" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="new-student-year">Year / Class</label>
-              <input type="text" id="new-student-year" class="form-input" placeholder="e.g. 3rd Year (Class of 2026)" required />
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="new-student-courses">Official course (type to search)</label>
+            <input type="search" id="new-student-courses" class="form-input" list="iats-course-options" placeholder="Search the 27 official courses…" autocomplete="off" required />
+            <datalist id="iats-course-options"><option value="Certificate in Tourism and Hospitality Management">CTH</option><option value="National Certificate in Information and Communication Technology">NIT</option><option value="National Certificate in Library and Information Science">CLI</option><option value="National Certificate in Social Work and Social Administration">CSW</option><option value="Certificate in Clearing and Forwarding">CCF</option><option value="Certificate in CCTV Installation and Surveillance Systems">CTV</option><option value="Certificate in Journalism and Media Studies">CJM</option><option value="National Certificate in Secretarial and Office Management">NCS</option><option value="National Certificate in Human Resource Management">NHR</option><option value="Certificate in Early Childhood Education">CEC</option><option value="Certificate in Public Administration and Management">CPA</option><option value="National Certificate in Cosmetology and Beauty Therapy">NCB</option><option value="Certificate in Procurement and Logistics Management">CPM</option><option value="National Certificate in Computer Repair and Maintenance">NCR</option><option value="Professional Certificate in Software Engineering">CSF</option><option value="National Certificate in Accounting and Finance">NAF</option><option value="National Certificate in Business Administration">CBA</option><option value="Certificate in Digital Marketing">NCM</option><option value="Certificate in Hotel Management and Institutional Catering">CHI</option><option value="Certificate in Records and Information Management">CRM</option><option value="National Certificate in Guidance and Counselling">CGC</option><option value="National Certificate in Agriculture">NCA</option><option value="Higher Education Certificate (HEC) General">HEG</option><option value="Higher Education Certificate in Biological Sciences">HEB</option><option value="Higher Education Certificate Physical Sciences">HEP</option><option value="Higher Education Certificate General">HET</option><option value="Higher Education Certificate Evening">HEE</option></datalist>
           </div>
           <div class="form-group">
-            <label class="form-label" for="new-student-courses">Course Syllabus Codes (comma separated)</label>
-            <input type="text" id="new-student-courses" class="form-input" placeholder="e.g. BIT 2101, CS 204, DATA 301" required />
+            <label class="form-label" for="new-student-year">Cohort</label>
+            <select id="new-student-year" class="form-input" required><option value="">Choose cohort</option><option value="1.1">1.1</option><option value="1.2">1.2</option><option value="2.1">2.1</option><option value="2.2">2.2</option></select>
           </div>
           <div class="form-group">
             <label class="form-label" for="new-student-location">Study Spot / Lab</label>
@@ -806,7 +801,7 @@
             <input type="text" id="new-student-interests" class="form-input" placeholder="e.g. Algorithms, Cloud Architecture, Databases, UI Design" required />
           </div>
           <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
-            <span>Save Scholar to Firestore Database →</span>
+            <span>Save Scholar Profile →</span>
           </button>
         </form>
       </div>
