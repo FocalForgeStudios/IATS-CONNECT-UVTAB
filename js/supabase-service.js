@@ -573,6 +573,11 @@ export const SupabaseService = {
         .order("updated_at", { ascending: false });
       if (error) return;
       const convs = data || [];
+      const unreadCounts = await Promise.all(convs.map(async c => {
+        const { count, error: countError } = await supabase.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", c.id).neq("sender_id", user.id).is("read_at", null).is("deleted_at", null);
+        return [c.id, countError ? 0 : (count || 0)];
+      }));
+      const unreadByConversation = new Map(unreadCounts);
       const peerIds = [...new Set(convs.map(c => c.created_by === user.id ? c.participant_id : c.created_by).filter(Boolean))];
       let peers = [];
       if (peerIds.length) {
@@ -583,7 +588,7 @@ export const SupabaseService = {
       onUpdate(convs.map(c => {
         const peerId = c.created_by === user.id ? c.participant_id : c.created_by;
         const peer = byId.get(peerId);
-        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url, peer_last_seen_at: peer?.last_seen_at || null };
+        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url, peer_last_seen_at: peer?.last_seen_at || null, unread_count: unreadByConversation.get(c.id) || 0 };
       }));
     };
     load();
@@ -592,6 +597,32 @@ export const SupabaseService = {
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
       .subscribe();
     return () => supabase.removeChannel(channel);
+  },
+
+  async markConversationRead(conversationId) {
+    if (!supabase || !conversationId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("conversation_id", conversationId).neq("sender_id", user.id).is("read_at", null);
+    if (error) throw new Error(friendlyError(error));
+  },
+
+  async getUnreadNewsIds(newsIds = []) {
+    if (!supabase || !newsIds.length) return [];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase.from("news_reads").select("catchup_id").eq("user_id", user.id).in("catchup_id", newsIds);
+    if (error) throw new Error(friendlyError(error));
+    const read = new Set((data || []).map(row => String(row.catchup_id)));
+    return newsIds.filter(id => !read.has(String(id)));
+  },
+
+  async markNewsRead(newsId) {
+    if (!supabase || !newsId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("news_reads").upsert({ user_id: user.id, catchup_id: newsId, read_at: new Date().toISOString() }, { onConflict: "user_id,catchup_id" });
+    if (error) throw new Error(friendlyError(error));
   },
 
   /** Live, no-delay message stream for one open conversation thread. */
