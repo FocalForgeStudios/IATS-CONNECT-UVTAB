@@ -120,9 +120,9 @@
      * @param {string[]} fields - list of key names to check
      * @returns {{ isClean: boolean, matchedField: string | null, matchedTerm: string | null, reason: string }}
      */
-    checkFields(obj, fields = []) {
+    checkFields(obj, fields = (obj && typeof obj === 'object' ? Object.keys(obj) : [])) {
       if (!obj || typeof obj !== 'object') {
-        return { isClean: true, matchedField: null, matchedTerm: null, reason: '' };
+        return { isClean: true, allowed: true, matchedField: null, matchedTerm: null, reason: '' };
       }
 
       for (const field of fields) {
@@ -132,6 +132,7 @@
           if (!result.isClean) {
             return {
               isClean: false,
+              allowed: false,
               matchedField: field,
               matchedTerm: result.matchedTerm,
               reason: result.reason
@@ -144,6 +145,7 @@
               if (!itemResult.isClean) {
                 return {
                   isClean: false,
+                  allowed: false,
                   matchedField: field,
                   matchedTerm: itemResult.matchedTerm,
                   reason: itemResult.reason
@@ -154,7 +156,7 @@
         }
       }
 
-      return { isClean: true, matchedField: null, matchedTerm: null, reason: '' };
+      return { isClean: true, allowed: true, matchedField: null, matchedTerm: null, reason: '' };
     }
   };
 
