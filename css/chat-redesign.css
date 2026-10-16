@@ -239,3 +239,29 @@ body { padding-left: calc(var(--iats-rail-width) + 30px) !important; padding-bot
  #view-chats .chat-input-row input, #view-chats .chat-input-row textarea { min-width: 0 !important; width: 100%; }
  #view-chats .chat-input-row button { flex-shrink: 0; }
 }
+
+/* Critical visibility override: the legacy glass stylesheet hides the dock until hover.
+   This rail is intentionally always visible and always occupies its reserved gutter. */
+.app-bottom-dock { position:fixed!important; display:flex!important; visibility:visible!important; opacity:1!important; pointer-events:none!important; left:8px!important; top:10px!important; bottom:10px!important; right:auto!important; width:var(--iats-rail-width,58px)!important; max-width:var(--iats-rail-width,58px)!important; height:auto!important; transform:none!important; z-index:99999!important; align-items:stretch!important; }
+.app-bottom-dock .dock-container { position:relative!important; display:flex!important; visibility:visible!important; opacity:1!important; pointer-events:auto!important; transform:none!important; width:100%!important; height:100%!important; min-height:0!important; max-height:none!important; box-sizing:border-box!important; flex-direction:column!important; justify-content:center!important; align-items:center!important; gap:8px!important; overflow:visible!important; padding:8px 4px!important; background:rgba(225,238,246,.20)!important; -webkit-backdrop-filter:blur(28px) saturate(160%)!important; backdrop-filter:blur(28px) saturate(160%)!important; border:1px solid rgba(255,255,255,.46)!important; border-radius:20px!important; box-shadow:0 8px 28px rgba(15,23,42,.08),inset 0 1px 0 rgba(255,255,255,.35)!important; }
+.app-bottom-dock .dock-nav-btn { flex:0 0 40px!important; width:40px!important; min-width:40px!important; height:40px!important; margin:0!important; padding:0!important; opacity:1!important; transform:none!important; display:flex!important; align-items:center!important; justify-content:center!important; background:transparent!important; border:1px solid transparent!important; box-shadow:none!important; }
+.app-bottom-dock .dock-nav-btn.active { background:rgba(15,159,143,.88)!important; color:white!important; border-color:rgba(255,255,255,.45)!important; }
+body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
+.app-container { width:100%!important; max-width:none!important; box-sizing:border-box!important; }
+#view-chats { width:100%!important; max-width:none!important; min-width:0!important; margin:0!important; padding:0!important; }
+#view-chats .chat-workspace { width:100%!important; max-width:none!important; height:calc(100dvh - 20px)!important; min-height:0!important; margin:0!important; gap:0!important; grid-template-columns:minmax(230px,27%) minmax(0,1fr)!important; border-radius:18px!important; }
+@media (max-width:640px) {
+ :root { --iats-rail-width:42px; }
+ body { padding-left:54px!important; padding-right:0!important; padding-bottom:4px!important; }
+ .app-container { padding:6px 4px 4px 0!important; }
+ .app-bottom-dock { left:4px!important; top:8px!important; bottom:8px!important; width:42px!important; max-width:42px!important; }
+ .app-bottom-dock .dock-container { gap:4px!important; padding:5px 2px!important; border-radius:15px!important; }
+ .app-bottom-dock .dock-nav-btn { flex:0 0 34px!important; width:34px!important; min-width:34px!important; height:34px!important; }
+ .app-bottom-dock .dock-nav-btn .dock-icon svg { width:18px!important; height:18px!important; }
+ .glass-header { left:54px!important; width:calc(100% - 58px)!important; }
+ #view-chats .chat-workspace { display:grid!important; grid-template-columns:minmax(0,1fr)!important; grid-template-rows:minmax(120px,27dvh) minmax(0,1fr)!important; width:100%!important; height:calc(100dvh - 12px)!important; min-height:0!important; border-radius:14px!important; }
+ #view-chats .chat-sidebar { min-height:0!important; max-height:none!important; padding:8px!important; overflow-y:auto!important; }
+ #view-chats .chat-main-window { min-height:0!important; height:100%!important; }
+ #view-chats .chat-input-row { min-width:0!important; padding:7px!important; gap:5px!important; }
+ #view-chats .chat-input-row input, #view-chats .chat-input-row textarea { min-width:0!important; flex:1 1 auto!important; }
+}
