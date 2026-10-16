@@ -912,11 +912,19 @@
     // scholar-directory record. The main profiles row alone is not a scholar profile.
     const scholarProfileButton = document.getElementById("dash-add-scholar-profile");
     if (scholarProfileButton) {
-      const signedInId = AppState.currentUser?.id;
-      const hasOwnScholarProfile = !!signedInId && AppState.matchProfiles.some(
-        profile => String(profile.owner_id || profile.user_id || "") === String(signedInId)
+      const user = AppState.currentUser;
+      const signedInId = user?.id;
+      const hasOwnDirectoryRecord = !!signedInId && AppState.matchProfiles.some(
+        profile => String(profile.owner_id || profile.user_id || profile.id || "") === String(signedInId)
       );
-      scholarProfileButton.hidden = !signedInId || hasOwnScholarProfile;
+      // The public directory subscription can omit the current user's own row
+      // (RLS/public-directory filtering). A complete saved course + cohort on
+      // the authenticated profile is also authoritative evidence of setup.
+      const hasSavedCourse = !!String(user?.major || "").trim();
+      const hasSavedCohort = IATS_COHORTS.includes(String(user?.year || user?.cohort || "").trim());
+      const hasStudyBuddyResults = getActiveBuddyProfiles().length > 0;
+      const hasScholarProfile = hasOwnDirectoryRecord || (hasSavedCourse && hasSavedCohort) || hasStudyBuddyResults;
+      scholarProfileButton.hidden = !signedInId || hasScholarProfile;
       scholarProfileButton.setAttribute("aria-hidden", String(scholarProfileButton.hidden));
     }
 
