@@ -506,3 +506,30 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
     grid-column: 1 / -1;
   }
 }
+
+
+/* Keep the host-event modal scrollable without showing an awkward outer scrollbar. */
+#host-catchup-modal .modal-box {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-y: contain;
+}
+#host-catchup-modal .modal-box::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+#host-catchup-modal #host-catchup-form {
+  padding-bottom: 4px;
+}
+#host-catchup-modal .form-scroll-hint {
+  grid-column: 1 / -1;
+  margin: -4px 0 4px;
+  padding: 8px 11px;
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 9px;
+  background: rgba(241, 245, 249, 0.72);
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
