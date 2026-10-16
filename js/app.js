@@ -911,7 +911,8 @@
     // Show the profile-creation CTA only when the signed-in account has no
     // scholar-directory record. The main profiles row alone is not a scholar profile.
     const scholarProfileButton = document.getElementById("dash-add-scholar-profile");
-    if (scholarProfileButton) {
+    const scholarProfileSidebarButton = document.getElementById("dash-add-scholar-profile-sidebar");
+    if (scholarProfileButton || scholarProfileSidebarButton) {
       const user = AppState.currentUser;
       const signedInId = user?.id;
       const hasOwnDirectoryRecord = !!signedInId && AppState.matchProfiles.some(
@@ -924,8 +925,10 @@
       const hasSavedCohort = IATS_COHORTS.includes(String(user?.year || user?.cohort || "").trim());
       const hasStudyBuddyResults = getActiveBuddyProfiles().length > 0;
       const hasScholarProfile = hasOwnDirectoryRecord || (hasSavedCourse && hasSavedCohort) || hasStudyBuddyResults;
-      scholarProfileButton.hidden = !signedInId || hasScholarProfile;
-      scholarProfileButton.setAttribute("aria-hidden", String(scholarProfileButton.hidden));
+      [scholarProfileButton, scholarProfileSidebarButton].filter(Boolean).forEach(button => {
+        button.hidden = !signedInId || hasScholarProfile;
+        button.setAttribute("aria-hidden", String(button.hidden));
+      });
     }
 
     // Study partner radar status
