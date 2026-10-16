@@ -1583,14 +1583,14 @@
 
   function openHostCatchupModal(eventId = null, forceNews = false) {
     syncNewsPublishingOption();
-    const event = eventId && isNewsPublisher()
-      ? (AppState.adminEvents || []).find(item => String(item.id) === String(eventId))
+    const event = eventId
+      ? (AppState.adminEvents || []).concat(AppState.catchups || []).find(item => String(item.id) === String(eventId))
       : null;
-    if (eventId && isNewsPublisher() && !event) {
-      showToast("Event Not Found", "Refresh the admin panel and select the event again.");
+    const canManageEvent = event && (isNewsPublisher() || (String(event.host_id || "") === String(AppState.currentUser?.id || "") && !isCampusNewsItem(event) && !event.is_official));
+    if (eventId && (!event || !canManageEvent)) {
+      showToast("Event Not Available", "You can only edit events you host. Refresh and try again.");
       return;
     }
-    // Student-host actions always open a fresh event form; stale IDs must not block hosting.
     AppState.editingEventId = event ? event.id : null;
     const titleInput = document.getElementById("new-catchup-title");
     const locationInput = document.getElementById("new-catchup-location");
@@ -1695,9 +1695,13 @@
         return;
       }
     }
-    if (AppState.editingEventId && !isNewsPublisher()) {
-      showToast("Administrator Only", "Only the platform developer can edit published events.");
-      return;
+    if (AppState.editingEventId) {
+      const existing = (AppState.adminEvents || []).concat(AppState.catchups || []).find(item => String(item.id) === String(AppState.editingEventId));
+      const ownsEvent = existing && String(existing.host_id || "") === String(AppState.currentUser?.id || "") && !existing.is_official && !isCampusNewsItem(existing);
+      if (!isNewsPublisher() && !ownsEvent) {
+        showToast("Event Not Available", "You can only edit events you host.");
+        return;
+      }
     }
 
     // STRICT ACADEMIC CONTENT FILTER VERIFICATION
@@ -1717,7 +1721,7 @@
     }
 
     const editingEvent = AppState.editingEventId
-      ? (AppState.adminEvents || []).find(item => String(item.id) === String(AppState.editingEventId))
+      ? (AppState.adminEvents || []).concat(AppState.catchups || []).find(item => String(item.id) === String(AppState.editingEventId))
       : null;
     const hostName = editingEvent ? (editingEvent.host || AppState.currentUser.name) : AppState.currentUser.name;
     const hostAvatar = editingEvent
