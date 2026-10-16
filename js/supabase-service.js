@@ -604,7 +604,7 @@ export const SupabaseService = {
       onUpdate(convs.map(c => {
         const peerId = c.created_by === user.id ? c.participant_id : c.created_by;
         const peer = byId.get(peerId);
-        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url, peer_last_seen_at: peer?.last_seen_at || null, unread_count: unreadByConversation.get(c.id) || 0 };
+        return { ...c, peer_id: peerId, name: peer?.name || "IATS Scholar", avatar_url: peer?.avatar_url || null, peer_last_seen_at: peer?.last_seen_at || null, unread_count: unreadByConversation.get(c.id) || 0 };
       }));
     };
     load();
