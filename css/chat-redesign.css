@@ -464,7 +464,6 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
   grid-column: 1 / -1;
 }
 #host-catchup-modal #host-catchup-form > #catchup-banner-group,
-#host-catchup-modal #host-catchup-form > #catchup-notes-group,
 #host-catchup-modal #host-catchup-form > #catchup-format-group,
 #host-catchup-modal #host-catchup-form > #catchup-online-url-group,
 #host-catchup-modal #host-catchup-form > #catchup-registration-deadline-group,
