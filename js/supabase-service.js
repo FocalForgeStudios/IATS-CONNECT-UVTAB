@@ -387,7 +387,7 @@ export const SupabaseService = {
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
           const { data, error } = await supabase.from("catchups")
-            .select("id,title,description,host,host_avatar,host_id,location,event_time,event_starts_at,event_ends_at,tag,item_type,is_official,event_format,online_url,registration_deadline,attendees,max_attendees,attendee_ids,created_at")
+            .select("id,title,description,banner_url,notes,host,host_avatar,host_id,location,event_time,event_starts_at,event_ends_at,tag,item_type,is_official,event_format,online_url,registration_deadline,attendees,max_attendees,attendee_ids,created_at")
             .order("created_at", { ascending: false })
             .range(offset, offset + pageSize - 1);
           if (error) throw new Error(friendlyError(error));
@@ -424,6 +424,8 @@ export const SupabaseService = {
       const payload = {
         title: sanitizeText(catchup.title, 120),
         description: sanitizeText(catchup.description, 2000),
+        banner_url: catchup.banner_url ? sanitizeText(catchup.banner_url, 1000) : null,
+        notes: catchup.notes ? sanitizeText(catchup.notes, 300) : null,
         host: sanitizeText(catchup.host, 80),
         host_avatar: sanitizeAvatar(catchup.hostAvatar),
         host_id: user ? user.id : null,
@@ -466,6 +468,8 @@ export const SupabaseService = {
     const payload = {
       title: sanitizeText(catchup.title, 120),
       description: sanitizeText(catchup.description, 2000),
+      banner_url: catchup.banner_url ? sanitizeText(catchup.banner_url, 1000) : null,
+      notes: catchup.notes ? sanitizeText(catchup.notes, 300) : null,
       location: sanitizeText(catchup.location, 100),
       event_time: sanitizeText(catchup.time, 100),
       event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
