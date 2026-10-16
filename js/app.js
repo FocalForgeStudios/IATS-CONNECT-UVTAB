@@ -1284,7 +1284,7 @@
       + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'>"
       + "<span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span>"
       + "<span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
-      + (bannerUrl ? "<img src='" + escapeEventText(bannerUrl) + "' alt='Event poster' loading='lazy' onerror=\"this.style.display='none'\" style='width:100%;height:170px;object-fit:cover;border-radius:14px;margin-bottom:12px;'>" : "")
+      + (bannerUrl ? (/\.(mp4|webm|mov)(?:$|[?#])/i.test(bannerUrl) ? "<video src=\'" + escapeEventText(bannerUrl) + "\' controls preload=\'metadata\' playsinline style=\'width:100%;max-height:260px;border-radius:14px;margin-bottom:12px;background:#0f172a;\'></video>" : "<img src=\'" + escapeEventText(bannerUrl) + "\' alt=\'Event poster\' loading=\'lazy\' onerror=\\"this.style.display=\'none\\" style=\'width:100%;height:170px;object-fit:cover;border-radius:14px;margin-bottom:12px;\'>") : "")
       + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>"
       + formatEventCountdown(start, end) + "</div>"
       + "<h3 style='font-size:1.15rem;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;'>" + escapeEventText(event.title) + "</h3>"
@@ -1632,10 +1632,14 @@
     const tagSelect = document.getElementById("new-catchup-tag");
     const modalTitle = document.getElementById("host-catchup-modal-title");
     const submitLabel = document.getElementById("host-catchup-submit-label");
-    const bannerInput = document.getElementById("new-catchup-banner-url");
+    const mediaInput = document.getElementById("new-catchup-media-file");
     const bannerPreview = document.getElementById("new-catchup-banner-preview");
-    if (bannerInput) bannerInput.value = event ? (event.banner_url || "") : "";
-    if (bannerPreview) { bannerPreview.src = event?.banner_url || ""; bannerPreview.style.display = event?.banner_url ? "block" : "none"; }
+    const videoPreview = document.getElementById("new-catchup-video-preview");
+    const currentMedia = document.getElementById("new-catchup-media-current");
+    if (mediaInput) mediaInput.value = "";
+    if (bannerPreview) { bannerPreview.src = ""; bannerPreview.style.display = "none"; }
+    if (videoPreview) { videoPreview.pause(); videoPreview.removeAttribute("src"); videoPreview.load(); videoPreview.style.display = "none"; }
+    if (currentMedia) { currentMedia.textContent = event?.banner_url ? "Current poster/trailer will be kept unless you choose a replacement file." : ""; currentMedia.style.display = event?.banner_url ? "block" : "none"; }
     if (titleInput) titleInput.value = event ? (event.title || "") : "";
     if (locationInput) locationInput.value = event ? (event.location || "") : "";
     if (descriptionInput) descriptionInput.value = event ? (event.description || "") : "";
@@ -1688,8 +1692,9 @@
     const title = document.getElementById("new-catchup-title") ? document.getElementById("new-catchup-title").value.trim() : "";
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
     const description = document.getElementById("new-catchup-description") ? document.getElementById("new-catchup-description").value.trim() : "";
-    const bannerUrl = document.getElementById("new-catchup-banner-url")?.value.trim() || "";
-    if (bannerUrl && !/^https?:\/\//i.test(bannerUrl)) { alert("Please enter a valid public image URL beginning with https:// or http://."); return; }
+    const mediaFile = document.getElementById("new-catchup-media-file")?.files?.[0] || null;
+    if (mediaFile && mediaFile.size > 50 * 1024 * 1024) { alert("The poster or video trailer must be 50 MB or smaller."); return; }
+    if (mediaFile && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","video/quicktime"].includes(mediaFile.type)) { alert("Choose a JPG, PNG, WebP, GIF, MP4, WebM, or MOV file."); return; }
     const startValue = document.getElementById("new-catchup-start")?.value || "";
     const endValue = document.getElementById("new-catchup-end")?.value || "";
     const startsAt = startValue ? new Date(startValue) : null;
@@ -1769,8 +1774,7 @@
     const newCatchup = {
       title,
       description,
-      banner_url: bannerUrl || null,
-      notes,
+      banner_url: editingEvent?.banner_url || null,
       host: hostName,
       hostAvatar,
       location: isCampusNews ? "" : location,
@@ -1794,6 +1798,7 @@
       if (!window.SupabaseService || typeof window.SupabaseService.addCatchup !== "function") {
         throw new Error("The event service is unavailable. Please refresh and try again.");
       }
+      if (mediaFile) newCatchup.banner_url = await window.SupabaseService.uploadEventMedia(mediaFile, AppState.currentUser.id);
       let saved;
       if (AppState.editingEventId) {
         saved = await window.SupabaseService.updateCatchup(AppState.editingEventId, newCatchup);
@@ -2737,12 +2742,19 @@
     const catchupBackdrop = document.getElementById("host-catchup-modal");
     if (catchupBackdrop) catchupBackdrop.addEventListener("click", event => { if (event.target === catchupBackdrop) closeHostCatchupModal(); });
     document.addEventListener("keydown", event => { if (event.key === "Escape") closeHostCatchupModal(); });
-    const bannerInput = document.getElementById("new-catchup-banner-url");
-    const bannerPreview = document.getElementById("new-catchup-banner-preview");
-    if (bannerInput && bannerPreview) bannerInput.addEventListener("input", () => {
-      const value = bannerInput.value.trim();
-      bannerPreview.src = /^https?:\/\//i.test(value) ? value : "";
-      bannerPreview.style.display = /^https?:\/\//i.test(value) ? "block" : "none";
+    const mediaInput = document.getElementById("new-catchup-media-file");
+    const imagePreview = document.getElementById("new-catchup-banner-preview");
+    const videoPreview = document.getElementById("new-catchup-video-preview");
+    if (mediaInput) mediaInput.addEventListener("change", () => {
+      const file = mediaInput.files?.[0] || null;
+      const currentMedia = document.getElementById("new-catchup-media-current");
+      if (imagePreview) { imagePreview.removeAttribute("src"); imagePreview.style.display = "none"; }
+      if (videoPreview) { videoPreview.pause(); videoPreview.removeAttribute("src"); videoPreview.load(); videoPreview.style.display = "none"; }
+      if (!file) return;
+      if (currentMedia) { currentMedia.textContent = "Selected: " + file.name; currentMedia.style.display = "block"; }
+      const previewUrl = URL.createObjectURL(file);
+      if (file.type.startsWith("image/") && imagePreview) { imagePreview.src = previewUrl; imagePreview.style.display = "block"; }
+      else if (file.type.startsWith("video/") && videoPreview) { videoPreview.src = previewUrl; videoPreview.style.display = "block"; }
     });
     document.querySelectorAll(".dock-nav-btn, [data-view], .nav-link").forEach(button => {
       button.addEventListener("click", () => {

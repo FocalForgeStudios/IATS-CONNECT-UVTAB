@@ -531,3 +531,19 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
   font-size: 0.78rem;
   line-height: 1.35;
 }
+
+
+/* Event poster/video picker previews. */
+#host-catchup-modal #new-catchup-media-file {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px dashed rgba(100,116,139,.45);
+  border-radius: 10px;
+  background: rgba(248,250,252,.8);
+  box-sizing: border-box;
+}
+#host-catchup-modal #new-catchup-media-current {
+  overflow-wrap: anywhere;
+}
