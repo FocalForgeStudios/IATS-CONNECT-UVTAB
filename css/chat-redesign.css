@@ -427,3 +427,11 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
     }
   }
 }
+
+
+/* Final chat polish: slightly narrow the conversation-name column on desktop. */
+@media (min-width: 641px) {
+  #view-chats .chat-workspace {
+    grid-template-columns: minmax(190px, 23%) minmax(0, 1fr) !important;
+  }
+}
