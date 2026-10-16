@@ -951,6 +951,15 @@
     if (!container) return;
 
     const buddyProfiles = getActiveBuddyProfiles();
+    const currentUser = AppState.currentUser;
+    const hasProfileInAccount = !!currentUser &&
+      IATS_COURSES.some(course => course.name === String(currentUser.major || "").trim()) &&
+      IATS_COHORTS.includes(String(currentUser.year || "").trim());
+    const hasProfileInDirectory = !!currentUser?.id && AppState.matchProfiles.some(profile =>
+      String(profile.owner_id || profile.user_id || profile.id || "") === String(currentUser.id)
+    );
+    const hasScholarProfile = hasProfileInAccount || hasProfileInDirectory;
+
     if (buddyProfiles.length === 0) {
       container.innerHTML = `
         <div class="glass-panel" style="text-align: center; padding: 48px 24px; max-width: 580px; margin: 0 auto;">
@@ -959,13 +968,17 @@
           </div>
           <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 8px;">No Study Buddies in Directory Yet</h3>
           <p style="color: #64748B; max-width: 440px; margin: 0 auto 24px auto;">
-            Study Buddy automatically finds scholars on the same course. Complete your course and cohort once to get started.
+            ${hasScholarProfile
+              ? "Your scholar profile is saved. There are currently no matching study buddies to display; check back as more scholars join your course."
+              : "Study Buddy finds scholars on the same course. Complete your course and cohort once to get started."}
           </p>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-liquid btn-primary" onclick="CampusApp.openCreateProfileModal()">
-              <span>+ Add Scholar Profile</span>
-            </button>
-          </div>
+          ${!hasScholarProfile && currentUser && !isNewsPublisher() ? `
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn-liquid btn-primary" onclick="CampusApp.openCreateProfileModal()">
+                <span>+ Add Scholar Profile</span>
+              </button>
+            </div>
+          ` : ""}
         </div>
       `;
       return;
@@ -978,13 +991,10 @@
             ${ICONS.check}
           </div>
           <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 8px;">You've Reviewed All Current Study Buddies</h3>
-          <p style="color: #64748B; max-width: 420px; margin: 0 auto 24px auto;">You can reset the directory to review study partners again, or add a new scholar profile.</p>
+          <p style="color: #64748B; max-width: 420px; margin: 0 auto 24px auto;">You've reviewed every current match for your course. You can reset the directory to review study partners again as the directory grows.</p>
           <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
             <button id="btn-reset-match-stack" class="btn-liquid btn-primary">
               <span>Review Directory Again</span>
-            </button>
-            <button class="btn-liquid btn-glass" onclick="CampusApp.openCreateProfileModal()">
-              <span>+ Add New Scholar</span>
             </button>
           </div>
         </div>
