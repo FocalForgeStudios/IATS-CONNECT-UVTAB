@@ -770,11 +770,12 @@ export const SupabaseService = {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Please sign in again.");
     if (String(profileId) === String(user.id)) throw new Error("You cannot share your own profile as another student.");
+    await ChatCrypto.ensureIdentity(supabase, user.id);
+    const peerId = await conversationPeerId(conversationId, user.id);
+    const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, conversationId, "Shared a student profile");
     const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: "Shared a student profile",
-      shared_profile_id: profileId
+      conversation_id: conversationId, sender_id: user.id, text: encryptedText,
+      encryption_version: 1, payload_kind: "profile_share", shared_profile_id: profileId
     });
     if (error) throw new Error(friendlyError(error));
     return true;
@@ -860,7 +861,15 @@ export const SupabaseService = {
 
   async editMessage(messageId, text) {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
-    const { error } = await supabase.from("messages").update({ text: sanitizeText(text, 500), edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString()); if (error) throw new Error(friendlyError(error));
+    const cleanText = sanitizeText(text, 500);
+    await requireContentApproval("text", { text: cleanText });
+    const { data: message, error: readError } = await supabase.from("messages").select("conversation_id").eq("id", messageId).eq("sender_id", user.id).single();
+    if (readError || !message) throw new Error("Could not verify this message.");
+    await ChatCrypto.ensureIdentity(supabase, user.id);
+    const peerId = await conversationPeerId(message.conversation_id, user.id);
+    const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, message.conversation_id, cleanText);
+    const { error } = await supabase.from("messages").update({ text: encryptedText, encryption_version: 1, edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString());
+    if (error) throw new Error(friendlyError(error));
   },
   async deleteMessage(messageId) {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
