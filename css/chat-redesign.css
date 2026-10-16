@@ -435,3 +435,74 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
     grid-template-columns: minmax(190px, 23%) minmax(0, 1fr) !important;
   }
 }
+
+
+/* Host-event form: use the available width instead of stacking every field vertically. */
+#host-catchup-modal .modal-box {
+  width: min(1040px, calc(100vw - 48px)) !important;
+  max-width: 1040px !important;
+  max-height: calc(100dvh - 40px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box;
+}
+#host-catchup-modal #host-catchup-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+  row-gap: 12px;
+  align-items: start;
+}
+#host-catchup-modal #host-catchup-form > .form-group,
+#host-catchup-modal #host-catchup-form > #catchup-dates-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+#host-catchup-modal #host-catchup-form > .form-group:first-child,
+#host-catchup-modal #host-catchup-form > #catchup-dates-group,
+#host-catchup-modal #host-catchup-form > #catchup-location-group,
+#host-catchup-modal #host-catchup-form > button[type="submit"] {
+  grid-column: 1 / -1;
+}
+#host-catchup-modal #host-catchup-form > #catchup-banner-group,
+#host-catchup-modal #host-catchup-form > #catchup-notes-group,
+#host-catchup-modal #host-catchup-form > #catchup-format-group,
+#host-catchup-modal #host-catchup-form > #catchup-online-url-group,
+#host-catchup-modal #host-catchup-form > #catchup-registration-deadline-group,
+#host-catchup-modal #host-catchup-form > #catchup-capacity-group {
+  grid-column: auto;
+}
+#host-catchup-modal #host-catchup-form .form-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#host-catchup-modal #new-catchup-description {
+  min-height: 88px;
+}
+#host-catchup-modal #new-catchup-banner-preview {
+  max-height: 130px !important;
+}
+@media (max-width: 640px) {
+  #host-catchup-modal .modal-box {
+    width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    padding: 22px 16px !important;
+  }
+  #host-catchup-modal #host-catchup-form {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 10px;
+  }
+  #host-catchup-modal #host-catchup-form > .form-group,
+  #host-catchup-modal #host-catchup-form > #catchup-dates-group,
+  #host-catchup-modal #host-catchup-form > button[type="submit"] {
+    grid-column: 1 / -1;
+  }
+  #host-catchup-modal #host-catchup-form > #catchup-banner-group,
+  #host-catchup-modal #host-catchup-form > #catchup-notes-group,
+  #host-catchup-modal #host-catchup-form > #catchup-format-group,
+  #host-catchup-modal #host-catchup-form > #catchup-online-url-group,
+  #host-catchup-modal #host-catchup-form > #catchup-registration-deadline-group,
+  #host-catchup-modal #host-catchup-form > #catchup-capacity-group {
+    grid-column: 1 / -1;
+  }
+}
