@@ -47,7 +47,7 @@
 
   const IATS_COURSES = [{"code":"CTH","name":"Certificate in Tourism and Hospitality Management","department":"Department of Business Administration"},{"code":"NIT","name":"National Certificate in Information and Communication Technology","department":"Department of Science and Technology"},{"code":"CLI","name":"National Certificate in Library and Information Science","department":"Department of Humanities and Social Sciences"},{"code":"CSW","name":"National Certificate in Social Work and Social Administration","department":"Department of Humanities and Social Sciences"},{"code":"CCF","name":"Certificate in Clearing and Forwarding","department":"Department of Business Administration"},{"code":"CTV","name":"Certificate in CCTV Installation and Surveillance Systems","department":"Department of Science and Technology"},{"code":"CJM","name":"Certificate in Journalism and Media Studies","department":"Department of Humanities and Social Sciences"},{"code":"NCS","name":"National Certificate in Secretarial and Office Management","department":"Department of Business Administration"},{"code":"NHR","name":"National Certificate in Human Resource Management","department":"Department of Business Administration"},{"code":"CEC","name":"Certificate in Early Childhood Education","department":"Department of Humanities and Social Sciences"},{"code":"CPA","name":"Certificate in Public Administration and Management","department":"Department of Business Administration"},{"code":"NCB","name":"National Certificate in Cosmetology and Beauty Therapy","department":"Department of Public Health and Medicine"},{"code":"CPM","name":"Certificate in Procurement and Logistics Management","department":"Department of Business Administration"},{"code":"NCR","name":"National Certificate in Computer Repair and Maintenance","department":"Department of Science and Technology"},{"code":"CSF","name":"Professional Certificate in Software Engineering","department":"Department of Science and Technology"},{"code":"NAF","name":"National Certificate in Accounting and Finance","department":"Department of Business Administration"},{"code":"CBA","name":"National Certificate in Business Administration","department":"Department of Business Administration"},{"code":"NCM","name":"Certificate in Digital Marketing","department":"Department of Business Administration"},{"code":"CHI","name":"Certificate in Hotel Management and Institutional Catering","department":"Department of Business Administration"},{"code":"CRM","name":"Certificate in Records and Information Management","department":"Department of Business Administration"},{"code":"CGC","name":"National Certificate in Guidance and Counselling","department":"Department of Humanities and Social Sciences"},{"code":"NCA","name":"National Certificate in Agriculture","department":"Department of Agriculture and Environmental Sciences"},{"code":"HEG","name":"Higher Education Certificate (HEC) General","department":"Department of Humanities and Social Sciences"},{"code":"HEB","name":"Higher Education Certificate in Biological Sciences","department":"Department of Public Health and Medicine"},{"code":"HEP","name":"Higher Education Certificate Physical Sciences","department":"Department of Science and Technology"},{"code":"HET","name":"Higher Education Certificate General","department":"Department of Humanities and Social Sciences"},{"code":"HEE","name":"Higher Education Certificate Evening","department":"Department of Humanities and Social Sciences"}];
   const IATS_COHORTS = ["1.1", "1.2", "2.1", "2.2"];
-  const getActiveBuddyProfiles = () => { const u = AppState.currentUser; const ownCourse = IATS_COURSES.find(c => c.name === u?.major); const code = String(ownCourse?.code || u?.course_code || "").toUpperCase(); const major = String(u?.major || "").trim().toLowerCase(); return AppState.matchProfiles.filter(p => !p.is_former_student && p.owner_id !== u?.id && (code ? String(p.course_code || "").toUpperCase() === code : (major && String(p.major || "").trim().toLowerCase() === major))); };
+  const getActiveBuddyProfiles = () => { const u = AppState.currentUser; return AppState.matchProfiles.filter(p => !p.is_former_student && String(p.owner_id || p.user_id || p.id || "") !== String(u?.id || "")); };
 
   // Global Dynamic State Store (Strictly Cloud Firestore Driven, No LocalStorage Mock Data)
   const AppState = {
@@ -993,128 +993,169 @@
   // ==========================================
   // Study Partner & Buddy Engine Logic
   // ==========================================
+  function escapeBuddyDirectoryText(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
+  }
+
+  function getBuddyCourseLabel(profile) {
+    return String(profile.major || profile.course_name || profile.course || profile.course_code || "Course not specified");
+  }
+
+  function getBuddyCohortLabel(profile) {
+    return String(profile.year || profile.cohort || profile.intake || "Cohort not specified");
+  }
+
   function renderMatchView() {
     const container = document.getElementById("match-card-container");
     if (!container) return;
 
-    const buddyProfiles = getActiveBuddyProfiles();
     const currentUser = AppState.currentUser;
-    const hasProfileInAccount = !!currentUser &&
-      IATS_COURSES.some(course => course.name === String(currentUser.major || "").trim()) &&
-      IATS_COHORTS.includes(String(currentUser.year || "").trim());
-    const hasProfileInDirectory = !!currentUser?.id && AppState.matchProfiles.some(profile =>
-      String(profile.owner_id || profile.user_id || profile.id || "") === String(currentUser.id)
-    );
-    const hasScholarProfile = hasProfileInAccount || hasProfileInDirectory;
+    const buddyProfiles = getActiveBuddyProfiles().slice().sort((a, b) => {
+      const ownCourse = String(currentUser?.major || "").trim().toLowerCase();
+      const aSameCourse = getBuddyCourseLabel(a).trim().toLowerCase() === ownCourse ? 0 : 1;
+      const bSameCourse = getBuddyCourseLabel(b).trim().toLowerCase() === ownCourse ? 0 : 1;
+      return aSameCourse - bSameCourse || String(a.name || "").localeCompare(String(b.name || ""));
+    });
+
+    if (!currentUser) {
+      container.innerHTML = `
+        <div class="glass-panel buddy-directory-empty">
+          <div class="buddy-directory-empty-icon">${ICONS.users}</div>
+          <h3>Find your study community</h3>
+          <p>Sign in to browse fellow IATS students and connect with classmates for academic collaboration.</p>
+          <button type="button" class="btn-liquid btn-primary" id="btn-buddy-sign-in">Sign in to continue</button>
+        </div>`;
+      const signInButton = document.getElementById("btn-buddy-sign-in");
+      if (signInButton) signInButton.addEventListener("click", openAuthModal);
+      return;
+    }
 
     if (buddyProfiles.length === 0) {
       container.innerHTML = `
-        <div class="glass-panel" style="text-align: center; padding: 48px 24px; max-width: 580px; margin: 0 auto;">
-          <div style="width: 60px; height: 60px; border-radius: 50%; background: #EFF6FF; color: #3A86C8; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            ${ICONS.users}
-          </div>
-          <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 8px;">No Study Buddies in Directory Yet</h3>
-          <p style="color: #64748B; max-width: 440px; margin: 0 auto 24px auto;">
-            ${hasScholarProfile
-              ? "Your scholar profile is saved. There are currently no matching study buddies to display; check back as more scholars join your course."
-              : "Study Buddy finds scholars on the same course. Complete your course and cohort once to get started."}
-          </p>
-        </div>
-      `;
+        <div class="glass-panel buddy-directory-empty">
+          <div class="buddy-directory-empty-icon">${ICONS.users}</div>
+          <h3>No students to show just yet</h3>
+          <p>There are no other student profiles in the directory yet. As more IATS scholars complete their academic profiles, they will appear here.</p>
+        </div>`;
       return;
     }
 
-    if (AppState.currentMatchIndex >= buddyProfiles.length) {
-      container.innerHTML = `
-        <div class="glass-panel" style="text-align: center; padding: 48px 24px; max-width: 580px; margin: 0 auto;">
-          <div style="width: 60px; height: 60px; border-radius: 50%; background: #D1FAE5; color: #059669; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            ${ICONS.check}
-          </div>
-          <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 8px;">You've Reviewed All Current Study Buddies</h3>
-          <p style="color: #64748B; max-width: 420px; margin: 0 auto 24px auto;">You've reviewed every current match for your course. You can reset the directory to review study partners again as the directory grows.</p>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <button id="btn-reset-match-stack" class="btn-liquid btn-primary">
-              <span>Review Directory Again</span>
-            </button>
-          </div>
-        </div>
-      `;
-      const resetBtn = document.getElementById("btn-reset-match-stack");
-      if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-          AppState.currentMatchIndex = 0;
-          renderMatchView();
-        });
-      }
-      return;
-    }
-
-    const student = buddyProfiles[AppState.currentMatchIndex];
-    container.innerHTML = `
-      <div class="glass-panel match-card-main">
-        <div class="match-photo-holder">
-          <img src="${resolveAssetUrl(student.avatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" alt="${student.name}" referrerpolicy="no-referrer">
-          <div class="match-compat-chip">
-            <span style="display: inline-flex; align-items: center; gap: 4px;">
-              ${ICONS.spark} ${student.compatScore || 92}% Syllabus Alignment
-            </span>
-          </div>
-          <div class="match-photo-overlay">
-            <h2 style="font-size: 1.8rem; font-weight: 800; line-height: 1.2;">${student.name}</h2>
-            <div style="font-size: 0.95rem; opacity: 0.95; font-weight: 600;">${student.major} • ${student.year}</div>
-            <div style="font-size: 0.82rem; opacity: 0.9; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-              ${ICONS.pin} ${student.location || 'IATS Main Campus'}
+    const courses = [...new Set(buddyProfiles.map(getBuddyCourseLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const cohorts = [...new Set(buddyProfiles.map(getBuddyCohortLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const cards = buddyProfiles.map((student, index) => {
+      const name = escapeBuddyDirectoryText(student.name || "IATS Student");
+      const course = escapeBuddyDirectoryText(getBuddyCourseLabel(student));
+      const cohort = escapeBuddyDirectoryText(getBuddyCohortLabel(student));
+      const bio = escapeBuddyDirectoryText(student.bio || "This student has not added a study introduction yet.");
+      const avatar = escapeBuddyDirectoryText(resolveAssetUrl(student.avatar || DEFAULT_AVATAR_PLACEHOLDER));
+      const interests = (Array.isArray(student.interests) ? student.interests : [])
+        .slice(0, 5)
+        .map(item => `<span class="buddy-interest-tag">${escapeBuddyDirectoryText(item)}</span>`)
+        .join("");
+      const searchText = escapeBuddyDirectoryText([
+        student.name, getBuddyCourseLabel(student), getBuddyCohortLabel(student),
+        student.bio, ...(Array.isArray(student.interests) ? student.interests : [])
+      ].join(" ").toLowerCase());
+      return `
+        <article class="buddy-directory-card" data-search="${searchText}" data-course="${course.toLowerCase()}" data-cohort="${cohort.toLowerCase()}">
+          <img class="buddy-directory-avatar" src="${avatar}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';">
+          <div class="buddy-directory-main">
+            <div class="buddy-directory-name-row">
+              <h3>${name}</h3>
+              <span class="buddy-directory-label">IATS scholar</span>
             </div>
+            <p class="buddy-directory-academic">${course} <span aria-hidden="true">·</span> Cohort ${cohort}</p>
+            <p class="buddy-directory-bio">${bio}</p>
+            ${interests ? `<div class="buddy-interest-list" aria-label="Academic interests">${interests}</div>` : ""}
           </div>
-        </div>
-
-        <div class="match-body-content">
-          <div style="font-size: 0.88rem; font-weight: 700; color: #D8232A; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Registered IATS Courses</div>
-          <div class="tag-list">
-            ${(student.courses || []).map(c => `<span class="tag-pill tag-pill-highlight">${c}</span>`).join("")}
+          <div class="buddy-directory-actions">
+            <button type="button" class="btn-liquid btn-primary btn-sm buddy-message-button" data-buddy-index="${index}">${ICONS.chat}<span>Message about studying</span></button>
           </div>
+        </article>`;
+    }).join("");
 
-          <div style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-top: 14px; margin-bottom: 6px;">Academic Focus & Study Goals</div>
-          <p style="font-size: 0.92rem; color: #334155; line-height: 1.55;">${student.bio}</p>
-
-          <div style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-top: 14px; margin-bottom: 6px;">Specializations & Interests</div>
-          <div class="tag-list">
-            ${(student.interests || []).map(i => `<span class="tag-pill tag-pill-blue">${i}</span>`).join("")}
+    container.innerHTML = `
+      <div class="buddy-directory">
+        <div class="buddy-directory-heading">
+          <div>
+            <p class="buddy-directory-eyebrow">ACADEMIC CONNECTIONS</p>
+            <h2>Find your Study Buddies</h2>
+            <p>Browse fellow scholars at your own pace. Find classmates, discover shared interests and start an academic conversation.</p>
           </div>
+          <div class="buddy-directory-count"><strong id="buddy-directory-visible-count">${buddyProfiles.length}</strong><span>students</span></div>
         </div>
-
-        <div class="match-actions-bar">
-          <button class="btn-round-action btn-pass" id="btn-match-pass" title="Next Scholar" aria-label="Next Scholar">
-            ${ICONS.cross}
-          </button>
-          <button class="btn-round-action btn-super" id="btn-match-super" title="Study Group Invite" aria-label="Study Group Invite">
-            ${ICONS.star}
-          </button>
-          <button class="btn-round-action btn-like" id="btn-match-like" title="Connect as Study Buddy" aria-label="Connect as Study Buddy">
-            ${ICONS.userPlus}
-          </button>
+        <div class="buddy-directory-filters" role="search">
+          <label class="buddy-search-field">
+            <span class="sr-only">Search students</span>
+            <span aria-hidden="true">${ICONS.users}</span>
+            <input id="buddy-directory-search" type="search" placeholder="Search by name, course or interest" autocomplete="off">
+          </label>
+          <label>
+            <span>Course</span>
+            <select id="buddy-directory-course">
+              <option value="">All courses</option>
+              ${courses.map(course => `<option value="${escapeBuddyDirectoryText(course.toLowerCase())}">${escapeBuddyDirectoryText(course)}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span>Cohort</span>
+            <select id="buddy-directory-cohort">
+              <option value="">All cohorts</option>
+              ${cohorts.map(cohort => `<option value="${escapeBuddyDirectoryText(cohort.toLowerCase())}">${escapeBuddyDirectoryText(cohort)}</option>`).join("")}
+            </select>
+          </label>
         </div>
-      </div>
-    `;
+        <p class="buddy-directory-results-note" id="buddy-directory-results-note">Showing all ${buddyProfiles.length} students. No likes or dislikes—just browse and connect.</p>
+        <div class="buddy-directory-list" id="buddy-directory-list">${cards}</div>
+        <div class="buddy-directory-empty buddy-directory-filter-empty" id="buddy-directory-filter-empty" hidden>
+          <h3>No students match those filters</h3>
+          <p>Try another search or clear one of the filters.</p>
+          <button type="button" class="btn-liquid btn-glass btn-sm" id="btn-buddy-clear-filters">Clear filters</button>
+        </div>
+      </div>`;
 
-    const passBtn = document.getElementById("btn-match-pass");
-    if (passBtn) passBtn.addEventListener("click", () => handleMatchAction("pass"));
-    const likeBtn = document.getElementById("btn-match-like");
-    if (likeBtn) likeBtn.addEventListener("click", () => handleMatchAction("like"));
-    const superBtn = document.getElementById("btn-match-super");
-    if (superBtn) superBtn.addEventListener("click", () => handleMatchAction("super"));
-  }
+    const searchInput = document.getElementById("buddy-directory-search");
+    const courseSelect = document.getElementById("buddy-directory-course");
+    const cohortSelect = document.getElementById("buddy-directory-cohort");
+    const clearButton = document.getElementById("btn-buddy-clear-filters");
+    const applyFilters = () => {
+      const query = String(searchInput?.value || "").trim().toLowerCase();
+      const course = String(courseSelect?.value || "").toLowerCase();
+      const cohort = String(cohortSelect?.value || "").toLowerCase();
+      const cardElements = [...container.querySelectorAll(".buddy-directory-card")];
+      let visible = 0;
+      cardElements.forEach(card => {
+        const matches = (!query || (card.dataset.search || "").includes(query)) &&
+          (!course || (card.dataset.course || "") === course) &&
+          (!cohort || (card.dataset.cohort || "") === cohort);
+        card.hidden = !matches;
+        if (matches) visible++;
+      });
+      const count = document.getElementById("buddy-directory-visible-count");
+      const note = document.getElementById("buddy-directory-results-note");
+      const empty = document.getElementById("buddy-directory-filter-empty");
+      if (count) count.textContent = String(visible);
+      if (note) note.textContent = `Showing ${visible} of ${buddyProfiles.length} students. No likes or dislikes—just browse and connect.`;
+      if (empty) empty.hidden = visible !== 0;
+    };
+    if (searchInput) searchInput.addEventListener("input", applyFilters);
+    if (courseSelect) courseSelect.addEventListener("change", applyFilters);
+    if (cohortSelect) cohortSelect.addEventListener("change", applyFilters);
+    if (clearButton) clearButton.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      if (courseSelect) courseSelect.value = "";
+      if (cohortSelect) cohortSelect.value = "";
+      applyFilters();
+    });
 
-  function handleMatchAction(action) {
-    const student = AppState.matchProfiles[AppState.currentMatchIndex];
-    if (!student) return;
-
-    if (action === "like" || action === "super") {
-      showMatchSuccessModal(student);
-    } else {
-      AppState.currentMatchIndex++;
-      renderMatchView();
-    }
+    container.querySelectorAll(".buddy-message-button").forEach(button => {
+      button.addEventListener("click", () => {
+        const student = buddyProfiles[Number(button.dataset.buddyIndex)];
+        if (student) startChatWithStudent(student);
+      });
+    });
   }
 
   function showMatchSuccessModal(student) {
