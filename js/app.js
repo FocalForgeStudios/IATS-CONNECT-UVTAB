@@ -908,6 +908,18 @@
       }
     }
 
+    // Show the profile-creation CTA only when the signed-in account has no
+    // scholar-directory record. The main profiles row alone is not a scholar profile.
+    const scholarProfileButton = document.getElementById("dash-add-scholar-profile");
+    if (scholarProfileButton) {
+      const signedInId = AppState.currentUser?.id;
+      const hasOwnScholarProfile = !!signedInId && AppState.matchProfiles.some(
+        profile => String(profile.owner_id || profile.user_id || "") === String(signedInId)
+      );
+      scholarProfileButton.hidden = !signedInId || hasOwnScholarProfile;
+      scholarProfileButton.setAttribute("aria-hidden", String(scholarProfileButton.hidden));
+    }
+
     // Study partner radar status
     const radarText = document.getElementById("dash-match-radar-text");
     if (radarText) {
