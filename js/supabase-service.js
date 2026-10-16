@@ -453,8 +453,15 @@ export const SupabaseService = {
   async updateCatchup(catchupId, catchup) {
     if (!supabase || !catchupId) throw new Error("An event ID is required.");
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user || String(user.email || "").toLowerCase() !== "focalforges@gmail.com") {
-      throw new Error("Only the platform developer can moderate events.");
+    if (authError || !user) throw new Error("Please sign in to manage this event.");
+    const isAdmin = String(user.email || "").toLowerCase() === "focalforges@gmail.com";
+    const { data: existing, error: readError } = await supabase.from("catchups")
+      .select("id,host_id,is_official,item_type,tag").eq("id", catchupId).maybeSingle();
+    if (readError || !existing) throw new Error("The event could not be found. Refresh and try again.");
+    const isOwner = String(existing.host_id || "") === String(user.id);
+    const isNews = existing.item_type === "news" || String(existing.tag || "").toLowerCase().replace(/\\s+/g, "") === "campusnews";
+    if (!isAdmin && (!isOwner || existing.is_official || isNews)) {
+      throw new Error("You can only edit events that you host.");
     }
     const payload = {
       title: sanitizeText(catchup.title, 120),
@@ -464,8 +471,8 @@ export const SupabaseService = {
       event_starts_at: catchup.startsAt ? new Date(catchup.startsAt).toISOString() : null,
       event_ends_at: catchup.endsAt ? new Date(catchup.endsAt).toISOString() : null,
       tag: sanitizeText(catchup.tag, 40) || "Academic Event",
-      item_type: catchup.item_type === "news" ? "news" : "event",
-      is_official: Boolean(catchup.is_official),
+      item_type: isAdmin && catchup.item_type === "news" ? "news" : "event",
+      is_official: isAdmin ? Boolean(catchup.is_official) : false,
       event_format: ["physical", "online", "hybrid"].includes(catchup.event_format) ? catchup.event_format : "physical",
       online_url: catchup.online_url ? sanitizeText(catchup.online_url, 500) : null,
       registration_deadline: catchup.registration_deadline || null,
