@@ -1748,18 +1748,9 @@
       const count = IATS_COURSES.filter(c => c.department === department).length;
       return "<li><button class='hub-channel-btn " + (AppState.activeHubDepartment === department ? "active" : "") + "' data-department='" + department.replace(/'/g,"&#39;") + "' type='button'>" + department + " <span style='opacity:.7'>(" + count + ")</span></button></li>";
     }).join("") + "<li><button class='hub-channel-btn " + (AppState.activeHubCategory === "all" ? "active" : "") + "' data-course='all' type='button'>All Course Discussions</button></li>";
-    let coursePanel = document.getElementById("hub-course-list");
-    if (!coursePanel) {
-      coursePanel = document.createElement("div");
-      coursePanel.id = "hub-course-list";
-      coursePanel.className = "glass-panel";
-      coursePanel.style.cssText = "padding:14px;margin-top:12px;";
-      sidebar.parentElement.appendChild(coursePanel);
-    }
+    // Remove the legacy course drawer; the main panel already lists courses for the selected department.
+    document.getElementById("hub-course-list")?.remove();
     const departmentCourses = IATS_COURSES.filter(c => c.department === AppState.activeHubDepartment);
-    coursePanel.innerHTML = "<div style='font-weight:800;margin:0 0 10px;color:#1E293B;'>Courses in this department</div>" + departmentCourses.map(c =>
-      "<button type='button' class='hub-course-btn " + (AppState.activeHubCategory === c.code ? "active" : "") + "' data-course='" + c.code + "' style='display:block;width:100%;text-align:left;padding:9px 10px;margin:4px 0;border:1px solid #E2E8F0;border-radius:10px;background:" + (AppState.activeHubCategory === c.code ? "#FEE2E2" : "transparent") + ";color:#1E293B;cursor:pointer;'>" + c.code + " · " + c.name + "</button>"
-    ).join("");
     const selectedCourse = IATS_COURSES.find(c => c.code === AppState.activeHubCategory);
     const heading = selectedCourse ? selectedCourse.name : AppState.activeHubCategory === "all" ? "All Course Discussions" : AppState.activeHubDepartment;
     if (AppState.activeHubCategory === "department") {
@@ -1781,7 +1772,6 @@
     }
     sidebar.querySelectorAll("[data-department]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubDepartment = btn.dataset.department; AppState.activeHubCategory = "department"; renderHubsView(); }));
     sidebar.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course === "all" ? "all" : btn.dataset.course; if (btn.dataset.course !== "all") { const c = IATS_COURSES.find(x => x.code === btn.dataset.course); if (c) AppState.activeHubDepartment = c.department; } renderHubsView(); }));
-    coursePanel.querySelectorAll("[data-course]").forEach(btn => btn.addEventListener("click", () => { AppState.activeHubCategory = btn.dataset.course; renderHubsView(); }));
   }
 
   function toggleUpvotePost(id) {
