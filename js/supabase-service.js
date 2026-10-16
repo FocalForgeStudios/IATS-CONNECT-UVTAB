@@ -269,6 +269,20 @@ export const SupabaseService = {
     if (error) throw new Error(friendlyError(error));
     return supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
   },
+  /** Upload an event poster or video trailer to public event media storage. */
+  async uploadEventMedia(file, userId) {
+    if (!supabase || !file) throw new Error("Choose a poster image or video trailer first.");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user || user.id !== userId) throw new Error("Sign in again before uploading event media.");
+    const allowed = new Set(["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","video/quicktime"]);
+    if (!allowed.has(file.type)) throw new Error("Choose a JPG, PNG, WebP, GIF, MP4, WebM, or MOV file.");
+    if (file.size > 50 * 1024 * 1024) throw new Error("The poster or video trailer must be 50 MB or smaller.");
+    const extensionByType = {"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","video/mp4":"mp4","video/webm":"webm","video/quicktime":"mov"};
+    const path = user.id + "/" + crypto.randomUUID() + "." + extensionByType[file.type];
+    const { error } = await supabase.storage.from("event-media").upload(path, file, { cacheControl: "3600", contentType: file.type, upsert: false });
+    if (error) throw new Error(friendlyError(error));
+    return supabase.storage.from("event-media").getPublicUrl(path).data.publicUrl;
+  },
   /** Creates the profile row on first login / updates it later. Avatar is always optional. */
   async saveUser(user) {
     if (!supabase || !user || !user.id) return null;
