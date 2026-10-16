@@ -2712,7 +2712,7 @@
 
     // Host CatchUp form (Academic Event)
     const openHostCatchup = document.getElementById("btn-open-host-catchup");
-    if (openHostCatchup) openHostCatchup.addEventListener("click", openHostCatchupModal);
+    if (openHostCatchup) openHostCatchup.addEventListener("click", () => openHostCatchupModal(null, false));
 
     const catchupForm = document.getElementById("host-catchup-form");
     if (catchupForm) catchupForm.addEventListener("submit", handleCreateCatchup);
