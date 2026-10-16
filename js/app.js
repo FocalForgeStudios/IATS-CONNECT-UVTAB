@@ -1294,8 +1294,10 @@
       + "<div class='catchup-attendees'><div style='display:flex;align-items:center;gap:8px;'>"
       + "<img src='" + avatar + "' onerror=\"this.onerror=null;this.src='" + DEFAULT_AVATAR_PLACEHOLDER + "';\" style='width:32px;height:32px;border-radius:50%;object-fit:cover;' alt='Host'>"
       + "<span style='font-size:.82rem;font-weight:500;'>Host: <b>" + escapeEventText(event.host || "IATS Scholar") + "</b>" + (isHost ? "<span style='display:block;font-size:.75rem;color:#D8232A;'>" + attendeeCount + " registration" + (attendeeCount === 1 ? "" : "s") + " so far</span>" : "") + "</span></div>"
+      + "<div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;'>"
+      + (isHost ? "<button class='btn-liquid btn-glass btn-sm btn-host-edit-event' data-id='" + escapeEventText(event.id) + "' type='button'>Manage Event</button>" : "")
       + "<button class='btn-liquid " + (event.isJoined ? "btn-glass" : "btn-primary") + " btn-sm btn-catchup-toggle' data-id='" + escapeEventText(event.id) + "' " + (!event.isJoined && !canRegister ? "disabled" : "") + ">"
-      + registrationLabel + "</button></div></article>";
+      + registrationLabel + "</button></div></div></article>";
   }
 
   function isCampusNewsItem(item) {
@@ -1393,7 +1395,8 @@
     markup += groups.filter(group => group.events.length).map(group => "<section style='grid-column:1/-1;margin-bottom:20px;'><h3 style='font-size:1.1rem;font-weight:850;color:#1E293B;margin:8px 0 14px;'>" + group.title + " <span style='font-size:.8rem;color:#64748B;'>(" + group.events.length + ")</span></h3><div class='catchup-grid'>" + group.events.map(renderCatchupCard).join("") + "</div></section>").join("");
     if (!markup) markup = "<div class='glass-panel' style='grid-column:1/-1;text-align:center;padding:40px 24px;'><h3 style='font-size:1.3rem;font-weight:850;color:#1E293B;margin-bottom:8px;'>No Events or News Yet</h3><p style='color:#64748B;max-width:520px;margin:0 auto;'>Academic events will appear here, while official campus news will always be prioritised above them.</p></div>";
     grid.innerHTML = markup;
-    grid.querySelectorAll(".btn-catchup-toggle").forEach(btn => btn.addEventListener("click", () => toggleJoinCatchup(btn.dataset.id)));
+    grid.querySelectorAll(".btn-catchup-toggle").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); toggleJoinCatchup(btn.dataset.id); }));
+    grid.querySelectorAll(".btn-host-edit-event").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); openHostCatchupModal(btn.dataset.id, false); }));
     grid.querySelectorAll(".btn-open-catchup-details").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); openCatchupDetails(btn.dataset.id); }));
     grid.querySelectorAll("[data-open-details]").forEach(card => card.addEventListener("click", event => {
       if (event.target.closest("button, a, input, select, textarea")) return;
