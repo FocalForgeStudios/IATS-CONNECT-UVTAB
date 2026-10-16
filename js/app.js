@@ -960,15 +960,6 @@
     );
     const hasScholarProfile = hasProfileInAccount || hasProfileInDirectory;
 
-    // The header CTA lives in index.html, outside the dynamically rendered card.
-    // Keep it hidden by default and reveal it only for a signed-in scholar who
-    // has not already completed a scholar profile.
-    const addProfileButton = document.getElementById("match-add-scholar-profile");
-    if (addProfileButton) {
-      addProfileButton.hidden = !currentUser || hasScholarProfile || isNewsPublisher();
-      addProfileButton.setAttribute("aria-hidden", String(addProfileButton.hidden));
-    }
-
     if (buddyProfiles.length === 0) {
       container.innerHTML = `
         <div class="glass-panel" style="text-align: center; padding: 48px 24px; max-width: 580px; margin: 0 auto;">
@@ -981,13 +972,6 @@
               ? "Your scholar profile is saved. There are currently no matching study buddies to display; check back as more scholars join your course."
               : "Study Buddy finds scholars on the same course. Complete your course and cohort once to get started."}
           </p>
-          ${!hasScholarProfile && currentUser && !isNewsPublisher() ? `
-            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-              <button class="btn-liquid btn-primary" onclick="CampusApp.openCreateProfileModal()">
-                <span>+ Add Scholar Profile</span>
-              </button>
-            </div>
-          ` : ""}
         </div>
       `;
       return;
