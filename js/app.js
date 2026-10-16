@@ -1292,7 +1292,7 @@
       + "<div style='font-size:.86rem;color:#64748B;margin-bottom:8px;'>" + ICONS.clock + " " + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.time || event.event_time || "Date/time not set") : formatEventDateTime(start))
       + (end ? " – " + escapeEventText(new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })) : "") + "</div>"
       + "<div style='font-size:.8rem;color:#64748B;'>" + escapeEventText(attendees) + "</div>"
-      + (Number.isFinite(deadline) ? "<div style='font-size:.8rem;color:" + (deadlinePassed ? "#B91C1C" : "#64748B") + ";margin-top:6px;'>Registration deadline: " + escapeEventText(formatEventDateTime(event.registration_deadline)) + (deadlinePassed ? " · Closed" : "") + "<div data-registration-countdown data-deadline-ms='" + deadline + "' style='font-weight:700;margin-top:3px;'>" + (deadlinePassed ? "Registration closed" : formatEventCountdown(event.registration_deadline, null, Date.now())) + "</div></div>" : "")
+      + (Number.isFinite(deadline) ? "<div style='font-size:.8rem;color:" + (deadlinePassed ? "#B91C1C" : "#64748B") + ";margin-top:6px;'>Registration deadline: " + escapeEventText(formatEventDateTime(event.registration_deadline)) + (deadlinePassed ? " · Closed" : "") + "<div data-registration-countdown data-deadline-ms='" + deadline + "' data-deadline-state='" + (deadlinePassed ? "closed" : "open") + "' style='font-weight:700;margin-top:3px;'>" + (deadlinePassed ? "Registration closed" : formatEventCountdown(event.registration_deadline, null, Date.now())) + "</div></div>" : "")
       + (meetingUrl && format !== "physical" ? "<div style='margin-top:8px;'><a href='" + escapeEventText(meetingUrl) + "' target='_blank' rel='noopener noreferrer'>Open online meeting link ↗</a></div>" : "") + "</div>"
       + "<div class='catchup-attendees'><div style='display:flex;align-items:center;gap:8px;'>"
       + "<img src='" + avatar + "' onerror=\"this.onerror=null;this.src='" + DEFAULT_AVATAR_PLACEHOLDER + "';\" style='width:32px;height:32px;border-radius:50%;object-fit:cover;' alt='Host'>"
@@ -1533,6 +1533,13 @@
       const deadline = Number(el.getAttribute("data-deadline-ms"));
       if (!Number.isFinite(deadline)) return;
       const remaining = deadline - now;
+      const nextState = remaining <= 0 ? "closed" : "open";
+      const previousState = el.getAttribute("data-deadline-state") || "open";
+      if (nextState !== previousState) {
+        el.setAttribute("data-deadline-state", nextState);
+        if (AppState.activeView === "catchup") publicStatusChanged = true;
+        if (AppState.activeView === "dashboard") dashboardStatusChanged = true;
+      }
       if (remaining <= 0) {
         el.textContent = "Registration closed";
         el.style.color = "#B91C1C";
