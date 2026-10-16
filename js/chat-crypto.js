@@ -35,7 +35,15 @@ async function keyPut(key, value) {
 const b64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
 const unb64 = (value) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
 export const ChatCrypto = {
+  _identityPromises: new Map(),
   async ensureIdentity(supabase, userId) {
+    if (this._identityPromises.has(userId)) return this._identityPromises.get(userId);
+    const task = this._ensureIdentity(supabase, userId);
+    this._identityPromises.set(userId, task);
+    try { return await task; }
+    finally { this._identityPromises.delete(userId); }
+  },
+  async _ensureIdentity(supabase, userId) {
     if (!globalThis.crypto?.subtle || !globalThis.indexedDB) throw new Error("This device does not support secure chat encryption.");
     let local = await keyGet(userId);
     if (!local?.privateKey || !local?.publicJwk) {
