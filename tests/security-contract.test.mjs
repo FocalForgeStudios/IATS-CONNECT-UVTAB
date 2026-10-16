@@ -30,3 +30,18 @@ test("migration adds public key metadata and generic encrypted previews", () => 
   assert.match(migration, /encryption_version integer/);
   assert.match(migration, /Encrypted message/);
 });
+
+const service = await readFile(new URL("../js/supabase-service.js", import.meta.url), "utf8");
+const app = await readFile(new URL("../js/app.js", import.meta.url), "utf8");
+test("direct message send path screens links before encrypting text", () => {
+  assert.match(service, /requireContentApproval\("text", \{ text: cleanText \}\)/);
+  assert.match(service, /ChatCrypto\.encryptText\(supabase, user\.id, peerId, conversationId, cleanText\)/);
+  assert.match(service, /encryption_version: 1/);
+});
+test("image attachments are screened before encryption and storage", () => {
+  assert.match(service, /requireContentApproval\("image", \{ dataUrl: await fileAsDataUrl\(file\) \}\)/);
+  assert.match(service, /ChatCrypto\.encryptBlob\(supabase, currentUser\.id, peerId, conversationId, file\)/);
+  assert.match(service, /contentType: "application\/octet-stream"/);
+  assert.match(app, /data-attachment-encryption/);
+  assert.match(app, /getChatAttachmentUrl\(card\.dataset\.attachmentPath, card\.dataset\.attachmentConversation/);
+});
