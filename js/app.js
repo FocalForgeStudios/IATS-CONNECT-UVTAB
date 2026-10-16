@@ -1263,10 +1263,20 @@
     const endMs = end && Number.isFinite(Date.parse(end)) ? Date.parse(end) : "";
     const label = status === "live" ? "LIVE NOW" : status === "past" ? "PAST" : "UPCOMING";
     const avatar = resolveAssetUrl(event.hostAvatar || event.host_avatar || DEFAULT_AVATAR_PLACEHOLDER);
-    const attendees = event.maxAttendees == null && event.max_attendees == null
-      ? (event.attendees || 1) + " attending · Unlimited capacity"
-      : (event.attendees || 1) + "/" + (event.maxAttendees ?? event.max_attendees) + " going";
-    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:16px;'>"
+    const attendeeCount = Number(event.attendees || 0);
+    const capacity = event.maxAttendees ?? event.max_attendees;
+    const remaining = capacity == null ? null : Math.max(0, Number(capacity) - attendeeCount);
+    const attendees = capacity == null ? attendeeCount + " registered · Unlimited capacity" : attendeeCount + "/" + Number(capacity) + " registered · " + remaining + " spots remaining";
+    const format = String(event.event_format || "physical");
+    const formatLabel = format === "online" ? "Online" : format === "hybrid" ? "Hybrid · Physical + Online" : "Physical";
+    const deadline = event.registration_deadline ? Date.parse(event.registration_deadline) : NaN;
+    const deadlinePassed = Number.isFinite(deadline) && Date.now() >= deadline;
+    const full = capacity != null && remaining <= 0;
+    const canRegister = status !== "past" && !deadlinePassed && !full;
+    const meetingUrl = /^https?:\/\//i.test(String(event.online_url || "")) ? String(event.online_url) : "";
+    const isHost = !!AppState.currentUser && String(event.host_id || "") === String(AppState.currentUser.id);
+    const registrationLabel = event.isJoined ? "Leave Event" : deadlinePassed ? "Registration Closed" : full ? "Event Full" : "Join Event";
+    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:16px;'>
       + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'>"
       + "<span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span>"
       + "<span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
@@ -1274,15 +1284,18 @@
       + formatEventCountdown(start, end) + "</div>"
       + "<h3 style='font-size:1.15rem;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;'>" + escapeEventText(event.title) + "</h3>"
       + (event.description ? "<p style='font-size:.88rem;color:#475569;line-height:1.55;margin:0 0 10px;white-space:pre-wrap;'>" + escapeEventText(event.description) + "</p>" : "")
-      + "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location || "Location not set") + "</div>"
+      + "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location || (format === "online" ? "Online event" : "Location not set")) + "</div>"
+      + "<div style='font-size:.8rem;font-weight:700;color:#475569;margin-bottom:6px;'>" + escapeEventText(formatLabel) + "</div>"
       + "<div style='font-size:.86rem;color:#64748B;margin-bottom:8px;'>" + ICONS.clock + " " + escapeEventText(formatEventDateTime(start) === "Date/time not set" ? (event.time || event.event_time || "Date/time not set") : formatEventDateTime(start))
       + (end ? " – " + escapeEventText(new Date(end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })) : "") + "</div>"
-      + "<div style='font-size:.8rem;color:#64748B;'>" + escapeEventText(attendees) + "</div></div>"
+      + "<div style='font-size:.8rem;color:#64748B;'>" + escapeEventText(attendees) + "</div>"
+      + (Number.isFinite(deadline) ? "<div style='font-size:.8rem;color:" + (deadlinePassed ? "#B91C1C" : "#64748B") + ";margin-top:6px;'>Registration deadline: " + escapeEventText(formatEventDateTime(event.registration_deadline)) + (deadlinePassed ? " · Closed" : "") + "</div>" : "")
+      + (meetingUrl && format !== "physical" ? "<div style='margin-top:8px;'><a href='" + escapeEventText(meetingUrl) + "' target='_blank' rel='noopener noreferrer'>Open online meeting link ↗</a></div>" : "") + "</div>"
       + "<div class='catchup-attendees'><div style='display:flex;align-items:center;gap:8px;'>"
       + "<img src='" + avatar + "' onerror=\"this.onerror=null;this.src='" + DEFAULT_AVATAR_PLACEHOLDER + "';\" style='width:32px;height:32px;border-radius:50%;object-fit:cover;' alt='Host'>"
-      + "<span style='font-size:.82rem;font-weight:500;'>Host: <b>" + escapeEventText(event.host || "IATS Scholar") + "</b></span></div>"
-      + "<button class='btn-liquid " + (event.isJoined ? "btn-glass" : "btn-primary") + " btn-sm btn-catchup-toggle' data-id='" + escapeEventText(event.id) + "' " + (status === "past" ? "disabled" : "") + ">"
-      + (event.isJoined ? "Leave Event" : "Join Event") + "</button></div></article>";
+      + "<span style='font-size:.82rem;font-weight:500;'>Host: <b>" + escapeEventText(event.host || "IATS Scholar") + "</b>" + (isHost ? "<span style='display:block;font-size:.75rem;color:#D8232A;'>" + attendeeCount + " registration" + (attendeeCount === 1 ? "" : "s") + " so far</span>" : "") + "</span></div>"
+      + "<button class='btn-liquid " + (event.isJoined ? "btn-glass" : "btn-primary") + " btn-sm btn-catchup-toggle' data-id='" + escapeEventText(event.id) + "' " + (!event.isJoined && !canRegister ? "disabled" : "") + ">"
+      + registrationLabel + "</button></div></article>";
   }
 
   function isCampusNewsItem(item) {
@@ -1570,11 +1583,14 @@
 
   function openHostCatchupModal(eventId = null, forceNews = false) {
     syncNewsPublishingOption();
-    const event = eventId ? (AppState.adminEvents || []).find(item => String(item.id) === String(eventId)) : null;
-    if (eventId && (!isNewsPublisher() || !event)) {
-      showToast("Administrator Only", "Refresh the admin panel and try again.");
+    const event = eventId && isNewsPublisher()
+      ? (AppState.adminEvents || []).find(item => String(item.id) === String(eventId))
+      : null;
+    if (eventId && isNewsPublisher() && !event) {
+      showToast("Event Not Found", "Refresh the admin panel and select the event again.");
       return;
     }
+    // Student-host actions always open a fresh event form; stale IDs must not block hosting.
     AppState.editingEventId = event ? event.id : null;
     const titleInput = document.getElementById("new-catchup-title");
     const locationInput = document.getElementById("new-catchup-location");
@@ -1670,7 +1686,7 @@
         return;
       }
       if (endsAt <= startsAt) { alert("The event end date and time must be after the start date and time."); return; }
-      if (format !== "physical" && !/^https?:\/\//i.test(onlineUrl)) {
+      if (format !== "physical" && onlineUrl && !/^https?:\/\//i.test(onlineUrl)) {
         alert("Please provide a valid online meeting URL beginning with https:// or http://.");
         return;
       }
