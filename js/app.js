@@ -853,7 +853,7 @@
           </div>
         `;
       } else {
-        const dashboardItems = AppState.catchups.filter(item => isCampusNewsItem(item) || !item.is_official).slice(0, 2);
+        const dashboardItems = [...AppState.catchups].sort((a, b) => Number(isCampusNewsItem(b)) - Number(isCampusNewsItem(a)) || Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, 2);
         quickCatchupList.innerHTML = dashboardItems.map(c => {
           if (isCampusNewsItem(c)) {
             const unread = (AppState.unreadNewsIds || []).some(id => String(id) === String(c.id));
