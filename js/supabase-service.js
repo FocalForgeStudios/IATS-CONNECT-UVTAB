@@ -16,6 +16,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
+import { ChatCrypto } from "./chat-crypto.js";
 
 const DEFAULT_STUDENT_AVATAR = "./images/scholar_female.jpg";
 const isConfigured =
@@ -71,6 +72,15 @@ function throttled(actionKey, minIntervalMs = 800) {
   return true;
 }
 
+async function conversationPeerId(conversationId, userId) {
+  const { data, error } = await supabase.from("conversations")
+    .select("created_by,participant_id").eq("id", conversationId).single();
+  if (error || !data) throw new Error("Could not verify this conversation's recipient.");
+  const peerId = data.created_by === userId ? data.participant_id : data.created_by;
+  if (!peerId || peerId === userId) throw new Error("Secure messaging requires a real recipient account.");
+  return peerId;
+}
+
 function friendlyError(e) {
   const msg = (e && e.message) || String(e);
   if (/rate limit/i.test(msg)) {
@@ -93,7 +103,12 @@ export const SupabaseService = {
   async getSession() {
     if (!supabase) return null;
     const { data } = await supabase.auth.getSession();
-    return data.session || null;
+    const session = data.session || null;
+    if (session?.user?.id) {
+      try { await ChatCrypto.ensureIdentity(supabase, session.user.id); }
+      catch (error) { console.warn("[IATS CONNECT] Secure chat key setup is not ready:", error); }
+    }
+    return session;
   },
 
   onAuthStateChange(callback) {
@@ -658,7 +673,19 @@ export const SupabaseService = {
           if (!result.error) profiles = result.data || [];
         }
         const names = new Map(profiles.map(p => [p.id, p.name]));
-        onUpdate(messages.map(m => ({ ...m, sender_name: names.get(m.sender_id) || "IATS Scholar" })));
+        const { data: { user } } = await supabase.auth.getUser();
+        const decrypted = await Promise.all(messages.map(async m => {
+          if (!m.encryption_version) return { ...m, sender_name: names.get(m.sender_id) || "IATS Scholar" };
+          try {
+            if (!user?.id) throw new Error("Sign in required.");
+            const peerId = await conversationPeerId(conversationId, user.id);
+            const displayText = await ChatCrypto.decryptText(supabase, user.id, peerId, conversationId, m.text);
+            return { ...m, text: displayText, sender_name: names.get(m.sender_id) || "IATS Scholar" };
+          } catch (error) {
+            return { ...m, text: "[Encrypted message — secure key unavailable on this device]", sender_name: names.get(m.sender_id) || "IATS Scholar" };
+          }
+        }));
+        onUpdate(decrypted);
       })();
     };
     load();
@@ -800,7 +827,13 @@ export const SupabaseService = {
 
   async editMessage(messageId, text) {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
-    const { error } = await supabase.from("messages").update({ text: sanitizeText(text, 500), edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString()); if (error) throw new Error(friendlyError(error));
+    const { data: message, error: readError } = await supabase.from("messages").select("conversation_id").eq("id", messageId).eq("sender_id", user.id).single();
+    if (readError || !message) throw new Error("Could not verify this message.");
+    await ChatCrypto.ensureIdentity(supabase, user.id);
+    const peerId = await conversationPeerId(message.conversation_id, user.id);
+    const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, message.conversation_id, sanitizeText(text, 500));
+    const { error } = await supabase.from("messages").update({ text: encryptedText, encryption_version: 1, edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString());
+    if (error) throw new Error(friendlyError(error));
   },
   async deleteMessage(messageId) {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
@@ -817,10 +850,16 @@ export const SupabaseService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You need to sign in first.");
+      const cleanText = sanitizeText(text, 500);
+      if (!cleanText) return false;
+      await ChatCrypto.ensureIdentity(supabase, user.id);
+      const peerId = await conversationPeerId(conversationId, user.id);
+      const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, conversationId, cleanText);
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        text: sanitizeText(text, 500),
+        text: encryptedText,
+        encryption_version: 1,
         reply_to: replyTo || null
       });
       if (error) throw error;
