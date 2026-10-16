@@ -160,35 +160,39 @@ body { padding-left: calc(var(--iats-rail-width) + 28px); }
   #view-chats .chat-workspace { grid-template-columns: minmax(210px, 34%) minmax(0,1fr); }
   #view-chats .chat-sidebar { padding: 14px 9px; }
 }
-/* Small screens: a compact top rail prevents conflict with Android/iOS system bars. */
+/* Small screens: keep navigation on the side so it never competes with system docks/taskbars. */
 @media (max-width: 640px) {
-  body { padding-left: 0; padding-bottom: 12px; }
-  .glass-header { left: 10px; width: calc(100% - 20px); }
+  :root { --iats-rail-width: 46px; }
+  body { padding-left: 0; padding-bottom: 8px; }
+  .glass-header { left: 54px; width: calc(100% - 62px); }
   .app-bottom-dock {
-    left: 50% !important;
-    top: auto !important;
-    bottom: 10px !important;
-    transform: translateX(-50%) !important;
-    width: max-content !important;
-    max-width: calc(100vw - 20px) !important;
+    left: 4px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    width: 42px !important;
+    max-width: 42px !important;
   }
   .dock-container {
-    flex-direction: row;
-    width: auto;
-    max-width: calc(100vw - 20px);
-    overflow-x: auto;
-    gap: 3px;
-    padding: 6px;
-    border-radius: 18px;
+    flex-direction: column;
+    width: 42px;
+    max-width: 42px;
+    max-height: calc(100dvh - 18px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 15px;
   }
-  .dock-nav-btn { flex: 0 0 42px; width: 42px; min-width: 42px; height: 42px; }
+  .dock-nav-btn { flex: 0 0 34px; width: 34px; min-width: 34px; height: 34px; border-radius: 11px; }
+  .dock-nav-btn .dock-icon svg { width: 17px; height: 17px; }
   #view-chats .chat-workspace {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 150px);
-    min-height: 420px;
+    height: calc(100dvh - 135px);
+    min-height: 400px;
     gap: 0;
-    border-radius: 18px;
+    border-radius: 16px;
   }
   #view-chats .chat-sidebar { flex: 0 0 auto; max-height: 30%; padding: 10px; border-right: 0; border-bottom: 1px solid var(--iats-chat-border); }
   #view-chats .chat-sidebar > div:first-child { padding-bottom: 8px !important; margin-bottom: 6px !important; }
