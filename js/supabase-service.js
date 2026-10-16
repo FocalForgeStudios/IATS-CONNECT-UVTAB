@@ -273,6 +273,19 @@ export const SupabaseService = {
   async saveUser(user) {
     if (!supabase || !user || !user.id) return null;
     try {
+      // Only write the profile belonging to the currently authenticated account.
+      // This blocks stale UI state during account switching from writing another
+      // person's profile/photo onto this account.
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser || authUser.id !== user.id) {
+        console.warn("saveUser blocked: requested profile does not belong to the signed-in account.");
+        return null;
+      }
+      const { data: existingProfile, error: existingError } = await supabase
+        .from("profiles").select("avatar_url").eq("id", authUser.id).maybeSingle();
+      if (existingError) throw existingError;
+      const incomingAvatar = sanitizeAvatar(user.avatar);
+      const avatarForThisUser = incomingAvatar || existingProfile?.avatar_url || null;
       const payload = {
         id: user.id,
         name: sanitizeText(user.name, 80) || "IATS Scholar",
@@ -283,7 +296,7 @@ export const SupabaseService = {
         bio: sanitizeText(user.bio, 500),
         courses: Array.isArray(user.courses) ? user.courses.map(c => sanitizeText(c, 30)) : [],
         interests: Array.isArray(user.interests) ? user.interests.map(i => sanitizeText(i, 30)) : [],
-        avatar_url: sanitizeAvatar(user.avatar), // null is fine — UI falls back to a default vector
+        avatar_url: avatarForThisUser, // Preserve this user's existing photo when an update omits it.
         location: sanitizeText(user.location, 80) || "IATS Main Campus",
         updated_at: new Date().toISOString()
       };
@@ -591,7 +604,7 @@ export const SupabaseService = {
       onUpdate(convs.map(c => {
         const peerId = c.created_by === user.id ? c.participant_id : c.created_by;
         const peer = byId.get(peerId);
-        return { ...c, peer_id: peerId, name: peer?.name || c.name || "IATS Scholar", avatar_url: peer?.avatar_url || c.avatar_url, peer_last_seen_at: peer?.last_seen_at || null, unread_count: unreadByConversation.get(c.id) || 0 };
+        return { ...c, peer_id: peerId, name: peer?.name || "IATS Scholar", avatar_url: peer?.avatar_url || null, peer_last_seen_at: peer?.last_seen_at || null, unread_count: unreadByConversation.get(c.id) || 0 };
       }));
     };
     load();
