@@ -868,7 +868,7 @@
           </div>
         `;
       } else {
-        const dashboardItems = [...AppState.catchups].sort((a, b) => Number(isCampusNewsItem(b)) - Number(isCampusNewsItem(a)) || Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, 2);
+        const dashboardItems = [...AppState.catchups].sort((a, b) => Number(Boolean(b.is_official) || isCampusNewsItem(b)) - Number(Boolean(a.is_official) || isCampusNewsItem(a)) || Number(isCampusNewsItem(b)) - Number(isCampusNewsItem(a)) || Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, 2);
         quickCatchupList.innerHTML = dashboardItems.map(c => {
           if (isCampusNewsItem(c)) {
             const unread = (AppState.unreadNewsIds || []).some(id => String(id) === String(c.id));
@@ -897,9 +897,12 @@
                 </div>
               </div>
             </div>
-            <button class="btn-liquid ${c.isJoined ? 'btn-glass' : 'btn-primary'} btn-sm btn-join-catchup" data-id="${c.id}">
-              ${c.isJoined ? "Joined ✓" : "Join Event"}
-            </button>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+              <span style="font-size:.78rem;color:#64748B;text-align:right;">${c.maxAttendees == null && c.max_attendees == null ? Number(c.attendees || 0) + " registered · Unlimited spots" : Number(c.attendees || 0) + " registered · " + Math.max(0, Number(c.maxAttendees ?? c.max_attendees) - Number(c.attendees || 0)) + " spots remaining"}</span>
+              <button class="btn-liquid ${c.isJoined ? 'btn-glass' : 'btn-primary'} btn-sm btn-join-catchup" data-id="${c.id}" ${(!c.isJoined && ((c.registration_deadline && Date.now() >= Date.parse(c.registration_deadline)) || ((c.maxAttendees ?? c.max_attendees) != null && Number(c.attendees || 0) >= Number(c.maxAttendees ?? c.max_attendees)) || eventStatus(c) === "past")) ? "disabled" : ""}>
+                ${c.isJoined ? "Leave Event" : (c.registration_deadline && Date.now() >= Date.parse(c.registration_deadline)) ? "Registration Closed" : ((c.maxAttendees ?? c.max_attendees) != null && Number(c.attendees || 0) >= Number(c.maxAttendees ?? c.max_attendees)) ? "Event Full" : "Join Event"}
+              </button>
+            </div>
           </div>`;
         }).join("");
 
