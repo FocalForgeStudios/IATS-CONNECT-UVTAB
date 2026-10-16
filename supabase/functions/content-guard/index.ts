@@ -40,7 +40,9 @@ Deno.serve(async (req) => {
   if (body.kind === "text") {
     const text = typeof body.text === "string" ? body.text : "";
     if (!text.trim() || text.length > 5000) return json({ error: "Invalid message text." }, 400);
-    const rawUrls = [...new Set(text.match(/(?:https?:\/\/|www\.)[^\s<>"']+/gi) ?? [])];
+    // Detect explicit URLs, www links, and bare domains; false positives are safer than allowing disguised links.
+    const rawUrls = [...new Set(text.match(/(?:https?:\/\/|www\.)[^\s<>"']+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?::\d{2,5})?(?:\/[^\s<>"']*)?/gi) ?? [])]
+      .map(value => value.replace(/[.,!?;:)\]]+$/, ""));
     if (!rawUrls.length) return json({ allowed: true });
     const urls: string[] = [];
     for (const raw of rawUrls) {
