@@ -1745,8 +1745,8 @@
     const departments = [...new Set(IATS_COURSES.map(c => c.department))];
     if (!departments.includes(AppState.activeHubDepartment)) AppState.activeHubDepartment = departments[0];
     sidebar.innerHTML = departments.map(department => {
-      const count = IATS_COURSES.filter(c => c.department === faculty).length;
-      return "<li><button class='hub-channel-btn " + (AppState.activeHubDepartment === faculty ? "active" : "") + "' data-department='" + department.replace(/'/g,"&#39;") + "' type='button'>" + faculty + " <span style='opacity:.7'>(" + count + ")</span></button></li>";
+      const count = IATS_COURSES.filter(c => c.department === department).length;
+      return "<li><button class='hub-channel-btn " + (AppState.activeHubDepartment === department ? "active" : "") + "' data-department='" + department.replace(/'/g,"&#39;") + "' type='button'>" + department + " <span style='opacity:.7'>(" + count + ")</span></button></li>";
     }).join("") + "<li><button class='hub-channel-btn " + (AppState.activeHubCategory === "all" ? "active" : "") + "' data-course='all' type='button'>All Course Discussions</button></li>";
     let coursePanel = document.getElementById("hub-course-list");
     if (!coursePanel) {
