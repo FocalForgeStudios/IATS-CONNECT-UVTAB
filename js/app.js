@@ -2738,6 +2738,22 @@
 
     const closeCatchupBtn = document.getElementById("btn-close-catchup-modal");
     if (closeCatchupBtn) closeCatchupBtn.addEventListener("click", closeHostCatchupModal);
+    const catchupBackdrop = document.getElementById("host-catchup-modal");
+    if (catchupBackdrop) catchupBackdrop.addEventListener("click", event => { if (event.target === catchupBackdrop) closeHostCatchupModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeHostCatchupModal(); });
+    const bannerInput = document.getElementById("new-catchup-banner-url");
+    const bannerPreview = document.getElementById("new-catchup-banner-preview");
+    if (bannerInput && bannerPreview) bannerInput.addEventListener("input", () => {
+      const value = bannerInput.value.trim();
+      bannerPreview.src = /^https?:\/\//i.test(value) ? value : "";
+      bannerPreview.style.display = /^https?:\/\//i.test(value) ? "block" : "none";
+    });
+    document.querySelectorAll(".dock-nav-btn, [data-view], .nav-link").forEach(button => {
+      button.addEventListener("click", () => {
+        const modal = document.getElementById("host-catchup-modal");
+        if (modal?.classList.contains("open")) closeHostCatchupModal();
+      }, true);
+    });
 
     // Create Profile form
     const profileForm = document.getElementById("create-profile-form");
