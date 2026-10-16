@@ -1277,15 +1277,18 @@
     const full = capacity != null && remaining <= 0;
     const canRegister = status !== "past" && !deadlinePassed && !full;
     const meetingUrl = /^https?:\/\//i.test(String(event.online_url || "")) ? String(event.online_url) : "";
+    const bannerUrl = /^https?:\/\//i.test(String(event.banner_url || "")) ? String(event.banner_url) : "";
     const isHost = !!AppState.currentUser && String(event.host_id || "") === String(AppState.currentUser.id);
     const registrationLabel = event.isJoined ? "Leave Event" : deadlinePassed ? "Registration Closed" : full ? "Event Full" : "Join Event";
     return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:16px;'>"
       + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'>"
       + "<span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span>"
       + "<span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
+      + (bannerUrl ? "<img src='" + escapeEventText(bannerUrl) + "' alt='Event poster' loading='lazy' onerror=\"this.style.display='none'\" style='width:100%;height:170px;object-fit:cover;border-radius:14px;margin-bottom:12px;'>" : "")
       + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>"
       + formatEventCountdown(start, end) + "</div>"
       + "<h3 style='font-size:1.15rem;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;'>" + escapeEventText(event.title) + "</h3>"
+      + (event.notes ? "<p style='font-size:.8rem;color:#64748B;background:rgba(148,163,184,.12);border-radius:8px;padding:7px 9px;margin:0 0 8px;'><b>Note:</b> " + escapeEventText(event.notes) + "</p>" : "")
       + (event.description ? "<p style='font-size:.88rem;color:#475569;line-height:1.55;margin:0 0 10px;white-space:pre-wrap;'>" + escapeEventText(event.description) + "</p>" : "")
       + "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location || (format === "online" ? "Online event" : "Location not set")) + "</div>"
       + "<div style='font-size:.8rem;font-weight:700;color:#475569;margin-bottom:6px;'>" + escapeEventText(formatLabel) + "</div>"
@@ -1630,6 +1633,12 @@
     const tagSelect = document.getElementById("new-catchup-tag");
     const modalTitle = document.getElementById("host-catchup-modal-title");
     const submitLabel = document.getElementById("host-catchup-submit-label");
+    const bannerInput = document.getElementById("new-catchup-banner-url");
+    const bannerPreview = document.getElementById("new-catchup-banner-preview");
+    const notesInput = document.getElementById("new-catchup-notes");
+    if (bannerInput) bannerInput.value = event ? (event.banner_url || "") : "";
+    if (bannerPreview) { bannerPreview.src = event?.banner_url || ""; bannerPreview.style.display = event?.banner_url ? "block" : "none"; }
+    if (notesInput) notesInput.value = event ? (event.notes || "") : "";
     if (titleInput) titleInput.value = event ? (event.title || "") : "";
     if (locationInput) locationInput.value = event ? (event.location || "") : "";
     if (descriptionInput) descriptionInput.value = event ? (event.description || "") : "";
@@ -1653,6 +1662,7 @@
   function closeHostCatchupModal() {
     const hostModal = document.getElementById("host-catchup-modal");
     if (hostModal) hostModal.classList.remove("open");
+    AppState.editingEventId = null;
   }
 
   function syncCatchupFormType() {
@@ -1681,6 +1691,9 @@
     const title = document.getElementById("new-catchup-title") ? document.getElementById("new-catchup-title").value.trim() : "";
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
     const description = document.getElementById("new-catchup-description") ? document.getElementById("new-catchup-description").value.trim() : "";
+    const bannerUrl = document.getElementById("new-catchup-banner-url")?.value.trim() || "";
+    const notes = document.getElementById("new-catchup-notes")?.value.trim() || "";
+    if (bannerUrl && !/^https?:\/\//i.test(bannerUrl)) { alert("Please enter a valid public image URL beginning with https:// or http://."); return; }
     const startValue = document.getElementById("new-catchup-start")?.value || "";
     const endValue = document.getElementById("new-catchup-end")?.value || "";
     const startsAt = startValue ? new Date(startValue) : null;
@@ -1760,6 +1773,8 @@
     const newCatchup = {
       title,
       description,
+      banner_url: bannerUrl || null,
+      notes,
       host: hostName,
       hostAvatar,
       location: isCampusNews ? "" : location,
@@ -2723,6 +2738,22 @@
 
     const closeCatchupBtn = document.getElementById("btn-close-catchup-modal");
     if (closeCatchupBtn) closeCatchupBtn.addEventListener("click", closeHostCatchupModal);
+    const catchupBackdrop = document.getElementById("host-catchup-modal");
+    if (catchupBackdrop) catchupBackdrop.addEventListener("click", event => { if (event.target === catchupBackdrop) closeHostCatchupModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeHostCatchupModal(); });
+    const bannerInput = document.getElementById("new-catchup-banner-url");
+    const bannerPreview = document.getElementById("new-catchup-banner-preview");
+    if (bannerInput && bannerPreview) bannerInput.addEventListener("input", () => {
+      const value = bannerInput.value.trim();
+      bannerPreview.src = /^https?:\/\//i.test(value) ? value : "";
+      bannerPreview.style.display = /^https?:\/\//i.test(value) ? "block" : "none";
+    });
+    document.querySelectorAll(".dock-nav-btn, [data-view], .nav-link").forEach(button => {
+      button.addEventListener("click", () => {
+        const modal = document.getElementById("host-catchup-modal");
+        if (modal?.classList.contains("open")) closeHostCatchupModal();
+      }, true);
+    });
 
     // Create Profile form
     const profileForm = document.getElementById("create-profile-form");
