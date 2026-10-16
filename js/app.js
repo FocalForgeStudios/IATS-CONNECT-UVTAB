@@ -498,19 +498,34 @@
     const newsCount = (AppState.unreadNewsIds || []).length;
     const chatCount = Object.values(AppState.unreadChatCounts || {}).reduce((sum, count) => sum + Number(count || 0), 0);
     document.querySelectorAll('.dock-nav-btn[data-view="catchup"]').forEach(button => {
-      const label = button.querySelector(".dock-label") || button;
       let badge = button.querySelector(".nav-notification-badge");
       if (newsCount > 0) {
-        if (!badge) { badge = document.createElement("span"); badge.className = "nav-notification-badge"; label.appendChild(badge); }
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "nav-notification-badge";
+          badge.setAttribute("role", "status");
+          button.appendChild(badge);
+        }
         badge.textContent = newsCount > 99 ? "99+" : String(newsCount);
-        badge.setAttribute("aria-label", newsCount + " unread news items");
-        badge.title = newsCount + " unread news items";
-      } else if (badge) badge.remove();
+        badge.setAttribute("aria-label", newsCount + " unread campus news items");
+        badge.title = newsCount + " unread campus news items";
+        badge.hidden = false;
+      } else if (badge) {
+        badge.remove();
+      }
     });
-    document.querySelectorAll('.dock-nav-btn[data-view="chats"] .dock-label').forEach(label => {
-      let badge = label.querySelector(".nav-notification-badge");
-      if (chatCount > 0) { if (!badge) { badge = document.createElement("span"); badge.className = "nav-notification-badge"; label.appendChild(badge); } badge.textContent = chatCount > 99 ? "99+" : String(chatCount); badge.setAttribute("aria-label", chatCount + " unread messages"); }
-      else if (badge) badge.remove();
+    document.querySelectorAll('.dock-nav-btn[data-view="chats"]').forEach(button => {
+      let badge = button.querySelector(".nav-notification-badge");
+      if (chatCount > 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "nav-notification-badge";
+          button.appendChild(badge);
+        }
+        badge.textContent = chatCount > 99 ? "99+" : String(chatCount);
+        badge.setAttribute("aria-label", chatCount + " unread messages");
+        badge.title = chatCount + " unread messages";
+      } else if (badge) badge.remove();
     });
   }
 
