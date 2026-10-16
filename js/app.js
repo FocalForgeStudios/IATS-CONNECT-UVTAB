@@ -1288,7 +1288,6 @@
       + "<div style='font-size:.82rem;font-weight:700;color:#D8232A;margin-bottom:10px;' data-event-countdown data-event-status='" + status + "' data-start-iso='" + escapeEventText(start || "") + "' data-end-iso='" + escapeEventText(end || "") + "' data-start-ms='" + startMs + "' data-end-ms='" + endMs + "'>"
       + formatEventCountdown(start, end) + "</div>"
       + "<h3 style='font-size:1.15rem;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;'>" + escapeEventText(event.title) + "</h3>"
-      + (event.notes ? "<p style='font-size:.8rem;color:#64748B;background:rgba(148,163,184,.12);border-radius:8px;padding:7px 9px;margin:0 0 8px;'><b>Note:</b> " + escapeEventText(event.notes) + "</p>" : "")
       + (event.description ? "<p style='font-size:.88rem;color:#475569;line-height:1.55;margin:0 0 10px;white-space:pre-wrap;'>" + escapeEventText(event.description) + "</p>" : "")
       + "<div style='color:#64748B;font-size:.86rem;margin-bottom:6px;'>" + ICONS.pin + " " + escapeEventText(event.location || (format === "online" ? "Online event" : "Location not set")) + "</div>"
       + "<div style='font-size:.8rem;font-weight:700;color:#475569;margin-bottom:6px;'>" + escapeEventText(formatLabel) + "</div>"
@@ -1635,10 +1634,8 @@
     const submitLabel = document.getElementById("host-catchup-submit-label");
     const bannerInput = document.getElementById("new-catchup-banner-url");
     const bannerPreview = document.getElementById("new-catchup-banner-preview");
-    const notesInput = document.getElementById("new-catchup-notes");
     if (bannerInput) bannerInput.value = event ? (event.banner_url || "") : "";
     if (bannerPreview) { bannerPreview.src = event?.banner_url || ""; bannerPreview.style.display = event?.banner_url ? "block" : "none"; }
-    if (notesInput) notesInput.value = event ? (event.notes || "") : "";
     if (titleInput) titleInput.value = event ? (event.title || "") : "";
     if (locationInput) locationInput.value = event ? (event.location || "") : "";
     if (descriptionInput) descriptionInput.value = event ? (event.description || "") : "";
@@ -1692,7 +1689,6 @@
     const location = document.getElementById("new-catchup-location") ? document.getElementById("new-catchup-location").value.trim() : "";
     const description = document.getElementById("new-catchup-description") ? document.getElementById("new-catchup-description").value.trim() : "";
     const bannerUrl = document.getElementById("new-catchup-banner-url")?.value.trim() || "";
-    const notes = document.getElementById("new-catchup-notes")?.value.trim() || "";
     if (bannerUrl && !/^https?:\/\//i.test(bannerUrl)) { alert("Please enter a valid public image URL beginning with https:// or http://."); return; }
     const startValue = document.getElementById("new-catchup-start")?.value || "";
     const endValue = document.getElementById("new-catchup-end")?.value || "";
