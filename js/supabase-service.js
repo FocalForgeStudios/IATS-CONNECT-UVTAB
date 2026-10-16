@@ -16,6 +16,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
+import { ChatCrypto } from "./chat-crypto.js";
 
 const DEFAULT_STUDENT_AVATAR = "./images/scholar_female.jpg";
 const isConfigured =
@@ -73,10 +74,24 @@ function throttled(actionKey, minIntervalMs = 800) {
 
 function friendlyError(e) {
   const msg = (e && e.message) || String(e);
-  if (/rate limit/i.test(msg)) {
-    return "You're doing that a little too fast. Please wait a few seconds and try again.";
-  }
+  if (/rate limit/i.test(msg)) return "You're doing that a little too fast. Please wait a few seconds and try again.";
   return msg;
+}
+
+async function requireContentApproval(kind, payload) {
+  if (!supabase) throw new Error("Content safety service is unavailable.");
+  const { data, error } = await supabase.functions.invoke("content-guard", { body: { kind, ...payload } });
+  if (error) throw new Error("Content could not be verified. Sending is blocked until safety checks are available.");
+  if (!data || data.allowed !== true) throw new Error(data?.reason || data?.error || "Content did not pass IATS CONNECT safety checks.");
+  return true;
+}
+
+async function conversationPeerId(conversationId, userId) {
+  const { data, error } = await supabase.from("conversations").select("created_by,participant_id").eq("id", conversationId).single();
+  if (error || !data) throw new Error("Could not verify this conversation's recipient.");
+  const peerId = data.created_by === userId ? data.participant_id : data.created_by;
+  if (!peerId || peerId === userId) throw new Error("Secure messaging requires a real recipient account.");
+  return peerId;
 }
 
 export const SupabaseService = {
@@ -93,12 +108,19 @@ export const SupabaseService = {
   async getSession() {
     if (!supabase) return null;
     const { data } = await supabase.auth.getSession();
-    return data.session || null;
+    const session = data.session || null;
+    if (session?.user?.id) {
+      try { await ChatCrypto.ensureIdentity(supabase, session.user.id); }
+      catch (error) { console.warn("[IATS CONNECT] Secure chat key setup is not ready:", error); }
+    }
+    return session;
   },
 
   onAuthStateChange(callback) {
     if (!supabase) return () => {};
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.id) ChatCrypto.ensureIdentity(supabase, session.user.id)
+        .catch(error => console.warn("[IATS CONNECT] Secure chat key setup is not ready:", error));
       callback(event, session);
     });
     return () => data.subscription.unsubscribe();
@@ -645,7 +667,20 @@ export const SupabaseService = {
           if (!result.error) profiles = result.data || [];
         }
         const names = new Map(profiles.map(p => [p.id, p.name]));
-        onUpdate(messages.map(m => ({ ...m, sender_name: names.get(m.sender_id) || "IATS Scholar" })));
+        const { data: { user } } = await supabase.auth.getUser();
+        const decrypted = await Promise.all(messages.map(async m => {
+          let displayText = m.text;
+          if (m.encryption_version > 0 && user?.id) {
+            try {
+              const peerId = await conversationPeerId(conversationId, user.id);
+              displayText = await ChatCrypto.decryptText(supabase, user.id, peerId, conversationId, m.text);
+            } catch (error) {
+              displayText = "[Encrypted message — secure key unavailable on this device]";
+            }
+          }
+          return { ...m, text: displayText, sender_name: names.get(m.sender_id) || "IATS Scholar" };
+        }));
+        onUpdate(decrypted);
       })();
     };
     load();
@@ -804,10 +839,18 @@ export const SupabaseService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You need to sign in first.");
+      const cleanText = sanitizeText(text, 500);
+      if (!cleanText) return false;
+      await requireContentApproval("text", { text: cleanText });
+      await ChatCrypto.ensureIdentity(supabase, user.id);
+      const peerId = await conversationPeerId(conversationId, user.id);
+      const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, conversationId, cleanText);
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        text: sanitizeText(text, 500),
+        text: encryptedText,
+        encryption_version: 1,
+        payload_kind: "text",
         reply_to: replyTo || null
       });
       if (error) throw error;
