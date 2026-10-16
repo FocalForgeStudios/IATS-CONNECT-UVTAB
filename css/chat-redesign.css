@@ -291,3 +291,64 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
   opacity: .9 !important; color: #64748B !important;
   background: rgba(100,116,139,.09) !important; outline: none !important;
 }
+
+/* True edge-to-edge chat workspace: cancel inherited section/container gutters. */
+#view-chats {
+  box-sizing: border-box !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+#view-chats.active {
+  display: block !important;
+  height: calc(100dvh - 0px) !important;
+  min-height: 0 !important;
+}
+#view-chats > .chat-workspace {
+  box-sizing: border-box !important;
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+}
+@media (min-width: 641px) {
+  #view-chats.active {
+    width: calc(100vw - var(--iats-rail-width, 58px)) !important;
+    margin-left: calc(-1 * (var(--iats-rail-width, 58px) + 28px)) !important;
+    padding-left: var(--iats-rail-width, 58px) !important;
+  }
+  #view-chats > .chat-workspace {
+    width: 100% !important;
+    height: 100dvh !important;
+  }
+}
+@media (max-width: 640px) {
+  #view-chats.active {
+    width: calc(100vw - 48px) !important;
+    margin-left: -48px !important;
+    padding-left: 48px !important;
+  }
+  #view-chats > .chat-workspace {
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+/* Keep the chat card flush to the top/right/bottom of the usable viewport. */
+#view-chats .chat-main-window,
+#view-chats .chat-sidebar {
+  min-height: 0 !important;
+  max-height: none !important;
+}
