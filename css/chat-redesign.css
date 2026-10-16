@@ -352,3 +352,78 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
   min-height: 0 !important;
   max-height: none !important;
 }
+
+
+/* Chat should be the viewport itself, not a floating card inside a scrolling page.
+   Keep the navigation rail fixed at the left and give the chat area every pixel
+   from its right edge to the viewport edge. */
+@supports selector(body:has(#view-chats.active)) {
+  body:has(#view-chats.active) {
+    overflow: hidden !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body:has(#view-chats.active) .app-container {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body:has(#view-chats.active) #view-chats.active {
+    position: fixed !important;
+    z-index: 1 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: var(--iats-rail-width, 58px) !important;
+    width: auto !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  body:has(#view-chats.active) #view-chats.active > .chat-workspace {
+    position: absolute !important;
+    inset: 0 !important;
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+  body:has(#view-chats.active) #view-chats .chat-main-window,
+  body:has(#view-chats.active) #view-chats .chat-sidebar {
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+  body:has(#view-chats.active) #view-chats .chat-sidebar {
+    overflow-y: auto !important;
+  }
+  body:has(#view-chats.active) #view-chats .chat-messages-scroll {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+}
+@media (max-width: 640px) {
+  @supports selector(body:has(#view-chats.active)) {
+    body:has(#view-chats.active) #view-chats.active {
+      left: 58px !important;
+    }
+  }
+}
