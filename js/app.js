@@ -1279,7 +1279,7 @@
     const meetingUrl = /^https?:\/\//i.test(String(event.online_url || "")) ? String(event.online_url) : "";
     const isHost = !!AppState.currentUser && String(event.host_id || "") === String(AppState.currentUser.id);
     const registrationLabel = event.isJoined ? "Leave Event" : deadlinePassed ? "Registration Closed" : full ? "Event Full" : "Join Event";
-    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:16px;'>
+    return "<article class='glass-panel catchup-card' style='display:flex;flex-direction:column;justify-content:space-between;gap:16px;'>"
       + "<div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;'>"
       + "<span class='tag-pill tag-pill-highlight'>" + escapeEventText(event.tag || "Academic Event") + "</span>"
       + "<span class='tag-pill " + (status === "live" ? "tag-pill-highlight" : "tag-pill-blue") + "' data-event-status-label>" + label + "</span></div>"
