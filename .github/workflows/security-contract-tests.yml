@@ -1,0 +1,15 @@
+name: Security contract tests
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ["security/content-filtering-e2ee"]
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/security-contract.test.mjs
