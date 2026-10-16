@@ -2297,6 +2297,12 @@
       avatar: "./images/scholar_female.jpg"
     };
 
+    // A scholar profile is complete when the account has an official course and valid IATS cohort.
+    // Do not depend on matchProfiles loading: that public directory is asynchronous.
+    const hasCompletedScholarProfile = !isDeveloperAccount &&
+      IATS_COURSES.some(course => course.name === String(user.major || "").trim()) &&
+      IATS_COHORTS.includes(String(user.year || "").trim());
+
     // Reuse the container declared at the start of renderProfileView().
     if (!container) return;
 
@@ -2336,7 +2342,7 @@
         <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 20px; margin-top: 20px;">
           <div style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-bottom: 12px;">Institutional Platform Services</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            ${isDeveloperAccount ? "" : '<button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openCreateProfileModal()"><span>+ Register Scholar Candidate</span></button>'}
+            ${isDeveloperAccount || hasCompletedScholarProfile ? "" : '<button class="btn-liquid btn-primary btn-sm" onclick="CampusApp.openCreateProfileModal()"><span>+ Register Scholar Candidate</span></button>'}
             <button class="btn-liquid btn-glass btn-sm" onclick="CampusApp.openLogicInspector()">
               <span>View System Architecture</span>
             </button>
