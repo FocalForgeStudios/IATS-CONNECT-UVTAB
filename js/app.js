@@ -339,6 +339,7 @@
     }
     syncNewsPublishingOption();
     renderNavigation();
+    refreshUnreadNews();
     startConversationsSync();
     if (unsubPresence) { unsubPresence(); unsubPresence = null; }
     if (window.SupabaseService.subscribePresence) window.SupabaseService.subscribePresence(async ids => {
@@ -496,10 +497,15 @@
   function updateNotificationBadges() {
     const newsCount = (AppState.unreadNewsIds || []).length;
     const chatCount = Object.values(AppState.unreadChatCounts || {}).reduce((sum, count) => sum + Number(count || 0), 0);
-    document.querySelectorAll('.dock-nav-btn[data-view="catchup"] .dock-label').forEach(label => {
-      let badge = label.querySelector(".nav-notification-badge");
-      if (newsCount > 0) { if (!badge) { badge = document.createElement("span"); badge.className = "nav-notification-badge"; label.appendChild(badge); } badge.textContent = newsCount > 99 ? "99+" : String(newsCount); badge.setAttribute("aria-label", newsCount + " unread news items"); }
-      else if (badge) badge.remove();
+    document.querySelectorAll('.dock-nav-btn[data-view="catchup"]').forEach(button => {
+      const label = button.querySelector(".dock-label") || button;
+      let badge = button.querySelector(".nav-notification-badge");
+      if (newsCount > 0) {
+        if (!badge) { badge = document.createElement("span"); badge.className = "nav-notification-badge"; label.appendChild(badge); }
+        badge.textContent = newsCount > 99 ? "99+" : String(newsCount);
+        badge.setAttribute("aria-label", newsCount + " unread news items");
+        badge.title = newsCount + " unread news items";
+      } else if (badge) badge.remove();
     });
     document.querySelectorAll('.dock-nav-btn[data-view="chats"] .dock-label').forEach(label => {
       let badge = label.querySelector(".nav-notification-badge");
@@ -510,8 +516,12 @@
 
   async function refreshUnreadNews() {
     if (!AppState.currentUser || !window.SupabaseService?.getUnreadNewsIds) return;
-    try { AppState.unreadNewsIds = await window.SupabaseService.getUnreadNewsIds((AppState.catchups || []).filter(isCampusNewsItem).map(item => item.id)); updateNotificationBadges(); if (AppState.activeView === "catchup") renderCatchUpView(); }
-    catch (err) { console.warn("Unread news refresh failed", err); }
+    try {
+      AppState.unreadNewsIds = await window.SupabaseService.getUnreadNewsIds((AppState.catchups || []).filter(isCampusNewsItem).map(item => item.id));
+      updateNotificationBadges();
+      if (AppState.activeView === "catchup") renderCatchUpView();
+      if (AppState.activeView === "dashboard") renderDashboardView();
+    } catch (err) { console.warn("Unread news refresh failed", err); }
   }
 
   async function markNewsRead(newsId) {
@@ -843,7 +853,21 @@
           </div>
         `;
       } else {
-        quickCatchupList.innerHTML = AppState.catchups.slice(0, 2).map(c => `
+        const dashboardItems = [...AppState.catchups].sort((a, b) => Number(isCampusNewsItem(b)) - Number(isCampusNewsItem(a)) || Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, 2);
+        quickCatchupList.innerHTML = dashboardItems.map(c => {
+          if (isCampusNewsItem(c)) {
+            const unread = (AppState.unreadNewsIds || []).some(id => String(id) === String(c.id));
+            return `
+          <div class="glass-panel campus-news-dashboard-card" data-news-id="${c.id}" style="padding: 16px; margin-bottom: 12px; cursor:pointer; border-left:4px solid ${unread ? '#D8232A' : '#CBD5E1'};" role="button" tabindex="0" aria-label="Read campus news: ${escapeEventText(c.title || 'Campus News')}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <div style="font-weight:700;font-size:.94rem;color:#1E293B;">${escapeEventText(c.title || 'Campus News')}</div>
+              ${unread ? '<span class="news-unread-pill">NEW</span>' : '<span style="font-size:.78rem;color:#64748B;">NEWS</span>'}
+            </div>
+            <p style="font-size:.84rem;color:#475569;margin:8px 0 0;">${escapeEventText(String(c.description || '').slice(0,140))}${String(c.description || '').length > 140 ? '…' : ''}</p>
+            <div style="font-size:.8rem;color:#D8232A;font-weight:700;margin-top:10px;">Read full news →</div>
+          </div>`;
+          }
+          return `
           <div class="glass-panel" style="padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <img src="${resolveAssetUrl(c.hostAvatar || DEFAULT_AVATAR_PLACEHOLDER)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PLACEHOLDER}';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" alt="host">
@@ -859,13 +883,18 @@
               </div>
             </div>
             <button class="btn-liquid ${c.isJoined ? 'btn-glass' : 'btn-primary'} btn-sm btn-join-catchup" data-id="${c.id}">
-              ${c.isJoined ? "Joined ✓" : "Join"}
+              ${c.isJoined ? "Joined ✓" : "Join Event"}
             </button>
-          </div>
-        `).join("");
+          </div>`;
+        }).join("");
 
         quickCatchupList.querySelectorAll(".btn-join-catchup").forEach(btn => {
-          btn.addEventListener("click", () => toggleJoinCatchup(btn.dataset.id));
+          btn.addEventListener("click", event => { event.stopPropagation(); toggleJoinCatchup(btn.dataset.id); });
+        });
+        quickCatchupList.querySelectorAll(".campus-news-dashboard-card").forEach(card => {
+          const openNews = () => openCatchupDetails(card.dataset.newsId);
+          card.addEventListener("click", openNews);
+          card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openNews(); } });
         });
       }
     }
