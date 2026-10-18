@@ -17,6 +17,7 @@
     <!-- Liquid Glassmorphism Core Stylesheet with Academic Theme Colors (Relative path for GitHub Pages compatibility) -->
     <link rel="stylesheet" href="./css/liquid-glass.css?v=20261016-newsbadge1" />
     <link rel="stylesheet" href="./css/chat-redesign.css?v=20261017-study-buddy-directory" />
+    <link rel="stylesheet" href="./css/academic-event-form.css?v=20261018-layout1" />
   </head>
   <body>
     <!-- Accessible skeleton loader: gives the page structure while scripts initialize -->
@@ -727,66 +728,94 @@
       <div class="modal-box">
         <button class="modal-close-btn" id="btn-close-catchup-modal" aria-label="Close">✕</button>
         <h2 id="host-catchup-modal-title" style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 16px;">Host an Academic Event & Study Sprint</h2>
-        <form id="host-catchup-form">
-          <p class="form-scroll-hint">Complete the fields below. Scroll inside this form to reach all options and the submit button.</p>
-          <div class="form-group">
-            <label class="form-label" for="new-catchup-title">Title</label>
-            <input type="text" id="new-catchup-title" class="form-input" placeholder="e.g. BIT2101 Data Structures Problem Review" required />
+        <form id="host-catchup-form" class="academic-event-form">
+          <p class="form-scroll-hint">Complete the event information below. Required fields are marked.</p>
+          <div class="academic-event-layout">
+            <section class="academic-event-left" aria-label="Event information and scheduling">
+              <div class="form-group">
+                <label class="form-label" for="new-catchup-title">Title</label>
+                <input type="text" id="new-catchup-title" class="form-input" placeholder="e.g. BIT2101 Data Structures Workshop" required />
+              </div>
+              <div class="form-group academic-media-group" id="catchup-banner-group">
+                <label class="form-label" for="new-catchup-media-file">Poster / Video <span class="optional-label">(optional)</span></label>
+                <label class="event-media-dropzone" for="new-catchup-media-file">
+                  <span class="event-media-icons" aria-hidden="true"><span>▧</span><span>▶</span></span>
+                  <strong>Click or choose a file to upload</strong>
+                  <span>Poster image or event video · up to 50 MB</span>
+                  <input type="file" id="new-catchup-media-file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" />
+                </label>
+                <div id="new-catchup-media-current" style="display:none;margin-top:8px;font-size:.82rem;color:#64748B;"></div>
+                <img id="new-catchup-banner-preview" alt="Event poster preview" style="display:none;width:100%;max-height:190px;object-fit:contain;border-radius:12px;margin-top:8px;" />
+                <video id="new-catchup-video-preview" controls playsinline style="display:none;width:100%;max-height:240px;border-radius:12px;margin-top:8px;"></video>
+              </div>
+              <div class="academic-event-time-grid" id="catchup-dates-group">
+                <div class="form-group">
+                  <label class="form-label" for="new-catchup-start">Start Date &amp; Time</label>
+                  <input type="datetime-local" id="new-catchup-start" class="form-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="new-catchup-end">End Date &amp; Time</label>
+                  <input type="datetime-local" id="new-catchup-end" class="form-input" />
+                </div>
+              </div>
+              <div class="form-group" id="catchup-format-group">
+                <label class="form-label" for="new-catchup-format">Event Format</label>
+                <div class="event-format-options">
+                  <label><input type="radio" name="event-format-choice" value="physical" checked /> Physical</label>
+                  <label><input type="radio" name="event-format-choice" value="online" /> Online</label>
+                  <label><input type="radio" name="event-format-choice" value="hybrid" /> Hybrid</label>
+                </div>
+                <select id="new-catchup-format" class="form-input event-format-data-select" aria-label="Event format">
+                  <option value="physical">Physical</option><option value="online">Online</option><option value="hybrid">Both physical and online</option>
+                </select>
+              </div>
+              <div class="form-group" id="catchup-location-group">
+                <label class="form-label" for="new-catchup-location">Physical Location <span class="optional-label">(if applicable)</span></label>
+                <input type="text" id="new-catchup-location" class="form-input" placeholder="Building, room, or campus venue" />
+              </div>
+              <div class="form-group" id="catchup-online-url-group" style="display:none;">
+                <label class="form-label" for="new-catchup-online-url">Online Event Link</label>
+                <input type="url" id="new-catchup-online-url" class="form-input" placeholder="https://meet.google.com/..." />
+              </div>
+              <div class="academic-event-time-grid academic-event-registration-grid">
+                <div class="form-group" id="catchup-registration-deadline-group">
+                  <label class="form-label" for="new-catchup-registration-deadline">Registration Deadline</label>
+                  <input type="datetime-local" id="new-catchup-registration-deadline" class="form-input" required />
+                </div>
+                <div class="form-group" id="catchup-capacity-group">
+                  <label class="form-label" for="new-catchup-capacity">Maximum Registrations</label>
+                  <input type="number" id="new-catchup-capacity" class="form-input" min="1" step="1" placeholder="Unlimited" aria-describedby="catchup-capacity-help" />
+                  <small id="catchup-capacity-help">Leave blank for unlimited registrations.</small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-catchup-tag">Event Category</label>
+                <select id="new-catchup-tag" class="form-input">
+                  <option value="Study Group">Study Sprint</option><option value="Academic Workshop">Department Workshop</option><option value="Exam Revision">Exam Revision Session</option><option value="Tech Seminar">Tech &amp; Innovation Seminar</option><option value="Campus News" data-admin-only="true" hidden>Campus News (admin only)</option>
+                </select>
+              </div>
+            </section>
+            <section class="academic-event-right" aria-label="Full event details">
+              <div class="form-group academic-details-group">
+                <label class="form-label" for="new-catchup-description">Full Details</label>
+                <div class="event-editor-shell">
+                  <div class="event-editor-toolbar" role="toolbar" aria-label="Event details formatting">
+                    <button type="button" data-format="bold" aria-label="Bold"><strong>B</strong></button>
+                    <button type="button" data-format="italic" aria-label="Italic"><em>I</em></button>
+                    <button type="button" data-format="underline" aria-label="Underline"><u>U</u></button>
+                    <span class="event-toolbar-divider"></span>
+                    <button type="button" data-format="heading" aria-label="Insert heading">H</button>
+                    <button type="button" data-format="bullet" aria-label="Insert bullet list">☷</button>
+                    <button type="button" data-format="number" aria-label="Insert numbered list">1.</button>
+                  </div>
+                  <textarea id="new-catchup-description" class="form-input event-details-textarea" rows="14" maxlength="2000" placeholder="Describe the event, agenda, speakers, learning outcomes, and any instructions for participants."></textarea>
+                </div>
+                <small class="event-details-help">Use the toolbar to format text or add an agenda and speaker details.</small>
+              </div>
+            </section>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="new-catchup-description">Full Details / Description</label>
-            <textarea id="new-catchup-description" class="form-input" rows="3" maxlength="2000" placeholder="Share the important details, instructions, or context for this event/news item."></textarea>
-          </div>
-          <div class="form-group" id="catchup-banner-group">
-            <label class="form-label" for="new-catchup-media-file">Event poster or video trailer (optional)</label>
-            <input type="file" id="new-catchup-media-file" class="form-input" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" />
-            <small style="display:block;color:#64748B;margin-top:5px;">Choose an image or video from your device. Images and videos up to 50 MB are supported.</small>
-            <div id="new-catchup-media-current" style="display:none;margin-top:8px;font-size:.82rem;color:#64748B;"></div>
-            <img id="new-catchup-banner-preview" alt="Event poster preview" style="display:none;width:100%;max-height:190px;object-fit:contain;border-radius:12px;margin-top:8px;" />
-            <video id="new-catchup-video-preview" controls playsinline style="display:none;width:100%;max-height:240px;border-radius:12px;margin-top:8px;"></video>
-          </div>
-
-          <div id="catchup-dates-group" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">
-            <div class="form-group">
-              <label class="form-label" for="new-catchup-start">Event start date & time</label>
-              <input type="datetime-local" id="new-catchup-start" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="new-catchup-end">Event end date & time</label>
-              <input type="datetime-local" id="new-catchup-end" class="form-input" />
-            </div>
-          </div>
-          <div class="form-group" id="catchup-format-group">
-            <label class="form-label" for="new-catchup-format">How will the event take place?</label>
-            <select id="new-catchup-format" class="form-input"><option value="physical">Physical</option><option value="online">Online</option><option value="hybrid">Both physical and online</option></select>
-          </div>
-          <div class="form-group" id="catchup-online-url-group" style="display:none;">
-            <label class="form-label" for="new-catchup-online-url">Online meeting link</label>
-            <input type="url" id="new-catchup-online-url" class="form-input" placeholder="https://meet.google.com/... or Zoom, Skype, etc." />
-            <small style="display:block;margin-top:5px;color:#64748B;">Paste the meeting link participants should use.</small>
-          </div>
-          <div class="form-group" id="catchup-registration-deadline-group">
-            <label class="form-label" for="new-catchup-registration-deadline">Registration deadline</label>
-            <input type="datetime-local" id="new-catchup-registration-deadline" class="form-input" required />
-            <small style="display:block;margin-top:5px;color:#64748B;">After this time, new registrations will be blocked.</small>
-          </div>
-          <div class="form-group" id="catchup-capacity-group">
-            <label class="form-label" for="new-catchup-capacity">Maximum registrations (optional)</label>
-            <input type="number" id="new-catchup-capacity" class="form-input" min="1" step="1" placeholder="Unlimited — leave blank" aria-describedby="catchup-capacity-help" />
-            <small id="catchup-capacity-help" style="display:block;margin-top:5px;color:#64748B;">Leave blank for unlimited registration capacity.</small>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="new-catchup-tag">Event Category</label>
-            <select id="new-catchup-tag" class="form-input">
-              <option value="Study Group">Study Sprint</option>
-              <option value="Academic Workshop">Department Workshop</option>
-              <option value="Exam Revision">Exam Revision Session</option>
-              <option value="Tech Seminar">Tech & Innovation Seminar</option>
-              <option value="Campus News" data-admin-only="true" hidden>Campus News (admin only)</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-liquid btn-primary" style="width: 100%; margin-top: 10px;">
-            <span id="host-catchup-submit-label">Publish Academic Event →</span>
+          <button type="submit" class="btn-liquid btn-primary academic-event-publish">
+            <span id="host-catchup-submit-label">➤ Publish Academic Event</span>
           </button>
         </form>
       </div>
