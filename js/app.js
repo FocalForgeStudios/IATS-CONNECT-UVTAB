@@ -2775,6 +2775,44 @@
     if (catchupForm) catchupForm.addEventListener("submit", handleCreateCatchup);
     const catchupTag = document.getElementById("new-catchup-tag");
     if (catchupTag) catchupTag.addEventListener("change", syncCatchupFormType);
+
+    // Keep the visible radio-style format choices synchronized with the existing select used by event publishing.
+    document.querySelectorAll('input[name="event-format-choice"]').forEach((choice) => {
+      choice.addEventListener("change", () => {
+        const formatSelect = document.getElementById("new-catchup-format");
+        if (formatSelect) {
+          formatSelect.value = choice.value;
+          formatSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+    });
+    const syncEventFormatChoices = () => {
+      const selected = document.getElementById("new-catchup-format")?.value || "physical";
+      document.querySelectorAll('input[name="event-format-choice"]').forEach((choice) => {
+        choice.checked = choice.value === selected;
+      });
+    };
+    document.getElementById("new-catchup-format")?.addEventListener("change", syncEventFormatChoices);
+    syncEventFormatChoices();
+
+    // Lightweight formatting helpers insert familiar Markdown into the existing plain-text details field.
+    document.querySelectorAll("#host-catchup-modal .event-editor-toolbar [data-format]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const textarea = document.getElementById("new-catchup-description");
+        if (!textarea) return;
+        const start = textarea.selectionStart ?? textarea.value.length;
+        const end = textarea.selectionEnd ?? start;
+        const selectedText = textarea.value.slice(start, end);
+        const format = button.dataset.format;
+        const wrappers = { bold: ["**", "**"], italic: ["_", "_"], underline: ["<u>", "</u>"], heading: ["\n## ", "\n"], bullet: ["\n- ", "\n"], number: ["\n1. ", "\n"] };
+        const pair = wrappers[format];
+        if (!pair) return;
+        const replacement = selectedText ? pair[0] + selectedText + pair[1] : pair[0] + (format === "heading" ? "Heading" : format === "bullet" ? "List item" : format === "number" ? "List item" : "text") + pair[1];
+        textarea.setRangeText(replacement, start, end, "select");
+        textarea.focus();
+      });
+    });
+
     const catchupFormat = document.getElementById("new-catchup-format");
     if (catchupFormat) catchupFormat.addEventListener("change", syncCatchupFormType);
 
