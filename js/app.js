@@ -2208,6 +2208,7 @@
         const name = escapeEventText(card.dataset.attachmentName || "Attachment");
         if (mime.startsWith("image/")) card.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" alt="${name}" loading="lazy" class="chat-attachment-image"><span>${name}</span></a>`;
         else if (mime.startsWith("video/")) card.innerHTML = `<video controls preload="metadata" class="chat-attachment-video" src="${url}"></video><a href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+        else if (mime.startsWith("audio/")) card.innerHTML = `<audio controls preload="metadata" class="chat-attachment-audio" src="${url}"></audio><a href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`;
         else card.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" download="${name}">📎 ${name} <span>Open / download</span></a>`;
       });
       renderReplyPreview();
@@ -2671,6 +2672,29 @@
   // Event Bindings
   // ==========================================
   function bindEvents() {
+    // Delegated safety net for the host-event modal. It still works if other
+    // form controls or dynamically injected content change their listeners.
+    if (!document.documentElement.dataset.hostModalDismissBound) {
+      document.documentElement.dataset.hostModalDismissBound = "1";
+      document.addEventListener("click", (event) => {
+        const modal = document.getElementById("host-catchup-modal");
+        if (!modal || !modal.classList.contains("open")) return;
+        if (event.target.closest("#btn-close-catchup-modal")) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeHostCatchupModal();
+        } else if (event.target === modal) {
+          closeHostCatchupModal();
+        } else if (event.target.closest(".nav-item-btn, .dock-nav-btn, [data-view]")) {
+          closeHostCatchupModal();
+        }
+      }, true);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && document.getElementById("host-catchup-modal")?.classList.contains("open")) {
+          closeHostCatchupModal();
+        }
+      });
+    }
     // Admin-only sign-out returns directly to the public guest landing page.
     const adminSignOutBtn = document.getElementById("btn-admin-signout-home");
     if (adminSignOutBtn) adminSignOutBtn.addEventListener("click", () => clearSession("landing"));
@@ -2920,6 +2944,62 @@
     const chatForm = document.getElementById("chat-send-form");
     if (chatForm) chatForm.addEventListener("submit", handleSendMessage);
     document.getElementById("btn-chat-attach")?.addEventListener("click", () => document.getElementById("chat-attachment-input")?.click());
+    let activeVoiceRecorder = null;
+    let voiceChunks = [];
+    let voiceStartedAt = 0;
+    const voiceButton = document.getElementById("btn-chat-voice");
+    if (voiceButton) voiceButton.addEventListener("click", async () => {
+      if (activeVoiceRecorder && activeVoiceRecorder.state === "recording") {
+        activeVoiceRecorder.stop();
+        voiceButton.disabled = true;
+        voiceButton.textContent = "⏳";
+        voiceButton.title = "Finishing voice note…";
+        return;
+      }
+      const conversation = AppState.conversations.find(c => String(c.id) === String(AppState.activeChatId));
+      if (!conversation) { showToast("Choose a Chat", "Open a conversation before recording a voice note."); return; }
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        showToast("Voice Notes Unavailable", "This browser does not support microphone recording. Try the latest version of Chrome or Edge over HTTPS.");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const preferredType = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"].find(type => MediaRecorder.isTypeSupported(type));
+        activeVoiceRecorder = preferredType ? new MediaRecorder(stream, { mimeType: preferredType }) : new MediaRecorder(stream);
+        voiceChunks = [];
+        voiceStartedAt = Date.now();
+        activeVoiceRecorder.addEventListener("dataavailable", event => { if (event.data && event.data.size) voiceChunks.push(event.data); });
+        activeVoiceRecorder.addEventListener("stop", async () => {
+          stream.getTracks().forEach(track => track.stop());
+          const mime = activeVoiceRecorder?.mimeType || voiceChunks[0]?.type || "audio/webm";
+          const blob = new Blob(voiceChunks, { type: mime });
+          activeVoiceRecorder = null;
+          voiceChunks = [];
+          if (blob.size > 0) {
+            const ext = mime.includes("ogg") ? "ogg" : mime.includes("mp4") ? "m4a" : "webm";
+            const file = new File([blob], "voice-note-" + new Date().toISOString().replace(/[:.]/g,"-") + "." + ext, { type: mime.split(";")[0] });
+            try {
+              await window.SupabaseService.uploadChatAttachment(conversation.id, file);
+              showToast("Voice Note Sent", "Your voice note was shared in this chat.");
+            } catch (error) {
+              showToast("Voice Note Failed", error.message || "Could not upload the recording.");
+            }
+          }
+          voiceButton.disabled = false;
+          voiceButton.textContent = "🎙️";
+          voiceButton.title = "Record a voice note";
+          voiceButton.classList.remove("is-recording");
+        });
+        activeVoiceRecorder.start();
+        voiceButton.textContent = "⏹";
+        voiceButton.title = "Stop and send voice note";
+        voiceButton.classList.add("is-recording");
+        showToast("Recording Voice Note", "Click the stop button to finish and send your recording.");
+      } catch (error) {
+        showToast("Microphone Permission Needed", error.name === "NotAllowedError" ? "Allow microphone access in your browser to record a voice note." : (error.message || "Could not start microphone recording."));
+        if (voiceButton) { voiceButton.disabled = false; voiceButton.textContent = "🎙️"; }
+      }
+    });
     document.getElementById("btn-chat-emoji")?.addEventListener("click", () => {
       const picker = document.getElementById("chat-emoji-picker");
       if (picker) picker.hidden = !picker.hidden;
