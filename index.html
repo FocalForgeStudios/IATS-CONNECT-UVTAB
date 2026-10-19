@@ -801,7 +801,8 @@
                     <button type="button" data-format="bullet" aria-label="Insert bullet list">☷</button>
                     <button type="button" data-format="number" aria-label="Insert numbered list">1.</button>
                   </div>
-                  <textarea id="new-catchup-description" class="form-input event-details-textarea" rows="14" maxlength="2000" placeholder="Describe the event, agenda, speakers, learning outcomes, and any instructions for participants."></textarea>
+                  <div id="new-catchup-rich-editor" class="form-input event-details-textarea event-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Full event details" data-placeholder="Describe the event, agenda, speakers, learning outcomes, and any instructions for participants."></div>
+                  <textarea id="new-catchup-description" class="form-input event-details-textarea event-description-storage" rows="14" maxlength="2000" aria-hidden="true" tabindex="-1"></textarea>
                 </div>
                 <small class="event-details-help">Use the toolbar to format text or add an agenda and speaker details.</small>
               </div>
