@@ -2838,10 +2838,34 @@
     if (catchupFormat) catchupFormat.addEventListener("change", syncCatchupFormType);
 
     const closeCatchupBtn = document.getElementById("btn-close-catchup-modal");
-    if (closeCatchupBtn) closeCatchupBtn.addEventListener("click", closeHostCatchupModal);
+    if (closeCatchupBtn) closeCatchupBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeHostCatchupModal();
+    });
     const catchupBackdrop = document.getElementById("host-catchup-modal");
-    if (catchupBackdrop) catchupBackdrop.addEventListener("click", event => { if (event.target === catchupBackdrop) closeHostCatchupModal(); });
-    document.addEventListener("keydown", event => { if (event.key === "Escape") closeHostCatchupModal(); });
+    if (catchupBackdrop) {
+      catchupBackdrop.addEventListener("click", event => {
+        if (event.target === catchupBackdrop) closeHostCatchupModal();
+      });
+      // Capture outside clicks before nested UI handlers can swallow them.
+      catchupBackdrop.addEventListener("pointerdown", event => {
+        if (event.target === catchupBackdrop) closeHostCatchupModal();
+      });
+    }
+    // The modal overlays the navigation, so any navigation intent should dismiss it first.
+    document.querySelectorAll(".nav-item-btn, .dock-nav-btn, [data-view]").forEach((navButton) => {
+      navButton.addEventListener("click", () => {
+        const modal = document.getElementById("host-catchup-modal");
+        if (modal?.classList.contains("open")) closeHostCatchupModal();
+      }, true);
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        const modal = document.getElementById("host-catchup-modal");
+        if (modal?.classList.contains("open")) closeHostCatchupModal();
+      }
+    });
     const mediaInput = document.getElementById("new-catchup-media-file");
     const imagePreview = document.getElementById("new-catchup-banner-preview");
     const videoPreview = document.getElementById("new-catchup-video-preview");
