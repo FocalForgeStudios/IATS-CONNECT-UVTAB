@@ -259,3 +259,63 @@
 @media (max-width: 760px) {
   #host-catchup-modal .event-rich-editor { min-height: 260px; height: 300px; }
 }
+
+
+/* Final sizing override: modal framework caps dialogs at 520px by default. */
+#host-catchup-modal.modal-backdrop {
+  box-sizing: border-box;
+  padding: 18px;
+  overflow-y: auto;
+  align-items: center;
+}
+#host-catchup-modal .modal-box {
+  width: min(1120px, calc(100vw - 36px)) !important;
+  max-width: 1120px !important;
+  min-width: 0;
+  max-height: calc(100dvh - 36px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+#host-catchup-modal .academic-event-form,
+#host-catchup-modal .academic-event-layout {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+}
+#host-catchup-modal .academic-event-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
+  gap: clamp(22px, 2.4vw, 34px) !important;
+}
+#host-catchup-modal .academic-event-left,
+#host-catchup-modal .academic-event-right,
+#host-catchup-modal .event-editor-shell,
+#host-catchup-modal .event-rich-editor {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#host-catchup-modal .event-rich-editor {
+  min-height: 420px;
+  height: clamp(420px, 54vh, 600px);
+}
+#host-catchup-modal .modal-close-btn { z-index: 5; }
+@media (max-width: 760px) {
+  #host-catchup-modal.modal-backdrop { padding: 10px; align-items: flex-start; }
+  #host-catchup-modal .modal-box {
+    width: calc(100vw - 20px) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 20px);
+    padding: 18px 16px;
+  }
+  #host-catchup-modal .academic-event-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #host-catchup-modal .event-rich-editor {
+    min-height: 260px;
+    height: 300px;
+  }
+}
