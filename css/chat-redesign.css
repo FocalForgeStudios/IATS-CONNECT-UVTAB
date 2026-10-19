@@ -604,3 +604,7 @@ body { padding-left:calc(var(--iats-rail-width,58px) + 24px)!important; }
   #view-match .buddy-directory-actions { grid-column:1 / -1; }
   #view-match .buddy-message-button { width:100%; }
 }
+
+.chat-attachment-audio { display:block; width:min(100%,360px); margin:8px 0; }
+#btn-chat-voice.is-recording { background:#fee2e2 !important; color:#b91c1c !important; animation:voice-note-pulse 1.2s ease-in-out infinite; }
+@keyframes voice-note-pulse { 50% { box-shadow:0 0 0 5px rgba(185,28,28,.14); } }
