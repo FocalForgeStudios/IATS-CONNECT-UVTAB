@@ -2020,6 +2020,7 @@
     const activeHeader = document.getElementById("chat-active-peer-header");
 
     if (!threadsList || !messagesWindow) return;
+    window.SupabaseService?.revokeTemporaryAttachmentUrls?.();
 
     if (AppState.conversations.length === 0) {
       threadsList.innerHTML = `
@@ -2183,7 +2184,7 @@
         const sharedProfile = sharedProfileId ? AppState.matchProfiles.find(p => String(p.owner_id || p.id) === String(sharedProfileId)) : null;
         const body = msg.deleted_at ? '<em>This message was deleted</em>' : sharedProfileId ? "" : escapeEventText(msg.text || "");
         const profileShareMarkup = sharedProfileId ? `<div class="shared-profile-card"><div class="shared-profile-icon">👤</div><div class="shared-profile-copy"><strong>${escapeEventText(sharedProfile?.name || "Shared IATS student")}</strong><span>${escapeEventText(sharedProfile?.major || "Student profile")}</span></div><button type="button" class="btn-liquid btn-primary btn-sm" data-open-shared-profile="${sharedProfileId}" data-profile-name="${escapeEventText(sharedProfile?.name || "IATS Scholar")}">Message</button></div>` : "";
-        const attachmentMarkup = msg.attachment_path && !msg.deleted_at ? `<div class="chat-attachment-card" data-attachment-path="${escapeEventText(msg.attachment_path)}" data-attachment-name="${escapeEventText(msg.attachment_name || "Attachment")}" data-attachment-mime="${escapeEventText(msg.attachment_mime || "")}"><span>📎 ${escapeEventText(msg.attachment_name || "Attachment")}</span><small>Preparing secure link…</small></div>` : "";
+        const attachmentMarkup = msg.attachment_path && !msg.deleted_at ? `<div class="chat-attachment-card" data-attachment-path="${escapeEventText(msg.attachment_path)}" data-attachment-name="${escapeEventText(msg.attachment_name || "Attachment")}" data-attachment-mime="${escapeEventText(msg.attachment_mime || "")}" data-attachment-conversation="${escapeEventText(activeConv.id)}" data-attachment-sender="${escapeEventText(msg.sender_id)}" data-attachment-encryption="${Number(msg.encryption_version || 0)}"><span>📎 ${escapeEventText(msg.attachment_name || "Attachment")}</span><small>Preparing secure link…</small></div>` : "";
         return `<div class="message-bubble ${mine ? "msg-outgoing" : "msg-incoming"}" data-message-id="${msg.id}">
           ${quoteMarkup}
           <div class="message-sender-label">${mine ? "You" : escapeEventText(msg.sender_name || activeConv.name || "IATS Scholar")}</div>
@@ -2202,7 +2203,7 @@
         startChatWithStudent(profile || { id: profileId, name: button.dataset.profileName || "IATS Scholar" });
       }));
       messagesWindow.querySelectorAll("[data-attachment-path]").forEach(async card => {
-        const url = await window.SupabaseService.getChatAttachmentUrl(card.dataset.attachmentPath);
+        const url = await window.SupabaseService.getChatAttachmentUrl(card.dataset.attachmentPath, card.dataset.attachmentConversation, card.dataset.attachmentSender, card.dataset.attachmentMime, card.dataset.attachmentEncryption);
         if (!url || !card.isConnected) { if (card.isConnected) card.innerHTML = "<span>Attachment unavailable</span>"; return; }
         const mime = card.dataset.attachmentMime || "";
         const name = escapeEventText(card.dataset.attachmentName || "Attachment");

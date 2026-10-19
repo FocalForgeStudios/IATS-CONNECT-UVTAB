@@ -16,6 +16,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
+import { ChatCrypto } from "./chat-crypto.js";
 
 const DEFAULT_STUDENT_AVATAR = "./images/scholar_female.jpg";
 const isConfigured =
@@ -73,10 +74,39 @@ function throttled(actionKey, minIntervalMs = 800) {
 
 function friendlyError(e) {
   const msg = (e && e.message) || String(e);
-  if (/rate limit/i.test(msg)) {
-    return "You're doing that a little too fast. Please wait a few seconds and try again.";
-  }
+  if (/rate limit/i.test(msg)) return "You're doing that a little too fast. Please wait a few seconds and try again.";
   return msg;
+}
+
+async function requireContentApproval(kind, payload) {
+  if (!supabase) throw new Error("Content safety service is unavailable.");
+  const { data, error } = await supabase.functions.invoke("content-guard", { body: { kind, ...payload } });
+  if (error) throw new Error("Content could not be verified. Sending is blocked until safety checks are available.");
+  if (!data || data.allowed !== true) throw new Error(data?.reason || data?.error || "Content did not pass IATS CONNECT safety checks.");
+  return true;
+}
+
+async function conversationPeerId(conversationId, userId) {
+  const { data, error } = await supabase.from("conversations").select("created_by,participant_id").eq("id", conversationId).single();
+  if (error || !data) throw new Error("Could not verify this conversation's recipient.");
+  const peerId = data.created_by === userId ? data.participant_id : data.created_by;
+  if (!peerId || peerId === userId) throw new Error("Secure messaging requires a real recipient account.");
+  return peerId;
+}
+
+function fileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read image for screening."));
+    reader.onerror = () => reject(new Error("Could not read image for screening."));
+    reader.readAsDataURL(file);
+  });
+}
+
+const temporaryAttachmentUrls = new Set();
+function revokeTemporaryAttachmentUrls() {
+  for (const url of temporaryAttachmentUrls) URL.revokeObjectURL(url);
+  temporaryAttachmentUrls.clear();
 }
 
 export const SupabaseService = {
@@ -93,12 +123,19 @@ export const SupabaseService = {
   async getSession() {
     if (!supabase) return null;
     const { data } = await supabase.auth.getSession();
-    return data.session || null;
+    const session = data.session || null;
+    if (session?.user?.id) {
+      try { await ChatCrypto.ensureIdentity(supabase, session.user.id); }
+      catch (error) { console.warn("[IATS CONNECT] Secure chat key setup is not ready:", error); }
+    }
+    return session;
   },
 
   onAuthStateChange(callback) {
     if (!supabase) return () => {};
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.id) ChatCrypto.ensureIdentity(supabase, session.user.id)
+        .catch(error => console.warn("[IATS CONNECT] Secure chat key setup is not ready:", error));
       callback(event, session);
     });
     return () => data.subscription.unsubscribe();
@@ -681,7 +718,20 @@ export const SupabaseService = {
           if (!result.error) profiles = result.data || [];
         }
         const names = new Map(profiles.map(p => [p.id, p.name]));
-        onUpdate(messages.map(m => ({ ...m, sender_name: names.get(m.sender_id) || "IATS Scholar" })));
+        const { data: { user } } = await supabase.auth.getUser();
+        const decrypted = await Promise.all(messages.map(async m => {
+          let displayText = m.text;
+          if (m.encryption_version > 0 && user?.id) {
+            try {
+              const peerId = await conversationPeerId(conversationId, user.id);
+              displayText = await ChatCrypto.decryptText(supabase, user.id, peerId, conversationId, m.text);
+            } catch (error) {
+              displayText = "[Encrypted message — secure key unavailable on this device]";
+            }
+          }
+          return { ...m, text: displayText, sender_name: names.get(m.sender_id) || "IATS Scholar" };
+        }));
+        onUpdate(decrypted);
       })();
     };
     load();
@@ -756,11 +806,12 @@ export const SupabaseService = {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Please sign in again.");
     if (String(profileId) === String(user.id)) throw new Error("You cannot share your own profile as another student.");
+    await ChatCrypto.ensureIdentity(supabase, user.id);
+    const peerId = await conversationPeerId(conversationId, user.id);
+    const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, conversationId, "Shared a student profile");
     const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: "Shared a student profile",
-      shared_profile_id: profileId
+      conversation_id: conversationId, sender_id: user.id, text: encryptedText,
+      encryption_version: 1, payload_kind: "profile_share", shared_profile_id: profileId
     });
     if (error) throw new Error(friendlyError(error));
     return true;
@@ -782,7 +833,7 @@ export const SupabaseService = {
     if (!supabase || !conversationId || !file) throw new Error("Choose a file to share.");
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Please sign in again.");
-    if (file.size > 50 * 1024 * 1024) throw new Error("Attachments must be 50 MB or smaller.");
+    if (file.size > 8 * 1024 * 1024) throw new Error("Securely screened attachments must be 8 MB or smaller.");
     const allowed = new Set([
       "image/jpeg","image/png","image/webp","image/gif",
       "video/mp4","video/webm","video/quicktime",
@@ -792,38 +843,69 @@ export const SupabaseService = {
       "application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation"
     ]);
     if (!allowed.has(file.type)) throw new Error("Use an image, video, PDF, Word, Excel, PowerPoint, or text document.");
+    if (file.type.startsWith("image/")) await requireContentApproval("image", { dataUrl: await fileAsDataUrl(file) });
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const peerId = await conversationPeerId(conversationId, currentUser.id);
+    await ChatCrypto.ensureIdentity(supabase, currentUser.id);
     const safeName = String(file.name || "attachment").replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
-    const path = conversationId + "/" + user.id + "/" + crypto.randomUUID() + "-" + safeName;
-    const { error: uploadError } = await supabase.storage.from("chat-attachments").upload(path, file, {
-      cacheControl: "3600", contentType: file.type, upsert: false
+    const encryptedBlob = await ChatCrypto.encryptBlob(supabase, currentUser.id, peerId, conversationId, file);
+    const path = conversationId + "/" + currentUser.id + "/" + crypto.randomUUID() + ".encrypted";
+    const { error: uploadError } = await supabase.storage.from("chat-attachments").upload(path, encryptedBlob, {
+      cacheControl: "3600", contentType: "application/octet-stream", upsert: false
     });
     if (uploadError) throw new Error(friendlyError(uploadError));
-    const { error: messageError } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: "Shared an attachment: " + safeName,
-      attachment_path: path,
-      attachment_name: safeName,
-      attachment_mime: file.type,
-      attachment_size: file.size
-    });
-    if (messageError) {
+    try {
+      const encryptedText = await ChatCrypto.encryptText(supabase, currentUser.id, peerId, conversationId, "Shared an attachment: " + safeName);
+      const { error: messageError } = await supabase.from("messages").insert({
+        conversation_id: conversationId, sender_id: currentUser.id, text: encryptedText,
+        encryption_version: 1, payload_kind: "attachment",
+        attachment_path: path, attachment_name: safeName, attachment_mime: file.type, attachment_size: file.size
+      });
+      if (messageError) throw messageError;
+    } catch (error) {
       await supabase.storage.from("chat-attachments").remove([path]);
-      throw new Error(friendlyError(messageError));
+      throw new Error(friendlyError(error));
     }
     return true;
   },
 
-  async getChatAttachmentUrl(path) {
+  async getChatAttachmentUrl(path, conversationId, senderId, mimeType, encryptionVersion = 0) {
     if (!supabase || !path) return null;
     const { data, error } = await supabase.storage.from("chat-attachments").createSignedUrl(path, 3600);
-    if (error) { console.warn("Attachment link could not be created:", friendlyError(error)); return null; }
-    return data?.signedUrl || null;
+    if (error || !data?.signedUrl) { console.warn("Attachment link could not be created:", friendlyError(error)); return null; }
+    if (Number(encryptionVersion) <= 0) return data.signedUrl; // legacy attachment during transition
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in again.");
+      const peerId = senderId === user.id ? await conversationPeerId(conversationId, user.id) : senderId;
+      const response = await fetch(data.signedUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error("Encrypted attachment download failed.");
+      const encryptedBlob = await response.blob();
+      const plainBlob = await ChatCrypto.decryptBlob(supabase, user.id, peerId, conversationId, encryptedBlob, mimeType);
+      const objectUrl = URL.createObjectURL(plainBlob);
+      temporaryAttachmentUrls.add(objectUrl);
+      return objectUrl;
+    } catch (error) {
+      console.warn("Encrypted attachment could not be decrypted:", friendlyError(error));
+      return null;
+    }
+  },
+
+  revokeTemporaryAttachmentUrls() {
+    revokeTemporaryAttachmentUrls();
   },
 
   async editMessage(messageId, text) {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
-    const { error } = await supabase.from("messages").update({ text: sanitizeText(text, 500), edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString()); if (error) throw new Error(friendlyError(error));
+    const cleanText = sanitizeText(text, 500);
+    await requireContentApproval("text", { text: cleanText });
+    const { data: message, error: readError } = await supabase.from("messages").select("conversation_id").eq("id", messageId).eq("sender_id", user.id).single();
+    if (readError || !message) throw new Error("Could not verify this message.");
+    await ChatCrypto.ensureIdentity(supabase, user.id);
+    const peerId = await conversationPeerId(message.conversation_id, user.id);
+    const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, message.conversation_id, cleanText);
+    const { error } = await supabase.from("messages").update({ text: encryptedText, encryption_version: 1, edited_at: new Date().toISOString() }).eq("id", messageId).eq("sender_id", user.id).is("deleted_at", null).gte("created_at", new Date(Date.now()-120000).toISOString());
+    if (error) throw new Error(friendlyError(error));
   },
   async deleteMessage(messageId) {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) throw new Error("Please sign in again.");
@@ -840,10 +922,18 @@ export const SupabaseService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You need to sign in first.");
+      const cleanText = sanitizeText(text, 500);
+      if (!cleanText) return false;
+      await requireContentApproval("text", { text: cleanText });
+      await ChatCrypto.ensureIdentity(supabase, user.id);
+      const peerId = await conversationPeerId(conversationId, user.id);
+      const encryptedText = await ChatCrypto.encryptText(supabase, user.id, peerId, conversationId, cleanText);
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        text: sanitizeText(text, 500),
+        text: encryptedText,
+        encryption_version: 1,
+        payload_kind: "text",
         reply_to: replyTo || null
       });
       if (error) throw error;
