@@ -2795,23 +2795,44 @@
     document.getElementById("new-catchup-format")?.addEventListener("change", syncEventFormatChoices);
     syncEventFormatChoices();
 
-    // Lightweight formatting helpers insert familiar Markdown into the existing plain-text details field.
-    document.querySelectorAll("#host-catchup-modal .event-editor-toolbar [data-format]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const textarea = document.getElementById("new-catchup-description");
-        if (!textarea) return;
-        const start = textarea.selectionStart ?? textarea.value.length;
-        const end = textarea.selectionEnd ?? start;
-        const selectedText = textarea.value.slice(start, end);
-        const format = button.dataset.format;
-        const wrappers = { bold: ["**", "**"], italic: ["_", "_"], underline: ["<u>", "</u>"], heading: ["\n## ", "\n"], bullet: ["\n- ", "\n"], number: ["\n1. ", "\n"] };
-        const pair = wrappers[format];
-        if (!pair) return;
-        const replacement = selectedText ? pair[0] + selectedText + pair[1] : pair[0] + (format === "heading" ? "Heading" : format === "bullet" ? "List item" : format === "number" ? "List item" : "text") + pair[1];
-        textarea.setRangeText(replacement, start, end, "select");
-        textarea.focus();
+    // Native rich-text editing: apply formatting to the highlighted text and keep
+    // the existing description textarea synchronized for the current save pipeline.
+    const richEditor = document.getElementById("new-catchup-rich-editor");
+    const descriptionStorage = document.getElementById("new-catchup-description");
+    const syncRichDescription = () => {
+      if (!richEditor || !descriptionStorage) return;
+      descriptionStorage.value = richEditor.innerHTML;
+      descriptionStorage.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    if (richEditor && descriptionStorage) {
+      richEditor.addEventListener("input", syncRichDescription);
+      document.querySelectorAll("#host-catchup-modal .event-editor-toolbar [data-format]").forEach((button) => {
+        button.addEventListener("mousedown", (event) => event.preventDefault());
+        button.addEventListener("click", () => {
+          richEditor.focus();
+          const format = button.dataset.format;
+          if (format === "bold") document.execCommand("bold", false);
+          else if (format === "italic") document.execCommand("italic", false);
+          else if (format === "underline") document.execCommand("underline", false);
+          else if (format === "heading") document.execCommand("formatBlock", false, "h2");
+          else if (format === "bullet") document.execCommand("insertUnorderedList", false);
+          else if (format === "number") document.execCommand("insertOrderedList", false);
+          syncRichDescription();
+        });
       });
-    });
+      // Existing event descriptions are plain text or previously saved text; display them as text, never as executable markup.
+      const originalResetCatchupForm = resetCatchupForm;
+      resetCatchupForm = function(event) {
+        originalResetCatchupForm(event);
+        if (richEditor && descriptionStorage) {
+          richEditor.innerHTML = "";
+          if (event && event.description) {
+            richEditor.textContent = event.description;
+          }
+          syncRichDescription();
+        }
+      };
+    }
 
     const catchupFormat = document.getElementById("new-catchup-format");
     if (catchupFormat) catchupFormat.addEventListener("change", syncCatchupFormType);

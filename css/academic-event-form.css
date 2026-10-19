@@ -213,3 +213,49 @@
     height: 300px;
   }
 }
+
+
+/* Real rich-text editing surface; hidden textarea remains the publishing integration. */
+#host-catchup-modal .event-rich-editor {
+  display: block;
+  width: 100%;
+  min-height: 430px;
+  height: min(56vh, 560px);
+  overflow-y: auto;
+  padding: 13px;
+  background: #fff;
+  color: #1f2937;
+  line-height: 1.6;
+  font-size: .94rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  outline: none;
+  cursor: text;
+}
+#host-catchup-modal .event-rich-editor:focus {
+  box-shadow: inset 0 0 0 2px rgba(58,134,200,.28);
+}
+#host-catchup-modal .event-rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+#host-catchup-modal .event-rich-editor p { margin: 0 0 .65em; }
+#host-catchup-modal .event-rich-editor ul,
+#host-catchup-modal .event-rich-editor ol { padding-left: 1.5rem; margin: .5em 0; }
+#host-catchup-modal .event-rich-editor h2,
+#host-catchup-modal .event-rich-editor h3 { margin: .7em 0 .35em; font-weight: 750; }
+#host-catchup-modal .event-description-storage {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+@media (max-width: 760px) {
+  #host-catchup-modal .event-rich-editor { min-height: 260px; height: 300px; }
+}
