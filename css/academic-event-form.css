@@ -145,3 +145,71 @@
   #host-catchup-modal .academic-event-time-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
   #host-catchup-modal .event-format-options { gap: 8px; }
 }
+
+/* Layout correction: use the entire dialog width for the complete event form. */
+#host-catchup-modal .modal-box {
+  width: calc(100vw - 48px);
+  max-width: 1120px;
+  box-sizing: border-box;
+  padding: 28px 30px 24px;
+}
+#host-catchup-modal .academic-event-form,
+#host-catchup-modal .academic-event-layout {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+#host-catchup-modal .academic-event-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.92fr) minmax(0, 1.08fr);
+  gap: 28px;
+  align-items: stretch;
+}
+#host-catchup-modal .academic-event-left,
+#host-catchup-modal .academic-event-right {
+  width: 100%;
+  min-width: 0;
+}
+#host-catchup-modal .academic-event-left .form-group,
+#host-catchup-modal .academic-event-right .form-group {
+  width: 100%;
+  max-width: none;
+}
+#host-catchup-modal .academic-event-left .form-input,
+#host-catchup-modal .academic-event-right .form-input {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#host-catchup-modal .academic-event-left .academic-event-time-grid,
+#host-catchup-modal .academic-event-left .academic-event-registration-grid {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+#host-catchup-modal .event-details-textarea {
+  width: 100%;
+  min-height: 430px;
+  height: min(56vh, 560px);
+}
+#host-catchup-modal .event-media-dropzone {
+  min-height: 150px;
+}
+#host-catchup-modal .academic-event-publish {
+  margin-top: 22px;
+}
+@media (max-width: 760px) {
+  #host-catchup-modal .modal-box {
+    width: calc(100vw - 20px);
+    max-height: 94dvh;
+    padding: 18px 16px;
+  }
+  #host-catchup-modal .academic-event-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  #host-catchup-modal .event-details-textarea {
+    min-height: 260px;
+    height: 300px;
+  }
+}
